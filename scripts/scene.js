@@ -1,13 +1,10 @@
 import { MODULE_ID } from './main.js';
 import { 
   applyIsometricPerspective,
-  adjustAllTokensAndTilesForIsometric, 
-  applyTokenTransformation, 
-  applyIsometricTransformation, 
   applyBackgroundTransformation, 
-  updateTokenVisuals, 
-  removeTokenVisuals 
 } from './transform.js';
+import { transformationService } from './services/transformationService.js';
+import { transformationCache } from './services/transformationCache.js';
 
 
 export function registerSceneConfig() {
@@ -65,24 +62,15 @@ export function registerSceneConfig() {
 
       // Se a cena sendo editada for a atual, aplica as transformações
       if (canvas.scene.id === sceneConfig.object.id) {
+        transformationCache.clear(); // Limpa todo o cache quando as configurações da cena mudam
+        transformationService.updateWorldSettings(); // Atualiza as configurações globais
+
         requestAnimationFrame(() => {
           applyIsometricPerspective(sceneConfig.object, newIsometric);
           applyBackgroundTransformation(sceneConfig.object, newIsometric, newBackground);
         });
       }
-
-      //requestAnimationFrame(() => {
-        //await canvas.draw();
-        //console.log("teste");
-        //await canvas.background.refresh();
-      //});
     });
-
-    /*// Re-inicializa as tabs
-    sceneConfig.options.tabs[0].active = "isometric";
-    const tabs = sceneConfig._tabs[0];
-    tabs.bind(html[0]);
-    */
   });
 
 
@@ -92,17 +80,25 @@ export function registerSceneConfig() {
     // Verifica se a cena sendo atualizada é a cena atual
     if (scene.id !== canvas.scene?.id) return;
     
-    if (changes.img || 
+    // Verifica se houve mudanças relevantes
+    const relevantChanges = changes.img || 
       changes.background?.offsetX !== undefined || 
       changes.background?.offsetY !== undefined ||
       changes.flags?.[MODULE_ID]?.isometricEnabled !== undefined ||
       changes.flags?.[MODULE_ID]?.isometricBackground !== undefined ||
-      changes.grid !== undefined ||          // Verifica mudanças na grid
-      changes.gridType !== undefined ||      // Verifica mudanças no tipo de grid
-      changes.gridSize !== undefined) {      // Verifica mudanças no tamanho da grid
+      changes.grid !== undefined ||
+      changes.gridType !== undefined ||
+      changes.gridSize !== undefined;
+    
+    if (relevantChanges) {
+      // Invalida o cache da cena
+      transformationService.invalidateSceneCache(scene.id);
       
       const isIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
       const shouldTransformBackground = scene.getFlag(MODULE_ID, "isometricBackground") ?? false;
+      
+      // Atualiza as configurações do serviço
+      transformationService.updateWorldSettings();
       
       requestAnimationFrame(() => {
         applyIsometricPerspective(scene, isIsometric);

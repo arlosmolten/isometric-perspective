@@ -3,6 +3,7 @@
   "version": "0.1.4",
   "description": "Isometric Module for Foundry VTT v12",
   "dependencies": {
+    "@pixi/devtools": "^2.0.1",
     "archiver": "^5.3.1"
   },
   "scripts": {

@@ -1,15 +1,15 @@
 import { MODULE_ID } from './main.js';
-import { isoToCartesian,
-  cartesianToIso,
-  calculateIsometricVerticalDistance
-} from './utils.js';
-
+import { transformationService } from './services/transformationService.js';
+import { transformationCache } from './services/transformationCache.js';
 
 // Função principal que muda o canvas da cena
 export function applyIsometricPerspective(scene, isIsometric) {
   const isometricWorldEnabled = game.settings.get(MODULE_ID, "worldIsometricFlag");
   const isoAngle = Math.PI/6;
   //const scale = scene.getFlag(MODULE_ID, "isometricScale") ?? 1;
+  
+  // Limpa o cache quando muda a perspectiva global
+  transformationCache.clear();
   
   if (isometricWorldEnabled && isIsometric) {
     canvas.app.stage.rotation = -isoAngle;
@@ -25,19 +25,37 @@ export function applyIsometricPerspective(scene, isIsometric) {
 
 // Função auxiliar que chama a função de transformação isométrica em todos os tokens e tiles da cena
 export function adjustAllTokensAndTilesForIsometric() {
-  canvas.tokens.placeables.forEach(token => applyIsometricTransformation(token, true));
-  canvas.tiles.placeables.forEach(tile => applyIsometricTransformation(tile, true));
+  // Atualiza as configurações globais antes de processar os objetos
+  transformationService.updateWorldSettings();
+  
+  // Processa todos os objetos em lote
+  requestAnimationFrame(() => {
+    canvas.tokens.placeables.forEach(token => applyIsometricTransformation(token, true));
+    canvas.tiles.placeables.forEach(tile => applyIsometricTransformation(tile, true));
+  });
 }
 
 
 
 // Função auxiliar que chama a função de transformação isométrica em um objeto específico da cena (token ou tile)
 export function applyTokenTransformation(token, isIsometric) {
+  // Invalida o cache do objeto específico antes de aplicar nova transformação
+  transformationService.invalidateObjectCache(token);
   applyIsometricTransformation(token, isIsometric);
 }
 
+// Função principal de transformação
+export function applyIsometricTransformation(object, isIsometric) {
+  // Calcula a transformação usando o serviço
+  const transform = transformationService.calculateObjectTransformation(object, isIsometric);
+  
+  // Aplica a transformação calculada
+  if (transform) {
+    transformationService.applyTransformation(object, transform);
+  }
+}
 
-
+/*
 // Função que aplica a transformação isométrica para um token ou tile -------------------------------------------------
 export function applyIsometricTransformation(object, isIsometric) {
   const isometricWorldEnabled = game.settings.get(MODULE_ID, "worldIsometricFlag");
@@ -150,7 +168,7 @@ export function applyIsometricTransformation(object, isIsometric) {
     object.mesh.position.set(object.document.x, object.document.y);
     object.mesh.anchor.set(0, 0);
   }
-}
+}*/
 
 
 
@@ -285,4 +303,3 @@ export function removeTokenVisuals(token) {
     canvas.stage.removeChild(line);
   }
 }
-

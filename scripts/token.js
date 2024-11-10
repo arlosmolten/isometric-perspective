@@ -1,20 +1,8 @@
 import { MODULE_ID } from './main.js';
-import { applyIsometricPerspective,
-  adjustAllTokensAndTilesForIsometric, 
-  applyTokenTransformation, 
-  applyIsometricTransformation, 
-  applyBackgroundTransformation, 
-  updateTokenVisuals, 
-  removeTokenVisuals 
-} from './transform.js';
-
-import { isoToCartesian,
-  cartesianToIso,
-  calculateIsometricVerticalDistance
-} from './utils.js';
+import { applyTokenTransformation, updateTokenVisuals, removeTokenVisuals } from './transform.js';
+import { transformationService } from './services/transformationService.js';
 
 export function registerTokenConfig() {
-
 
   Hooks.on("renderTokenConfig", async (app, html, data) => {
     // Carrega o template HTML para a nova aba
@@ -58,6 +46,8 @@ export function registerTokenConfig() {
     
     const isIsometric = token.scene.getFlag(MODULE_ID, "isometricEnabled");
 
+    // Força recálculo para novo token
+    transformationService.invalidateObjectCache(token);
     applyTokenTransformation(token, isIsometric);
     //requestAnimationFrame(() => applyTokenTransformation(token, isIsometric));
   });
@@ -71,7 +61,11 @@ export function registerTokenConfig() {
     
     const isIsometric = token.scene.getFlag(MODULE_ID, "isometricEnabled");
     
-    if (updateData.flags?.[MODULE_ID] || updateData.x !== undefined || updateData.y !== undefined) {
+    if (updateData.flags?.[MODULE_ID] || 
+        updateData.x !== undefined || 
+        updateData.y !== undefined ||
+        updateData.elevation !== undefined) {
+      transformationService.invalidateObjectCache(token);
       applyTokenTransformation(token, isIsometric);
       //requestAnimationFrame(() => applyTokenTransformation(token, isIsometric));
     }
@@ -82,6 +76,9 @@ export function registerTokenConfig() {
   // Hook para quando um token precisa ser redesenhado
   Hooks.on("refreshToken", (token) => {
     const isIsometric = token.scene.getFlag(MODULE_ID, "isometricEnabled");
+    
+    // Invalida o cache e reaplica transformação
+    transformationService.invalidateObjectCache(token);
     applyTokenTransformation(token, isIsometric);
   });
 
@@ -89,6 +86,8 @@ export function registerTokenConfig() {
 
   // Hook para quando um token precisa ser redesenhado
   Hooks.on("deleteToken", (token) => {
+    // Remove o token do cache
+    transformationService.invalidateObjectCache(token);
     updateTokenVisuals(token);
   });
 

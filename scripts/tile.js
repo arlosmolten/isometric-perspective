@@ -9,9 +9,10 @@ import { applyIsometricPerspective,
 } from './transform.js';
 
 import { isoToCartesian,
-  cartesianToIso,
+  cartesianToIso2,
   calculateIsometricVerticalDistance
 } from './utils.js';
+import { transformationService } from './services/transformationService.js';
 
 export function registerTileConfig() {
 
@@ -75,6 +76,9 @@ export function registerTileConfig() {
     
     const scene = tile.scene;
     const isIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
+    
+    // Força recálculo para novo tile
+    transformationService.invalidateObjectCache(tile);
     requestAnimationFrame(() => applyIsometricTransformation(tile, isIsometric));
   });
 
@@ -91,8 +95,10 @@ export function registerTileConfig() {
         updateData.y !== undefined ||
         updateData.width !== undefined ||
         updateData.height !== undefined ||
-        updateData.texture !== undefined
-      ){
+        updateData.texture !== undefined ||
+        updateData.flags?.[MODULE_ID]){
+
+        transformationService.invalidateObjectCache(tile);
         requestAnimationFrame(() => applyIsometricTransformation(tile, isIsometric));
       }
   });
@@ -102,6 +108,9 @@ export function registerTileConfig() {
   Hooks.on("refreshTile", (tile) => {
     const scene = tile.scene;
     const isIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
+    
+    // Invalida o cache e reaplica transformação
+    transformationService.invalidateObjectCache(tile);
     applyIsometricTransformation(tile, isIsometric);
   });
 

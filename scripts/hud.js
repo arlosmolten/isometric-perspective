@@ -10,7 +10,7 @@ import {
 } from './transform.js';
 
 import { isoToCartesian,
-  cartesianToIso,
+  cartesianToIso2,
   calculateIsometricVerticalDistance
 } from './utils.js';
 
