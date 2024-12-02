@@ -1,6 +1,5 @@
 import { MODULE_ID, DEBUG_PRINT, WORLD_ISO_FLAG } from './main.js';
 import { applyIsometricTransformation, updateTokenVisuals } from './transform.js';
-import { cartesianToIso, isoToCartesian } from './utils.js';
 
 export function registerTokenConfig() {
   Hooks.on("renderTokenConfig", handleRenderTokenConfig);
@@ -18,15 +17,12 @@ async function handleRenderTokenConfig(app, html, data) {
     isoDisabled: app.object.getFlag(MODULE_ID, 'isoTokenDisabled') ?? 1,
     offsetX: app.object.getFlag(MODULE_ID, 'offsetX') ?? 0,
     offsetY: app.object.getFlag(MODULE_ID, 'offsetY') ?? 0,
-    isoAnchorY: app.object.getFlag(MODULE_ID, 'isoAnchorY') ?? 0,
-    isoAnchorX: app.object.getFlag(MODULE_ID, 'isoAnchorX') ?? 0,
-    isoAnchorToggleCheckbox: app.object.getFlag(MODULE_ID, 'isoAnchorToggle') ?? 0,
     scale: app.object.getFlag(MODULE_ID, 'scale') ?? 1
   });
   
   // Add a new tab to the menu
   const tabs = html.find('.tabs:not(.secondary-tabs)');
-  tabs.append('<a class="item" data-tab="isometric"><i class="fas fa-cube"></i> Isometric</a>');
+  tabs.append(`<a class="item" data-tab="isometric"><i class="fas fa-cube"></i> ${game.i18n.localize('isometric-perspective.tab_isometric_name')}</a>`);
   
   // Adds the tab contents after the last existing tab
   const lastTab = html.find('.tab').last();
@@ -34,7 +30,18 @@ async function handleRenderTokenConfig(app, html, data) {
 
   // Update the offset fine adjustment button
   updateAdjustOffsetButton(html);
-  updateAdjustAnchorButton(html);
+  
+  // keeps the window height on auto
+  /*
+  const sheet = html.closest('.sheet');
+  if (sheet.length) {
+    sheet.css({ 'height': 'auto', 'min-height': '0' });
+    const windowContent = sheet.find('.window-content');
+    if (windowContent.length) {
+      windowContent.css({ 'height': 'auto', 'overflow': 'visible' });
+    }
+  }
+  */
 
   // Initializes control values
   const isoTokenCheckbox = html.find('input[name="flags.isometric-perspective.isoTokenDisabled"]');
@@ -64,160 +71,6 @@ async function handleRenderTokenConfig(app, html, data) {
       callback: () => {}
     })];
     app._tabs[0].bind(html[0]);
-  }
-
-
-
-
-
-
-  // Initializes control values
-  const isoAnchorToggleCheckbox = html.find('input[name="flags.isometric-perspective.isoAnchorToggle"]');
-  isoAnchorToggleCheckbox.prop("unchecked", app.object.getFlag(MODULE_ID, "isoAnchorToggle") ?? false);
-
-  // Function to draw alignment lines
-  function drawAlignmentLines(isoAnchor) {
-    // Removes existing lines
-    cleanup();
-    
-    // Create container for the lines
-    const graphics = new PIXI.Graphics();
-    graphics.name = 'tokenAlignmentLine';
-    graphics.lineStyle(1, 0xFF0000, 0.75); // Largura, Cor, Opacidade
-
-    // Calculate diagonal length
-    const canvasWidth = canvas.dimensions.width;
-    const canvasHeight = canvas.dimensions.height;
-    const diagonalLength = Math.sqrt(Math.pow(canvasWidth, 2) + Math.pow(canvasHeight, 2));
-
-    // Draw lines
-    graphics.moveTo(isoAnchor.x - diagonalLength / 2, isoAnchor.y - diagonalLength / 2);
-    graphics.lineTo(isoAnchor.x + diagonalLength / 2, isoAnchor.y + diagonalLength / 2);
-    
-    graphics.moveTo(isoAnchor.x - diagonalLength / 2, isoAnchor.y + diagonalLength / 2);
-    graphics.lineTo(isoAnchor.x + diagonalLength / 2, isoAnchor.y - diagonalLength / 2);
-
-    // Add on canvas
-    canvas.stage.addChild(graphics);
-    return graphics;
-  };
-
-  // Function to calculate the alignment point
-  function updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY) {
-    let tokenMesh = app.token.object.mesh;
-    if (!tokenMesh) return { x: 0, y: 0 };
-    
-    // Defines the values ​​and transforms strings into numbers
-    let textureValues = cartesianToIso(
-      tokenMesh.height,
-      tokenMesh.width
-    );
-    let isoAnchors = cartesianToIso(
-      parseFloat(isoAnchorX) * tokenMesh.height,
-      parseFloat(isoAnchorY) * tokenMesh.width
-    );
-    let isoOffsets = cartesianToIso(
-      parseFloat(offsetX), 
-      parseFloat(offsetY)
-    );
-
-    return {
-      x: (tokenMesh.x - textureValues.x/2) + isoOffsets.x + isoAnchors.x,
-      y: (tokenMesh.y - textureValues.y/2) + isoOffsets.y + isoAnchors.y
-    };
-  };
-
-  
-
-  // Function to remove the lines
-  function cleanup() {
-    const existingLines = canvas.stage.children.filter(child => child.name === 'tokenAlignmentLine');
-    existingLines.forEach(line => line.destroy());
-  };
-
-  
-  // Initialize the lines with the current values
-  let isoAnchorX = app.object.getFlag(MODULE_ID, 'isoAnchorX') ?? 0;
-  let isoAnchorY = app.object.getFlag(MODULE_ID, 'isoAnchorY') ?? 0;
-  let offsetX = app.object.getFlag(MODULE_ID, 'offsetX') ?? 0;
-  let offsetY = app.object.getFlag(MODULE_ID, 'offsetY') ?? 0;
-  
-  // Add the button to reset the token settings
-  const toggleButton = document.createElement("button");
-  toggleButton.classList.add("toggle-alignment-lines");
-  toggleButton.textContent = "Reset Token Alignment Configuration";
-  toggleButton.title = "Click to toggle the alignment lines";
-  html.find(".anchor-point").append(toggleButton);
-
-  // Variables to control state
-  let graphics;
-  let showAlignmentLines = true;
-  
-  // Add the click event to the button
-  toggleButton.addEventListener("click", async (event) => {
-    event.preventDefault(); // Evita que o clique feche a janela
-
-    // Reset all alignment settings
-    html.find('input[name="texture.anchorX"]').val(0.5);
-    html.find('input[name="texture.anchorY"]').val(0.5);
-    html.find('input[name="flags.isometric-perspective.isoAnchorX"]').val(0.5);
-    html.find('input[name="flags.isometric-perspective.isoAnchorY"]').val(0.5);
-    html.find('input[name="flags.isometric-perspective.offsetX"]').val(0);
-    html.find('input[name="flags.isometric-perspective.offsetY"]').val(0);
-    html.find('input[name="flags.isometric-perspective.scale"]').val(1);
-
-    graphics = drawAlignmentLines(updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY));
-  });
-  
-
-  // Add a listener to the "Save?" Checkbox, If it is marked, draw the lines
-  isoAnchorToggleCheckbox.on('change', async () => {
-    const isChecked = isoAnchorToggleCheckbox.prop("checked");
-    if (isChecked) graphics = drawAlignmentLines(updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY));
-    
-    // Invert the state of the selector
-    showAlignmentLines = !showAlignmentLines;
-  });
-  
-  // Update the lines when changing the inputs
-  html.find('input[name="flags.isometric-perspective.isoAnchorX"], input[name="flags.isometric-perspective.isoAnchorY"], input[name="flags.isometric-perspective.offsetX"], input[name="flags.isometric-perspective.offsetY"]').on('change', () => {
-    // Take updated values ​​directly from inputs
-    let currentIsoAnchorX = html.find('input[name="flags.isometric-perspective.isoAnchorX"]').val();
-    let currentIsoAnchorY = html.find('input[name="flags.isometric-perspective.isoAnchorY"]').val();
-    let currentOffsetX = html.find('input[name="flags.isometric-perspective.offsetX"]').val();
-    let currentOffsetY = html.find('input[name="flags.isometric-perspective.offsetY"]').val();
-    
-    // Recalculate the position and creates the lines again
-    const newAnchor = updateIsoAnchor(currentIsoAnchorX, currentIsoAnchorY, currentOffsetX, currentOffsetY);
-    graphics = drawAlignmentLines(newAnchor); // Adicionar novas
-  });
-
-  
-  
-  
-
-
-  // Removes all lines when clicking on update token
-  html.find('button[type="submit"]').on('click', () => {
-    if (!isoAnchorToggleCheckbox.prop("checked")) {
-      cleanup();
-    } else {
-      // Update the anchor basic values ​​in the token configuration
-      html.find('input[name="texture.anchorX"]').val(isoAnchorY);
-      html.find('input[name="texture.anchorY"]').val(1-isoAnchorX);
-    }
-  });
-
-  // Changes the Close method to delete the lines, IF avoids changing the method more than once
-  if (!app._isCloseModified) {
-    const originalClose = app.close;
-    app.close = async function (options) {
-      cleanup();
-      await originalClose.apply(this, [options]);
-    };
-
-    // Mark that the close method has already been
-    app._isCloseModified = true;
   }
 }
 
@@ -267,88 +120,69 @@ function handleDeleteToken(token) {
 }
 
 
+function updateAdjustOffsetButton(html) {
+  const offsetPointContainer = html.find('.offset-point')[0];
 
+  // Finds the fine adjustment button on the original HTML
+  const adjustButton = offsetPointContainer.querySelector('button.fine-adjust');
 
+  // Configures the fine adjustment button
+  adjustButton.style.width = '30px';
+  adjustButton.style.cursor = 'pointer';
+  adjustButton.style.padding = '1px 5px';
+  adjustButton.style.border = '1px solid #888';
+  adjustButton.style.borderRadius = '3px';
+  //adjustButton.title = 'Hold and drag to fine-tune X and Y';
+  adjustButton.title = game.i18n.localize('isometric-perspective.token_artOffset_mouseover');
 
-
-
-
-
-
-
-
-// Generic function to create adjustable buttons with drag functionality
-function createAdjustableButton(options) {
-  // Destructure configuration options with default values
-  const {
-    container,                // Parent container element
-    buttonSelector,           // CSS selector for the button
-    inputs,                   // Array of input elements to update
-    adjustmentScale = 0.2,    // How much the value changes per pixel moved
-    valueConstraints = null,  // Optional min/max constraints for values
-    roundingPrecision = 0     // Number of decimal places to round to
-  } = options;
-
-  // Find and configure the adjustment button
-  const adjustButton = container.querySelector(buttonSelector);
-  
-  // Apply consistent button styling
-  Object.assign(adjustButton.style, {
-    width: '30px',
-    cursor: 'pointer',
-    padding: '1px 5px',
-    border: '1px solid #888',
-    borderRadius: '3px'
-  });
-  adjustButton.title = 'Hold and drag to fine-tune X and Y';
-
-  // State variables for tracking drag operations
+  // Adds the fine adjustment logic
   let isAdjusting = false;
   let startX = 0;
   let startY = 0;
-  let originalValues = [0, 0];
+  let originalValueX = 0;
+  let originalValueY = 0;
 
-  // Function to handle mouse movement and value adjustments
+  let offsetXInput = html.find('input[name="flags.isometric-perspective.offsetX"]')[0];
+  let offsetYInput = html.find('input[name="flags.isometric-perspective.offsetY"]')[0];
+
+  // Function to apply adjustment
   const applyAdjustment = (e) => {
     if (!isAdjusting) return;
 
-    // Calculate mouse movement deltas
+    // Calculates the difference on x and y axes
     const deltaY = e.clientX - startX;
     const deltaX = startY - e.clientY;
     
-    // Calculate value adjustments based on mouse movement
-    const adjustments = [
-      deltaX * adjustmentScale,
-      deltaY * adjustmentScale
-    ];
-
-    // Update each input with new values
-    inputs.forEach((input, index) => {
-      let newValue = originalValues[index] + adjustments[index];
-      
-      // Apply min/max constraints if provided
-      if (valueConstraints) {
-        newValue = Math.max(valueConstraints.min, Math.min(valueConstraints.max, newValue));
-      }
-      
-      // Round to specified precision
-      newValue = Math.round(newValue * Math.pow(10, roundingPrecision)) / Math.pow(10, roundingPrecision);
-      
-      // Update input value and trigger change event
-      input.value = newValue.toFixed(roundingPrecision);
-      input.dispatchEvent(new Event('change', { bubbles: true }));
-    });
+    // Fine tuning: every 10px of motion = 0.1 value 
+    const adjustmentX = deltaX * 0.1;
+    const adjustmentY = deltaY * 0.1;
+    
+    // Calculates new values
+    let newValueX = Math.round(originalValueX + adjustmentX);
+    let newValueY = Math.round(originalValueY + adjustmentY);
+    
+    // Rounding for 2 decimal places
+    newValueX = Math.round(newValueX * 100) / 100;
+    newValueY = Math.round(newValueY * 100) / 100;
+    
+    // Updates anchor inputs
+    offsetXInput.value = newValueX.toFixed(0);
+    offsetYInput.value = newValueY.toFixed(0);
+    offsetXInput.dispatchEvent(new Event('change', { bubbles: true }));
+    offsetYInput.dispatchEvent(new Event('change', { bubbles: true }));
   };
 
-  // Set up mouse event listeners for drag functionality
+  // Listeners for Adjustment
   adjustButton.addEventListener('mousedown', (e) => {
     isAdjusting = true;
     startX = e.clientX;
     startY = e.clientY;
-    // Store initial input values
-    originalValues = inputs.map(input => parseFloat(input.value));
     
-    // Add global mouse event listeners
+    // Obtains the original values ​​of offset inputs
+    originalValueX = parseFloat(offsetXInput.value);
+    originalValueY = parseFloat(offsetYInput.value);
+    
+    // Add global listeners
     document.addEventListener('mousemove', applyAdjustment);
     document.addEventListener('mouseup', () => {
       isAdjusting = false;
@@ -358,50 +192,6 @@ function createAdjustableButton(options) {
     e.preventDefault();
   });
 }
-
-// Handler for offset adjustment button
-function updateAdjustOffsetButton(html) {
-  const container = html.find('.offset-point')[0];
-  createAdjustableButton({
-    container,
-    buttonSelector: 'button.fine-adjust',
-    inputs: [
-      html.find('input[name="flags.isometric-perspective.offsetX"]')[0],
-      html.find('input[name="flags.isometric-perspective.offsetY"]')[0]
-    ],
-    adjustmentScale: 0.2,    // Larger scale for offset adjustments
-    roundingPrecision: 0     // Whole numbers for offset values
-  });
-}
-
-// Handler for anchor adjustment button
-function updateAdjustAnchorButton(html) {
-  const container = html.find('.anchor-point')[0];
-  createAdjustableButton({
-    container,
-    buttonSelector: 'button.fine-adjust-anchor',
-    inputs: [
-      html.find('input[name="flags.isometric-perspective.isoAnchorX"]')[0],
-      html.find('input[name="flags.isometric-perspective.isoAnchorY"]')[0]
-    ],
-    adjustmentScale: 0.005,  // Smaller scale for precise anchor adjustments
-    valueConstraints: { min: 0, max: 1 },  // Anchor values must be between 0 and 1
-    roundingPrecision: 2     // Two decimal places for anchor values
-  });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -473,22 +263,16 @@ export class TokenPrecisionConfig {
 
 // Inicializa as configurações de precisão ao carregar o módulo
 TokenPrecisionConfig.initialize();
-*/
 
-/*
-export class EnhancedAnchorInput {
+
+
+
+// Módulo para melhorar a interação com inputs de anchor no Foundry VTT
+export class EnhancedAnchorInput2 {
   // Cria botões de controle e configura listeners para ajuste refinado
   static enhanceAnchorInputs(inputs) {
-    // Verifica se o wrapper já existe
-    let wrapper = inputs[0].parentNode;
-    if (wrapper.classList.contains('enhanced-anchor-wrapper')) {
-      // Se existir, remove o wrapper e seus filhos
-      wrapper.parentNode.replaceChild(inputs[0], wrapper);
-      wrapper.parentNode.replaceChild(inputs[1], wrapper.lastElementChild);
-    }
-    
     // Contêiner principal para envolver os inputs e botão
-    wrapper = document.createElement('div');
+    const wrapper = document.createElement('div');
     wrapper.style.display = 'flex';
     wrapper.style.alignItems = 'center';
     wrapper.style.gap = '5px';
@@ -607,5 +391,5 @@ export class EnhancedAnchorInput {
 }
 
 // Inicializa o módulo de melhoria de inputs
-EnhancedAnchorInput.initialize();
+EnhancedAnchorInput2.initialize();
 */
