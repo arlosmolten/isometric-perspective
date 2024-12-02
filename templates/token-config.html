@@ -26,6 +26,24 @@
     <p class="notes">{{localize 'isometric-perspective.token_artOffset_hint'}}</p>
   </div>
 
+  <div class="form-group anchor-point">
+    <label>Isometric Anchor</label>
+    <div class="form-fields">
+      <label class="anchorToggle">Save?</label>
+      <input type="checkbox" name="flags.isometric-perspective.isoAnchorToggle" {{#if isoAnchorToggle}}unchecked{{/if}}>
+      <label class="axisX">X</label>
+      <input type="number" name="flags.isometric-perspective.isoAnchorY" 
+             value="{{isoAnchorY}}"
+             step="0.01" />
+      <button class="fine-adjust-anchor" title="Hold and drag to fine-tune X and Y">✥</button>
+      <input type="number" name="flags.isometric-perspective.isoAnchorX"
+             value="{{isoAnchorX}}"
+             step="0.01" />
+      <label class="axisY">Y</label>
+    </div>
+    <p class="notes">Change the anchor of the token. If "Save?" is unchecked, doesn't apply the new anchor configuration.</p>
+  </div>
+
   <div class="form-group">
     <label>{{localize 'isometric-perspective.token_scale_name'}}</label>
     <div class="form-fields">
