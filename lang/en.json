@@ -14,13 +14,16 @@
     "isometric-perspective.settings_token_silhouette_hint": "Adjusts the visibility of tiles dynamically with the positioning of tokens. See how this feature works here.",
     "isometric-perspective.settings_debug_name": "Enable Debug Mode",
     "isometric-perspective.settings_debug_hint": "Enables debug prints.",
+
     "isometric-perspective._comment": "Game Settings: Configure Controls",
     "isometric-perspective.keybindings_increase_tile_opacity": "Increase Tile Opacity",
     "isometric-perspective.keybindings_increase_tile_opacity_hint": "Increases the opacity of always visible tiles.",
     "isometric-perspective.keybindings_decrease_tile_opacity": "Decrease Tile Opacity",
     "isometric-perspective.keybindings_decrease_tile_opacity_hint": "Decreases the opacity of always visible tiles.",
+
     "isometric-perspective._comment": "Configuration Tab Name",
     "isometric-perspective.tab_isometric_name": "Isometric",
+
     "isometric-perspective._comment": "Scene Configuration",
     "isometric-perspective.scene_enableIsometric": "Enable Isometric for this Scene",
     "isometric-perspective.scene_transform_name": "Transform Background Image",
@@ -28,6 +31,7 @@
     "isometric-perspective.scene_scale_name": "Isometric Scale",
     "isometric-perspective.scene_scale_hint_1": "Adjust scale of art in isometric mode (Range: 0.5x to 3x). The \"Offset Background (Pixels)\" in ",
     "isometric-perspective.scene_scale_hint_2": " Grid tab can be used to shift/move the background.",
+
     "isometric-perspective._comment": "Token Configuration",
     "isometric-perspective.token_enableIsometric_name": "Disable Isometric Token",
     "isometric-perspective.token_enableIsometric_hint": "Disable isometric transformation on this token.",
@@ -36,6 +40,7 @@
     "isometric-perspective.token_artOffset_mouseover": "Hold and drag to fine-tune X and Y",
     "isometric-perspective.token_scale_name": "Isometric Scale",
     "isometric-perspective.token_scale_hint": "Adjust scale of token art when in isometric perspective (0.01x to 3x).",
+
     "isometric-perspective._comment": "Tile Configuration",
     "isometric-perspective.tile_enableIsometric_name": "Disable Isometric Tile",
     "isometric-perspective.tile_enableIsometric_hint": "Disable isometric transformation on this tile.",
@@ -50,6 +55,7 @@
     "isometric-perspective.tile_link_wall_select_wall": "Select Wall",
     "isometric-perspective.tile_link_wall_clear_wall": "Clear Wall",
     "isometric-perspective.tile_link_wall_hint": "Click the button to select a wall. This wall will be used to determine the tile's visibility for the selected token.",
+    
     "isometric-perspective._comment": "Warnings and Error Messages",
     "isometric-perspective.error_test": "Test error message"
 }
