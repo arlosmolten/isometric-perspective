@@ -1,17 +1,17 @@
 <!-- Isometric Token Configuration.html -->
 <div class="tab" data-tab="isometric">
   <div class="form-group">
-    <label>Disable Isometric Token</label>
+    <label>{{localize 'isometric-perspective.token_enableIsometric_name'}}</label>
     <div class="form-fields">
         <input type="checkbox" name="flags.isometric-perspective.isoTokenDisabled" {{#if isoTokenDisabled}}checked{{/if}}>
     </div>
-    <p class="notes">Disable isometric transformation on this token.</p>
+    <p class="notes">{{localize 'isometric-perspective.token_enableIsometric_hint'}}</p>
   </div>
 
   <hr>
   
   <div class="form-group offset-point">
-    <label>Art Offset</label>
+    <label>{{localize 'isometric-perspective.token_artOffset_name'}}</label>
     <div class="form-fields">
       <label class="axisX">X</label>
       <input type="number" name="flags.isometric-perspective.offsetY" 
@@ -23,29 +23,11 @@
              step="1" />
       <label class="axisY">Y</label>
     </div>
-    <p class="notes">Offset the token art position in pixels.</p>
-  </div>
-
-  <div class="form-group anchor-point">
-    <label>Isometric Anchor</label>
-    <div class="form-fields">
-      <label class="anchorToggle">Save?</label>
-      <input type="checkbox" name="flags.isometric-perspective.isoAnchorToggle" {{#if isoAnchorToggle}}unchecked{{/if}}>
-      <label class="axisX">X</label>
-      <input type="number" name="flags.isometric-perspective.isoAnchorY" 
-             value="{{isoAnchorY}}"
-             step="0.01" />
-      <button class="fine-adjust-anchor" title="Hold and drag to fine-tune X and Y">✥</button>
-      <input type="number" name="flags.isometric-perspective.isoAnchorX"
-             value="{{isoAnchorX}}"
-             step="0.01" />
-      <label class="axisY">Y</label>
-    </div>
-    <p class="notes">Change the anchor of the token. If "Save?" is unchecked, doesn't apply the new anchor configuration.</p>
+    <p class="notes">{{localize 'isometric-perspective.token_artOffset_hint'}}</p>
   </div>
 
   <div class="form-group">
-    <label>Isometric Scale</label>
+    <label>{{localize 'isometric-perspective.token_scale_name'}}</label>
     <div class="form-fields">
       <input type="range" name="flags.isometric-perspective.scale"
              value="{{scale}}"
@@ -53,7 +35,7 @@
              class="scale-slider" />
       <span class="range-value">{{scale}}</span>
     </div>
-    <p class="notes">Adjust scale of tile art when in isometric perspective (0.01x to 3x).</p>
+    <p class="notes">{{localize 'isometric-perspective.token_scale_hint'}}</p>
   </div>
 
   <style>
