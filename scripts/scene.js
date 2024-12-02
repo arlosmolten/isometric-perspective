@@ -11,7 +11,8 @@ async function handleRenderSceneConfig(sceneConfig, html, data) {
   const tabHtml = await renderTemplate("modules/isometric-perspective/templates/scene-config.html");
 
   // Adiciona o botão e o conteúdo da aba logo após a última aba
-  html.find('nav.sheet-tabs:not(.secondary-tabs)').append('<a class="item" data-tab="isometric"><i class="fas fa-cube"></i> Isometric</a>');
+  //html.find('nav.sheet-tabs:not(.secondary-tabs)').append('<a class="item" data-tab="isometric"><i class="fas fa-cube"></i> Isometric</a>');
+  html.find('nav.sheet-tabs:not(.secondary-tabs)').append(`<a class="item" data-tab="isometric"><i class="fas fa-cube"></i> ${game.i18n.localize('isometric-perspective.tab_isometric_name')}</a>`);
   html.find('div.tab[data-tab="ambience"]').after(tabHtml);
 
   // Inicializa os valores dos controles
