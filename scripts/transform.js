@@ -92,7 +92,10 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
   let isoTileDisabled = object.document.getFlag(MODULE_ID, 'isoTileDisabled') ?? 0;
   let isoTokenDisabled = object.document.getFlag(MODULE_ID, 'isoTokenDisabled') ?? 0;
   if (isoTileDisabled || isoTokenDisabled) {
-    object.mesh.anchor.set(0.5, 0.5);  // This is set to make isometric anchor don't mess with non-iso scenes
+    object.mesh.anchor.set(
+      object?.document?.texture?.anchorX ?? 0.5,
+      object?.document?.texture?.anchorY ?? 0.5
+    );  // This is set to make isometric anchor don't mess with non-iso scenes
     return
   }
 
@@ -104,7 +107,10 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
     //object.mesh.scale.set(objTxtRatio, objTxtRatio);
     //object.mesh.position.set(object.document.x, object.document.y);
     //object.document.texture.fit = "contain"; //height
-    object.mesh.anchor.set(0.5, 0.5);  // This is set to make isometric anchor don't mess with non-iso scenes
+    object.mesh.anchor.set(
+      object?.document?.texture?.anchorX ?? 0.5,
+      object?.document?.texture?.anchorY ?? 0.5
+    );  // This is set to make isometric anchor don't mess with non-iso scenes
     return;
   }
 
