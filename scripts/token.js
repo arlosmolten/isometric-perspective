@@ -18,8 +18,8 @@ async function handleRenderTokenConfig(app, html, data) {
     isoDisabled: app.object.getFlag(MODULE_ID, 'isoTokenDisabled') ?? 1,
     offsetX: app.object.getFlag(MODULE_ID, 'offsetX') ?? 0,
     offsetY: app.object.getFlag(MODULE_ID, 'offsetY') ?? 0,
-    isoAnchorY: app.object.getFlag(MODULE_ID, 'isoAnchorY') ?? 0,
-    isoAnchorX: app.object.getFlag(MODULE_ID, 'isoAnchorX') ?? 0,
+    isoAnchorY: app.object.getFlag(MODULE_ID, 'isoAnchorY') ?? 0.5,
+    isoAnchorX: app.object.getFlag(MODULE_ID, 'isoAnchorX') ?? 0.5,
     isoAnchorToggleCheckbox: app.object.getFlag(MODULE_ID, 'isoAnchorToggle') ?? 0,
     scale: app.object.getFlag(MODULE_ID, 'scale') ?? 1
   });
@@ -123,7 +123,7 @@ async function handleRenderTokenConfig(app, html, data) {
 
   // Function to calculate the alignment point
   function updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY) {
-    let tokenMesh = app.token.object.mesh;
+    let tokenMesh = app.token.object?.mesh;
     if (!tokenMesh) return { x: 0, y: 0 };
     
     // Defines the values ​​and transforms strings into numbers
@@ -156,8 +156,8 @@ async function handleRenderTokenConfig(app, html, data) {
 
   
   // Initialize the lines with the current values
-  let isoAnchorX = app.object.getFlag(MODULE_ID, 'isoAnchorX') ?? 0;
-  let isoAnchorY = app.object.getFlag(MODULE_ID, 'isoAnchorY') ?? 0;
+  let isoAnchorX = app.object.getFlag(MODULE_ID, 'isoAnchorX') ?? 0.5;
+  let isoAnchorY = app.object.getFlag(MODULE_ID, 'isoAnchorY') ?? 0.5;
   let offsetX = app.object.getFlag(MODULE_ID, 'offsetX') ?? 0;
   let offsetY = app.object.getFlag(MODULE_ID, 'offsetY') ?? 0;
   
