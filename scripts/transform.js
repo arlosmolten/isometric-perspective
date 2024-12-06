@@ -115,9 +115,11 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
   }
 
   // It undoes rotation and deformation
+  let isoAnchorX = object.document.getFlag(MODULE_ID, "isoAnchorX") ?? 0.5;
+  let isoAnchorY = object.document.getFlag(MODULE_ID, "isoAnchorY") ?? 0.5;
   object.mesh.rotation = Math.PI/4;
   object.mesh.skew.set(0, 0);
-  //object.mesh.anchor.set(isoAnchorX, isoAnchorY);
+  object.mesh.anchor.set(isoAnchorX, isoAnchorY);
     
   // recovers the object characteristics of the object (token/tile)
   let texture = object.texture;

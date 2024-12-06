@@ -177,8 +177,6 @@ async function handleRenderTokenConfig(app, html, data) {
     event.preventDefault(); // Evita que o clique feche a janela
 
     // Reset all alignment settings
-    html.find('input[name="texture.anchorX"]').val(0.5);
-    html.find('input[name="texture.anchorY"]').val(0.5);
     html.find('input[name="flags.isometric-perspective.isoAnchorX"]').val(0.5);
     html.find('input[name="flags.isometric-perspective.isoAnchorY"]').val(0.5);
     html.find('input[name="flags.isometric-perspective.offsetX"]').val(0);
@@ -212,24 +210,6 @@ async function handleRenderTokenConfig(app, html, data) {
   });
 
   
-  
-  
-
-
-  // Removes all lines when clicking on update token
-  html.find('button[type="submit"]').on('click', () => {
-    if (!isoAnchorToggleCheckbox.prop("checked")) {
-      cleanup();
-    } else {
-      // Take updated values ​​directly from inputs
-      let currentIsoAnchorX = html.find('input[name="flags.isometric-perspective.isoAnchorX"]').val();
-      let currentIsoAnchorY = html.find('input[name="flags.isometric-perspective.isoAnchorY"]').val();
-      
-      // Update the anchor basic values ​​in the token configuration
-      html.find('input[name="texture.anchorX"]').val(currentIsoAnchorY);
-      html.find('input[name="texture.anchorY"]').val(1-currentIsoAnchorX);
-    }
-  });
 
   // Changes the Close method to delete the lines, IF avoids changing the method more than once
   if (!app._isCloseModified) {
