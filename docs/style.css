@@ -23,9 +23,10 @@ body {
 }
 
 #pixiApp {
-    flex: 1;
+    flex: 1; /* O canvas ocupa todo o espaço restante */
     height: 100%;
     border-right: 1px solid #ddd;
+    overflow: hidden; /* Garante que o canvas não role */
 }
 
 .controls {
@@ -37,6 +38,7 @@ body {
     gap: 15px;
     box-sizing: border-box;
     overflow-y: auto; /* Permite rolar os controles se necessário */
+    max-height: 100%; /* Garante que respeite o tamanho do container */
 }
 
 .controls label {
@@ -89,6 +91,12 @@ button {
     transition: background 0.3s ease;
 }
 
+button.active {
+    background-color: #0056b3; /* Cor mais escura para indicar o estado ativo */
+    box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.2); /* Aparência de botão pressionado */
+    transform: translateY(1px); /* Pequeno deslocamento para baixo */
+}
+
 button:hover {
     background: #0056b3;
 }
@@ -116,14 +124,16 @@ select {
 
 textarea#outputValues {
     width: 100%;
-    resize: none; /* Impede o redimensionamento manual */
-    padding: 10px;
+    height: auto; /* Ajuste automático da altura */
+    min-height: 100px; /* Define uma altura mínima */
+    /*max-height: 200px; /* Define uma altura máxima */
+    resize: vertical; /* Permite redimensionamento vertical apenas */
+    padding: 10px; /* Adiciona espaçamento interno para o texto */
     font-size: 14px;
     border: 1px solid #ddd;
     border-radius: 5px;
-    background: #f9f9f9;
+    /*background: #f9f9f9;*/
     color: #555;
-    box-sizing: border-box;
-    overflow-y: hidden; /* Remove barras de rolagem vertical */
-    transition: height 0.2s ease; /* Suaviza o redimensionamento */
+    box-sizing: border-box; /* Inclui o padding no cálculo da largura/altura */
+    overflow-y: auto; /* Permite rolagem vertical se necessário */
 }

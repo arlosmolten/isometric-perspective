@@ -20,6 +20,7 @@ This module changes the map, tiles and token artwork/sprite for use with maps an
 Here are some of the features the module offers.
 
 - **Dual Canvas Perspectives:** You can use top-down isometric or native isometric maps. In native isometric mode, you can adjust the scale of the map.
+- **Multiple Isometric Perspectives:** You can choose between different types of isometric projections, with different aspect ratios, such as the default true isometric (√3:1), dimetric (2:1), overhead (√2:1) and others specific to well-known old games.
 - **Token Sprite Adjustments:** You can fine-tune the position of the token sprite, as well as its scale. Increasing the size of the token automatically increases the size of the sprite. You can adjust the token art sprite to be centered even if the token is assymetrical.
 - **Tile Sprite Adjustments:** You can also fine-tune the sprite position and scale, making easy to copy and paste multiple tiles. There's also a easy Flip Tile option.
 - **Token Height Visual Cues:** If a token has any elevation, its sprite adjusts to reflect the height, with a round shadow and line sprites being created for clarity.
@@ -79,12 +80,13 @@ LockerView _(needs a 330° rotation to make a working isometric rotation)_
 
 ## To-Do List
 
-- [ ] Add new perspectives.
+- [ ] Add custom perspectives.
 - [ ] Code to handle tiles and walls.
 - [ ] Code to handle occlusion of tiles and tokens.
 - [ ] Different token art for isometric and top-down views.
 - [ ] Code to handle non symmetrical token sizes.
 - [ ] Translation to other languages.
+- [x] Add new perspectives.
 - [x] Check compatibility with other canvas related modules.
 - [x] Bugfix: Change tokens properties (vision) change token position.
 - [x] Using core foundry controls for token scale and anchor. *(Scrapped idea).*

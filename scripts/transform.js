@@ -1,45 +1,6 @@
 import { MODULE_ID, DEBUG_PRINT, WORLD_ISO_FLAG } from './main.js';
 import { cartesianToIso } from './utils.js';
-
-const ISOMETRIC_TRUE_ROTATION = Math.PI/6;
-
-// values in degrees
-export let ISOMETRIC_CONST = {
-  rotation: -30.0,
-  skewX:     30.0,
-  skewY:      0.0
-}
-
-//convert to rad
-ISOMETRIC_CONST.rotation *= Math.PI / 180;
-ISOMETRIC_CONST.skewX *= Math.PI / 180;
-ISOMETRIC_CONST.skewY *= Math.PI / 180;
-
-/*
-True Isometric
-
-Planescape Torment
-  rotation: -34.90,
-  skewX:     19.75,
-  skewY:      0.00
-
-Fallout
-  rotation: -50.9,
-  skewX:      2.3,
-  skewY:     36.8
-
-Earthbound / Paperboy
-  rotation:   0,
-  skewX:    -45,
-  skewY:      0
-*/
-
-
-
-
-
-
-
+import { ISOMETRIC_CONST } from './consts.js';
 
 
 // Função principal que muda o canvas da cena
@@ -50,7 +11,10 @@ export function applyIsometricPerspective(scene, isSceneIsometric) {
   
   if (isometricWorldEnabled && isSceneIsometric) {
     canvas.app.stage.rotation = ISOMETRIC_CONST.rotation;
-    canvas.app.stage.skew.set(ISOMETRIC_CONST.skewX, ISOMETRIC_CONST.skewY);
+    canvas.app.stage.skew.set(
+      ISOMETRIC_CONST.skewX,
+      ISOMETRIC_CONST.skewY
+    );
     adjustAllTokensAndTilesForIsometric();
   } else {
     canvas.app.stage.rotation = 0;
@@ -117,8 +81,8 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
   // It undoes rotation and deformation
   let isoAnchorX = object.document.getFlag(MODULE_ID, "isoAnchorX") ?? 0.5;
   let isoAnchorY = object.document.getFlag(MODULE_ID, "isoAnchorY") ?? 0.5;
-  object.mesh.rotation = Math.PI/4;
-  object.mesh.skew.set(0, 0);
+  object.mesh.rotation = ISOMETRIC_CONST.reverseRotation;
+  object.mesh.skew.set(ISOMETRIC_CONST.reverseSkewX, ISOMETRIC_CONST.reverseSkewY);
   object.mesh.anchor.set(isoAnchorX, isoAnchorY);
     
   // recovers the object characteristics of the object (token/tile)
@@ -233,7 +197,7 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
     // Apply the scale by maintaining the proportion of the original art
     object.mesh.scale.set(
       (scaleX / originalWidth) * isoScale,
-      (scaleY / originalHeight) * isoScale * Math.sqrt(3)
+      (scaleY / originalHeight) * isoScale * ISOMETRIC_CONST.ratio
     );
     
     // Flip token horizontally, if the flag is active
@@ -274,12 +238,15 @@ export function applyBackgroundTransformation(scene, isSceneIsometric, shouldTra
   
   if (isometricWorldEnabled && isSceneIsometric && shouldTransform) {
     // Aplica rotação isométrica
-    background.rotation = Math.PI/4;
-    background.skew.set(0, 0);
+    background.rotation = ISOMETRIC_CONST.reverseRotation;
+    background.skew.set(
+      ISOMETRIC_CONST.reverseSkewX,
+      ISOMETRIC_CONST.reverseSkewY
+    );
     background.anchor.set(0.5, 0.5);
     background.transform.scale.set(
       scale,
-      scale * Math.sqrt(3)
+      scale * ISOMETRIC_CONST.ratio // Math.sqrt(3)
     );
     
     // Calculate scene dimensions and padding

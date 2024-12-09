@@ -31,6 +31,9 @@
     "isometric-perspective.scene_scale_name": "Isometric Scale",
     "isometric-perspective.scene_scale_hint_1": "Adjust scale of art in isometric mode (Range: 0.5x to 3x). The \"Offset Background (Pixels)\" in ",
     "isometric-perspective.scene_scale_hint_2": " Grid tab can be used to shift/move the background.",
+    "isometric-perspective.scene_dropdown_name": "Isometric Projection",
+    "isometric-perspective.scene_dropdown_hint": "Choose an isometric projection type for this scene.",
+
 
     "isometric-perspective._comment": "Token Configuration",
     "isometric-perspective.token_enableIsometric_name": "Disable Isometric Token",

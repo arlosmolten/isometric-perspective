@@ -6,7 +6,8 @@ import { registerOcclusionConfig } from './occlusion.js';
 import { registerSortingConfig } from './autosorting.js';
 import { registerDynamicTileConfig, increaseTilesOpacity, decreaseTilesOpacity } from './dynamictile.js';
 import { applyIsometricPerspective, applyBackgroundTransformation } from './transform.js';
-import { cartesianToIso } from './utils.js';
+import { ISOMETRIC_CONST } from './consts.js';
+import { isoToCartesian, cartesianToIso } from './utils.js';
 
 
 // ---------- CONSTANTS ----------
@@ -170,38 +171,7 @@ Hooks.once("init", function() {
 
 
 
-// Aplica a perspectiva isométrica aos tokens, tiles e background quando a cena termina de ser renderizada
-Hooks.on("canvasReady", (canvas) => {
-  const activeScene = game.scenes.active;
-  if (!activeScene) return;
 
-  const scene = canvas.scene;
-  const isSceneIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
-  const shouldTransformBackground = scene.getFlag(MODULE_ID, "isometricBackground") ?? false;
-  applyIsometricPerspective(scene, isSceneIsometric);
-  applyBackgroundTransformation(scene, isSceneIsometric, shouldTransformBackground);
-  
-  // debug print
-  if (DEBUG_PRINT) console.log("Hooks.on canvasReady");
-});
-
-
-
-// Aplica a perspectiva isométrica ao background quando a cena for redimensionada
-Hooks.on("canvasResize", (canvas) => {
-  const scene = canvas.scene;
-  if (!scene) return;
-  
-  const isSceneIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
-  const shouldTransformBackground = scene.getFlag(MODULE_ID, "isometricBackground") ?? false;
-  
-  if (isSceneIsometric && shouldTransformBackground) {
-    applyBackgroundTransformation(scene, isSceneIsometric, shouldTransformBackground);
-  }
-  
-  // debug print
-  if (DEBUG_PRINT) console.log("Hooks.on canvasResize");
-});
 
 
 

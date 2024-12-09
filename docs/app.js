@@ -2,6 +2,7 @@
 const app = new PIXI.Application({
     resizeTo: document.getElementById('pixiApp'),
     backgroundColor: 0x1099bb,
+    antialias: true, // Habilita antialiasing
 });
 document.getElementById('pixiApp').appendChild(app.view);
 
@@ -60,11 +61,11 @@ rectangle.scale.set(0.5, 0.5); // Escalas iniciais ajustadas para 0.5
 
 sliders.positionX.value = rectangle.position.x;
 sliders.positionY.value = rectangle.position.y;
+sliders.scale.value = 0.5;
+
+values.scale.value = 0.5;
 values.positionX.value = rectangle.position.x;
 values.positionY.value = rectangle.position.y;
-
-sliders.scale.value = 0.5;
-values.scale.value = 0.5;
 
 // Criando o ponto de rotação
 const pivotPoint = new PIXI.Graphics();
@@ -89,12 +90,62 @@ function updatePivotPoint() {
     pivotLine.position.set(globalPivot.x, globalPivot.y);
 }
 
-// Evento para mostrar/ocultar o ponto de rotação
+// Evento para mostrar/ocultar o ponto de rotação e a linha diagonal
 togglePivot.addEventListener('click', () => {
-    pivotPoint.visible = !pivotPoint.visible;
-    pivotLine.visible = pivotPoint.visible;
-    if (pivotPoint.visible) updatePivotPoint();
+    const visibility = !pivotPoint.visible;
+    pivotPoint.visible = visibility;
+    pivotLine.visible = visibility;
+    diagonalLine.visible = visibility; // Sincronizar a visibilidade da linha azul navy
+    togglePivot.classList.toggle('active', visibility); // Adicionar ou remover a classe 'active'
+    if (visibility) {
+        updatePivotPoint();
+        updateDiagonalLine();
+    }
 });
+
+// Linha azul navy que conecta o ponto pivô ao vértice oposto do quadrado
+const diagonalLine = new PIXI.Graphics();
+diagonalLine.lineStyle(2, 0x000080, 0.5); // Linha azul navy
+diagonalLine.visible = false; // Inicia oculto
+app.stage.addChild(diagonalLine);
+
+// Função para atualizar a linha diagonal
+function updateDiagonalLine() {
+    // Coordenadas globais do pivô
+    const globalPivot = rectangle.toGlobal(new PIXI.Point(rectangle.pivot.x, rectangle.pivot.y));
+
+    // Determinar o vértice oposto ao pivô
+    const oppositeVertexX = rectangle.pivot.x === 0 ? rectangle.width : 0;
+    const oppositeVertexY = rectangle.pivot.y === 0 ? rectangle.height : 0;
+    const globalOppositeVertex = rectangle.toGlobal(new PIXI.Point(oppositeVertexX, oppositeVertexY));
+
+    // Calcular o vetor de direção
+    const dx = globalOppositeVertex.x - globalPivot.x;
+    const dy = globalOppositeVertex.y - globalPivot.y;
+
+    // Extender a linha para além dos dois pontos
+    const lengthMultiplier = 1000; // Define o comprimento da linha
+    const extendedStartX = globalPivot.x - dx * lengthMultiplier;
+    const extendedStartY = globalPivot.y - dy * lengthMultiplier;
+    const extendedEndX = globalOppositeVertex.x + dx * lengthMultiplier;
+    const extendedEndY = globalOppositeVertex.y + dy * lengthMultiplier;
+
+    // Atualizar a linha diagonal
+    diagonalLine.clear();
+    diagonalLine.lineStyle(2, 0x000080); // Linha azul navy
+    diagonalLine.moveTo(extendedStartX, extendedStartY);
+    diagonalLine.lineTo(extendedEndX, extendedEndY);
+}
+
+// Atualizar a linha diagonal sempre que o pivô ou transformação mudar
+function updateGraphics() {
+    if (pivotPoint.visible) {
+        updatePivotPoint();
+        updateDiagonalLine();
+    }
+
+    drawGrid();
+}
 
 
 
@@ -158,6 +209,7 @@ function drawGrid() {
     }
 }
 
+/*
 function updatePosition() {
     rectangle.position.set(
         parseFloat(sliders.positionX.value),
@@ -165,6 +217,7 @@ function updatePosition() {
     );
     drawGrid(); // Atualizar a grade ao mover o quadrado
 }
+*/
 
 
 
@@ -210,6 +263,30 @@ clearImage.addEventListener('click', () => {
         imageSprite = null;
     }
     imageLoader.value = '';
+
+    // Restaura os valores iniciais dos sliders e campos de texto
+    sliders.scale.value = 0.5;
+    sliders.rotation.value = 0;
+    sliders.skewX.value = 0;
+    sliders.skewY.value = 0;
+    sliders.positionX.value = app.screen.width / 2;
+    sliders.positionY.value = app.screen.height / 2;
+
+    values.scale.value = 0.5;
+    values.rotation.value = 0;
+    values.skewX.value = 0;
+    values.skewY.value = 0;
+    values.positionX.value = app.screen.width / 2;
+    values.positionY.value = app.screen.height / 2;
+
+    rectangle.scale.set(0.5, 0.5);
+    rectangle.rotation = 0;
+    rectangle.skew.set(0, 0);
+    rectangle.position.set(app.screen.width / 2, app.screen.height / 2);
+
+    updateGraphics();
+    drawGrid();
+    updateOutputValues();
 });
 
 // Função auxiliar para converter graus em radianos
@@ -301,6 +378,7 @@ Object.keys(sliders).forEach((key) => {
         drawGrid(); // Atualizar a grade
         updateOutputValues(); // Atualizar o campo de texto
         updateDiagonalsDisplay();
+        updateGraphics();
         if (pivotPoint.visible) updatePivotPoint();
     });
 
@@ -333,6 +411,7 @@ Object.keys(sliders).forEach((key) => {
 
         drawGrid(); // Atualizar a grade
         updateOutputValues(); // Atualizar o campo de texto
+        updateGraphics();
         if (pivotPoint.visible) updatePivotPoint();
     });
 });
@@ -363,6 +442,7 @@ pivotSelector.addEventListener('change', (event) => {
             break;
     }
 
+    updateGraphics();
     drawGrid(); // Atualizar a grade
 });
 
@@ -384,39 +464,41 @@ outputValues.addEventListener("input", () => adjustTextareaHeight(outputValues))
 // Ajusta a altura inicial ao carregar a página
 adjustTextareaHeight(outputValues);
 
+// ---------------------------------------------------------------------------------------
+
 // Atualização dos valores exibidos em Actual Values
 function updateOutputValues() {
     const diagonals = calculateDiagonalProportion();
-    outputValues.value = `
-        Rotation: ${sliders.rotation.value},
-        Skew X: ${sliders.skewX.value},
-        Skew Y: ${sliders.skewY.value},
-        Diagonal 1: ${diagonals.diagonal1.toFixed(2)},
-        Diagonal 2: ${diagonals.diagonal2.toFixed(2)},
-        Ratio: ${diagonals.proportion.toFixed(3)} (about ${diagonals.readableRatio})
-    `.replace(/^ +/gm, '').trim(); //.replace(/\s+/g, '').trim() Remove espaços desnecessários
+    const angleBetweenLines = calculateAngleBetweenLines();
+    const rectAngles = calculateRectangleAngles(rectangle);
 
-    /*
-    scaleX: ${sliders.scaleX.value},
-    scaleY: ${sliders.scaleY.value},
-    positionX: ${sliders.positionX.value},
-    positionY: ${sliders.positionY.value},
-    rotation: ${sliders.rotation.value},
-    skewX: ${sliders.skewX.value},
-    skewY: ${sliders.skewY.value},
-    Diagonal1: ${diagonal1.toFixed(2)},
-    Diagonal2: ${diagonal2.toFixed(2)},
-    Proporção: ${proportion.toFixed(2)}
-    */
+    outputValues.value = `
+        --- Scene Info ---
+        rotation: ${sliders.rotation.value},
+        skewX: ${sliders.skewX.value},
+        skewY: ${sliders.skewY.value},
+        HudAngle: ${(rectAngles[0]/2 - angleBetweenLines).toFixed(2)},
+        reverseRotation: 45,
+        reverseSkewX:     0,
+        reverseSkewY:     0,
+        ratio: ${diagonals.proportion.toFixed(9)},
+        \n --- Extra Info ---
+        Diagonals: ${diagonals.diagonal1.toFixed(2)} / ${diagonals.diagonal2.toFixed(2)},
+        Approx. Ratio: about ${diagonals.readableRatio},
+        Blue-Red Lines Angle: ${angleBetweenLines.toFixed(2)},
+        Adjusted Angle: ${(45 - angleBetweenLines).toFixed(2)}
+        Rectangle Angle: ${(rectAngles[0]/2 - angleBetweenLines).toFixed(2)} / ${(rectAngles[1]/2 - angleBetweenLines).toFixed(2)},
+    `.replace(/^ +/gm, '').trim(); //.replace(/\s+/g, '').trim() Remove espaços desnecessários
 
     adjustTextareaHeight(outputValues); // Ajusta a altura após atualizar o texto
 }
 
 updateOutputValues(); // Atualiza o campo de texto com os valores iniciais
 
-// Definir o valor inicial para o seletor de ponto de rotação e marcar a opção com a cor vermelha
+// Definir o valor inicial para o seletor de ponto de rotação
 pivotSelector.value = 'top-left'; // Garantindo que a opção inicial seja "Superior Esquerdo"
 
+/*
 // Estilizar a opção selecionada com a cor vermelha
 const selectedOption = pivotSelector.options[pivotSelector.selectedIndex];
 selectedOption.style.color = 'red';
@@ -434,6 +516,7 @@ function setupZoom(sprite) {
         sprite.scale.set(scale, scale);
     });
 }
+*/
 
 // Atualização inicial dos controles
 updateCanvasElements();
@@ -528,6 +611,78 @@ function updateDiagonalsDisplay() {
     //outputValues.value += `\nDiagonal1: ${diagonals.diagonal1.toFixed(2)}, Diagonal2: ${diagonals.diagonal2.toFixed(2)}, Proporção: ${diagonals.proportion.toFixed(2)}`;
 }
 
+// Função para calcular o ângulo entre duas linhas em graus
+function calculateAngleBetweenLines() {
+    // Coordenadas globais do pivô
+    const globalPivot = rectangle.toGlobal(new PIXI.Point(rectangle.pivot.x, rectangle.pivot.y));
+
+    // Coordenadas de um ponto de referência na linha vermelha
+    const redLinePoint = {
+        x: globalPivot.x + app.screen.width, // Linha horizontal, expandida para a direita
+        y: globalPivot.y
+    };
+
+    // Coordenadas do vértice oposto para a linha azul
+    const oppositeVertexX = rectangle.pivot.x === 0 ? rectangle.width : 0;
+    const oppositeVertexY = rectangle.pivot.y === 0 ? rectangle.height : 0;
+    const globalOppositeVertex = rectangle.toGlobal(new PIXI.Point(oppositeVertexX, oppositeVertexY));
+
+    // Vetores das duas linhas
+    const redLineVector = { x: redLinePoint.x - globalPivot.x, y: redLinePoint.y - globalPivot.y };
+    const blueLineVector = { x: globalOppositeVertex.x - globalPivot.x, y: globalOppositeVertex.y - globalPivot.y };
+
+    // Produto escalar e magnitude dos vetores
+    const dotProduct = redLineVector.x * blueLineVector.x + redLineVector.y * blueLineVector.y;
+    const magnitudeRed = Math.sqrt(redLineVector.x ** 2 + redLineVector.y ** 2);
+    const magnitudeBlue = Math.sqrt(blueLineVector.x ** 2 + blueLineVector.y ** 2);
+
+    // Cálculo do ângulo em radianos e conversão para graus
+    const angleRadians = Math.acos(dotProduct / (magnitudeRed * magnitudeBlue));
+    const angleDegrees = (angleRadians * 180) / Math.PI;
+
+    return angleDegrees;
+}
+
+function calculateRectangleAngles(rectangle) {
+    // Obtém as coordenadas globais dos 4 vértices do quadrado
+    const points = [
+        rectangle.toGlobal(new PIXI.Point(0, 0)),           // Canto superior esquerdo
+        rectangle.toGlobal(new PIXI.Point(rectangle.width, 0)),    // Canto superior direito
+        rectangle.toGlobal(new PIXI.Point(rectangle.width, rectangle.height)), // Canto inferior direito
+        rectangle.toGlobal(new PIXI.Point(0, rectangle.height))    // Canto inferior esquerdo
+    ];
+
+    // Função para calcular o ângulo entre dois pontos
+    function calculateAngleBetweenPoints(p1, p2, p3) {
+        const v1 = { x: p1.x - p2.x, y: p1.y - p2.y };
+        const v2 = { x: p3.x - p2.x, y: p3.y - p2.y };
+
+        // Produto escalar
+        const dotProduct = v1.x * v2.x + v1.y * v2.y;
+        
+        // Magnitude dos vetores
+        const magnitudeV1 = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+        const magnitudeV2 = Math.sqrt(v2.x * v2.x + v2.y * v2.y);
+
+        // Cálculo do ângulo em radianos
+        const angleRadians = Math.acos(dotProduct / (magnitudeV1 * magnitudeV2));
+        
+        // Conversão para graus
+        const angleDegrees = (angleRadians * 180) / Math.PI;
+
+        return angleDegrees;
+    }
+
+    // Calcular os ângulos em cada vértice
+    const angles = [
+        calculateAngleBetweenPoints(points[3], points[0], points[1]),  // Ângulo superior esquerdo
+        calculateAngleBetweenPoints(points[0], points[1], points[2]),  // Ângulo superior direito
+        calculateAngleBetweenPoints(points[1], points[2], points[3]),  // Ângulo inferior direito
+        calculateAngleBetweenPoints(points[2], points[3], points[0])   // Ângulo inferior esquerdo
+    ];
+
+    return angles;
+}
 
 
 
@@ -540,8 +695,18 @@ function updateDiagonalsDisplay() {
 
 
 
-
-
+// ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
 // Configurar a ordem de tabulação
 function setupTabOrder() {
     // Defina a ordem desejada para os elementos
@@ -677,4 +842,7 @@ function toggleLimits() {
 }
 
 // Adiciona o evento ao botão
-toggleLimitsButton.addEventListener("click", toggleLimits);
+toggleLimitsButton.addEventListener('click', () => {
+    toggleLimits();
+    toggleLimitsButton.classList.toggle('active', usingAlternativeLimits); // Adicionar ou remover a classe 'active'
+});

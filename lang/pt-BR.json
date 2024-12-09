@@ -31,7 +31,9 @@
     "isometric-perspective.scene_scale_name": "Escala Isométrica",
     "isometric-perspective.scene_scale_hint_1": "Ajusta a escala da arte no modo isométrico (Intervalo: 0.5x a 3x). O \"Deslocamento do Fundo (Pixels)\" na aba",
     "isometric-perspective.scene_scale_hint_2": "Grade pode ser usado para mover o fundo.",
-
+    "isometric-perspective.scene_dropdown_name": "Projeção Isométrica",
+    "isometric-perspective.scene_dropdown_hint": "Escolha um tipo de projeção isométrica para esta cena.",
+    
     "isometric-perspective._comment": "Configuração de Tokens",
     "isometric-perspective.token_enableIsometric_name": "Desabilitar Token Isométrico",
     "isometric-perspective.token_enableIsometric_hint": "Desabilita a transformação isométrica neste token.",
