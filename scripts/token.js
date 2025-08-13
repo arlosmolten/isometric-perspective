@@ -5,6 +5,8 @@ import { ISOMETRIC_CONST } from './consts.js';
 
 export function registerTokenConfig() {
   Hooks.on("renderTokenConfig", handleRenderTokenConfig);
+  // Also handle Prototype Token configuration (e.g., from Actor sheet)
+  Hooks.on("renderPrototypeTokenConfig", handleRenderTokenConfig);
 
   Hooks.on("createToken", handleCreateToken);
   Hooks.on("updateToken", handleUpdateToken);
@@ -14,67 +16,220 @@ export function registerTokenConfig() {
 
 
 async function handleRenderTokenConfig(app, html, data) {
+  // Resolve TokenDocument across FVTT versions
+  const doc = (
+    app.object ??
+    app.document ??
+    app.token?.document ??
+    app.token ??
+    app.actor?.prototypeToken ??
+    data?.document ??
+    data?.object ??
+    null
+  );
+  // Minimal debug to confirm hook execution and tab selectors
+  try { console.debug('[isometric-perspective] renderTokenConfig hook fired'); } catch (e) { /* noop */ }
+  // If no document, still proceed to inject the tab with default values
+
+  // Ensure jQuery wrapper for html
+  const $html = (html && html.jquery) ? html : $(html);
+
+  // Safe getter for flags when doc is missing
+  const getFlag = (key, fallback) => (doc && typeof doc.getFlag === 'function' ? doc.getFlag(MODULE_ID, key) : undefined) ?? fallback;
+
   // Load the HTML template
   const tabHtml = await renderTemplate("modules/isometric-perspective/templates/token-config.html", {
-    isoDisabled: app.object.getFlag(MODULE_ID, 'isoTokenDisabled') ?? 1,
-    offsetX: app.object.getFlag(MODULE_ID, 'offsetX') ?? 0,
-    offsetY: app.object.getFlag(MODULE_ID, 'offsetY') ?? 0,
-    isoAnchorY: app.object.getFlag(MODULE_ID, 'isoAnchorY') ?? 0,
-    isoAnchorX: app.object.getFlag(MODULE_ID, 'isoAnchorX') ?? 0,
-    isoAnchorToggleCheckbox: app.object.getFlag(MODULE_ID, 'isoAnchorToggle') ?? 0,
-    scale: app.object.getFlag(MODULE_ID, 'scale') ?? 1
+    isoTokenDisabled: getFlag('isoTokenDisabled', 0),
+    offsetX: getFlag('offsetX', 0),
+    offsetY: getFlag('offsetY', 0),
+    isoAnchorY: getFlag('isoAnchorY', 0),
+    isoAnchorX: getFlag('isoAnchorX', 0),
+    isoAnchorToggle: getFlag('isoAnchorToggle', 0),
+    scale: getFlag('scale', 1),
+    isoImageSrc: getFlag('isoImageSrc', ''),
+    topdownImageSrc: getFlag('topdownImageSrc', '')
   });
   
-  // Add a new tab to the menu
-  const tabs = html.find('.tabs:not(.secondary-tabs)');
-  tabs.append(`<a class="item" data-tab="isometric"><i class="fas fa-cube"></i> ${game.i18n.localize('isometric-perspective.tab_isometric_name')}</a>`);
-  
-  // Adds the tab contents after the last existing tab
-  const lastTab = html.find('.tab').last();
-  lastTab.after(tabHtml);
+  // Prefer TokenConfig primary tabs nav
+  let tabs = $html.find('nav.sheet-tabs.tabs, nav.sheet-tabs[data-application-part="tabs"]');
+  if (!tabs.length) tabs = $html.find('.tabs:not(.secondary-tabs)');
+  if (!tabs.length) tabs = $html.find('nav.tabs');
+  if (!tabs.length) tabs = $html.find('.tabs');
+  const makeLink = () => `<a class="item" data-action="tab" data-group="sheet" data-tab="isometric"><i class="fas fa-cube"></i> ${game.i18n.localize('isometric-perspective.tab_isometric_name')}</a>`;
+  const appendLink = ($tabs) => {
+    if (!$tabs.length) return;
+    if ($tabs.find('a.item[data-tab="isometric"]').length) return; // avoid duplicates
+    $tabs.append(makeLink());
+  };
+  appendLink(tabs);
 
-  // Update the offset fine adjustment button
-  updateAdjustOffsetButton(html);
-  updateAdjustAnchorButton(html);
-
-  // Initializes control values
-  const isoTokenCheckbox = html.find('input[name="flags.isometric-perspective.isoTokenDisabled"]');
-  isoTokenCheckbox.prop("checked", app.object.getFlag(MODULE_ID, "isoTokenDisabled"));
-  const isoScaleDisabled = html.find('input[name="flags.isometric-perspective.isoScaleDisabled"]');
-  isoScaleDisabled.prop("checked", app.object.getFlag(MODULE_ID, "isoScaleDisabled"));
-
-  // Add listener to update the shown value from Slider
-  html.find('.scale-slider').on('input', function() {
-    html.find('.range-value').text(this.value);
-  });
-
-  // Handler for the submit form
-  html.find('form').on('submit', async (event) => {
-    // If the value of checkbox is true, updates the flags with the new values
-    if (isoTokenCheckbox.prop("checked")) {
-      await app.object.setFlag(MODULE_ID, "isoTokenDisabled", true);
-    } else {
-      await app.object.unsetFlag(MODULE_ID, "isoTokenDisabled");
+  // Retry once shortly after render in case other modules re-rendered the sheet
+  const doBind = () => {
+    if (app._tabs && app._tabs.length) {
+      for (const t of app._tabs) {
+        try { t.bind($html[0]); } catch (e) { /* noop */ }
+      }
     }
+  };
 
-    if (isoScaleDisabled.prop("checked")) {
-      await app.object.setFlag(MODULE_ID, "isoScaleDisabled", true);
-    } else {
-      await app.object.unsetFlag(MODULE_ID, "isoScaleDisabled");
+  setTimeout(() => {
+    let tabs2 = $html.find('nav.sheet-tabs.tabs, .tabs:not(.secondary-tabs), nav.tabs, .tabs');
+    appendLink(tabs2);
+    if (!$html.find('.tab[data-tab="isometric"]').length) {
+      let lastTab2 = $html.find('.tab').last();
+      if (lastTab2.length) lastTab2.after(tabHtml);
     }
-  });
+    doBind();
+  }, 0);
 
-  // Fix tab init
-  if (!app._tabs || app._tabs.length === 0) {
-    app._tabs = [new Tabs({
-      navSelector: ".tabs",
-      contentSelector: ".sheet-body",
-      initial: "appearance",
-      callback: () => {}
-    })];
-    app._tabs[0].bind(html[0]);
+  // Second retry to catch late DOM changes from other modules/systems
+  setTimeout(() => {
+    let tabs3 = $html.find('nav.sheet-tabs.tabs, nav.sheet-tabs[data-application-part="tabs"], .tabs:not(.secondary-tabs), nav.tabs, .tabs');
+    appendLink(tabs3);
+    if (!$html.find('.tab[data-tab="isometric"]').length) {
+      let lastTab3 = $html.find('.tab').last();
+      if (lastTab3.length) lastTab3.after(tabHtml);
+    }
+    doBind();
+  }, 100);
+
+  // Insert tab contents after the last .tab panel; fallback to append to .sheet-body
+  let lastTab = $html.find('.tab').last();
+  if (!$html.find('.tab[data-tab="isometric"]').length) {
+    if (lastTab.length) lastTab.after(tabHtml);
+    else $html.find('.sheet-body').append(tabHtml);
   }
 
+  // Rebind existing tabs so the new one is recognized; avoid creating new Tabs which can break sheet behavior
+  if (app._tabs && app._tabs.length) {
+    for (const t of app._tabs) {
+      try { t.bind($html[0]); } catch (e) { /* noop */ }
+    }
+  }
+
+  // Update the offset fine adjustment button
+  updateAdjustOffsetButton($html);
+  updateAdjustAnchorButton($html);
+
+  // Initializes control values
+  const isoTokenCheckbox = $html.find('input[name="flags.isometric-perspective.isoTokenDisabled"]');
+  isoTokenCheckbox.prop("checked", !!getFlag('isoTokenDisabled', false));
+  const isoScaleDisabled = $html.find('input[name="flags.isometric-perspective.isoScaleDisabled"]');
+  isoScaleDisabled.prop("checked", !!getFlag('isoScaleDisabled', false));
+
+  // Add listener to update the shown value from Slider
+  $html.find('.scale-slider').on('input', function() {
+    $html.find('.range-value').text(this.value);
+  });
+
+  // File pickers for alternate art
+  const bindPicker = (buttonSelector, inputSelector, flagKey) => {
+    const $btn = $html.find(buttonSelector);
+    const $inp = $html.find(inputSelector);
+    if (!$btn.length || !$inp.length) return;
+    $btn.on('click', async (ev) => {
+      ev.preventDefault();
+      const fp = new FilePicker({
+        type: 'image',
+        current: $inp.val() || '',
+        callback: async (path) => {
+          $inp.val(path).trigger('change');
+          if (doc?.setFlag && flagKey) {
+            try { await doc.setFlag(MODULE_ID, flagKey, String(path)); } catch (e) { /* noop */ }
+          }
+        },
+        top: Math.min(window.innerHeight - 350, (window.screenY || 100) + 150),
+        left: Math.min(window.innerWidth - 720, (window.screenX || 100) + 150)
+      });
+      fp.render(true);
+    });
+  };
+  bindPicker('.file-picker-iso', 'input[name="flags.isometric-perspective.isoImageSrc"]', 'isoImageSrc');
+  bindPicker('.file-picker-top', 'input[name="flags.isometric-perspective.topdownImageSrc"]', 'topdownImageSrc');
+
+  // Persist when typing manually into inputs
+  const bindImmediatePersist = (inputSelector, flagKey) => {
+    const $inp = $html.find(inputSelector);
+    if (!$inp.length || !flagKey) return;
+    let to;
+    $inp.on('input change', () => {
+      if (!doc?.setFlag) return;
+      clearTimeout(to);
+      to = setTimeout(async () => {
+        const v = String($inp.val() || '').trim();
+        try {
+          if (v) await doc.setFlag(MODULE_ID, flagKey, v);
+          else await doc.unsetFlag(MODULE_ID, flagKey);
+        } catch (e) { /* noop */ }
+      }, 150);
+    });
+  };
+  bindImmediatePersist('input[name="flags.isometric-perspective.isoImageSrc"]', 'isoImageSrc');
+  bindImmediatePersist('input[name="flags.isometric-perspective.topdownImageSrc"]', 'topdownImageSrc');
+
+  // Numeric persist helper
+  const bindImmediatePersistNumber = (inputSelector, flagKey) => {
+    const $inp = $html.find(inputSelector);
+    if (!$inp.length || !flagKey) return;
+    let to;
+    $inp.on('input change', () => {
+      if (!doc?.setFlag) return;
+      clearTimeout(to);
+      to = setTimeout(async () => {
+        const raw = String($inp.val() ?? '').trim();
+        const num = Number(raw);
+        try {
+          if (raw === '' || !Number.isFinite(num)) await doc.unsetFlag(MODULE_ID, flagKey);
+          else await doc.setFlag(MODULE_ID, flagKey, num);
+        } catch (e) { /* noop */ }
+      }, 150);
+    });
+  };
+  bindImmediatePersistNumber('input[name="flags.isometric-perspective.isoAnchorX"]', 'isoAnchorX');
+  bindImmediatePersistNumber('input[name="flags.isometric-perspective.isoAnchorY"]', 'isoAnchorY');
+  bindImmediatePersistNumber('input[name="flags.isometric-perspective.offsetX"]', 'offsetX');
+  bindImmediatePersistNumber('input[name="flags.isometric-perspective.offsetY"]', 'offsetY');
+  bindImmediatePersistNumber('input[name="flags.isometric-perspective.scale"]', 'scale');
+
+  // Handler for the submit form
+  $html.find('form').on('submit', async (event) => {
+    // If the value of checkbox is true, updates the flags with the new values
+    if (doc?.setFlag) {
+      if (isoTokenCheckbox.prop("checked")) await doc.setFlag(MODULE_ID, "isoTokenDisabled", true);
+      else await doc.unsetFlag(MODULE_ID, "isoTokenDisabled");
+    }
+
+    if (doc?.setFlag) {
+      if (isoScaleDisabled.prop("checked")) await doc.setFlag(MODULE_ID, "isoScaleDisabled", true);
+      else await doc.unsetFlag(MODULE_ID, "isoScaleDisabled");
+    }
+
+    // Persist alternate image sources when editing a concrete TokenDocument
+    if (doc?.setFlag) {
+      const isoSrc = String($html.find('input[name="flags.isometric-perspective.isoImageSrc"]').val() || '').trim();
+      const topSrc = String($html.find('input[name="flags.isometric-perspective.topdownImageSrc"]').val() || '').trim();
+      if (isoSrc) await doc.setFlag(MODULE_ID, 'isoImageSrc', isoSrc); else await doc.unsetFlag(MODULE_ID, 'isoImageSrc');
+      if (topSrc) await doc.setFlag(MODULE_ID, 'topdownImageSrc', topSrc); else await doc.unsetFlag(MODULE_ID, 'topdownImageSrc');
+    }
+
+    // Persist numeric isometric positioning flags
+    if (doc?.setFlag) {
+      const numOrUnset = async (key, valStr) => {
+        const raw = String(valStr ?? '').trim();
+        const num = Number(raw);
+        if (raw === '' || !Number.isFinite(num)) await doc.unsetFlag(MODULE_ID, key);
+        else await doc.setFlag(MODULE_ID, key, num);
+      };
+      await numOrUnset('isoAnchorX', $html.find('input[name="flags.isometric-perspective.isoAnchorX"]').val());
+      await numOrUnset('isoAnchorY', $html.find('input[name="flags.isometric-perspective.isoAnchorY"]').val());
+      await numOrUnset('offsetX', $html.find('input[name="flags.isometric-perspective.offsetX"]').val());
+      await numOrUnset('offsetY', $html.find('input[name="flags.isometric-perspective.offsetY"]').val());
+      await numOrUnset('scale', $html.find('input[name="flags.isometric-perspective.scale"]').val());
+    }
+  });
+
+  // Do not create a new Tabs instance here; the hosting sheet controls tabs. Our injection relies on its existing binding.
+
 
 
 
@@ -92,8 +247,8 @@ async function handleRenderTokenConfig(app, html, data) {
   
   
   // Initializes control values
-  const isoAnchorToggleCheckbox = html.find('input[name="isoAnchorToggle"]');
-  isoAnchorToggleCheckbox.prop("unchecked", app.object.getFlag(MODULE_ID, "isoAnchorToggle") ?? false);
+  const isoAnchorToggleCheckbox = $html.find('input[name="isoAnchorToggle"]');
+  isoAnchorToggleCheckbox.prop("unchecked", !!getFlag('isoAnchorToggle', false));
 
   // Function to draw alignment lines
   function drawAlignmentLines(isoAnchor) {
@@ -124,7 +279,7 @@ async function handleRenderTokenConfig(app, html, data) {
 
   // Function to calculate the alignment point
   function updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY) {
-    let tokenMesh = app.token.object.mesh;
+    let tokenMesh = app.token?.object?.mesh ?? app.token?.mesh ?? null;
     if (!tokenMesh) return { x: 0, y: 0 };
     
     // Defines the values ​​and transforms strings into numbers
@@ -157,17 +312,18 @@ async function handleRenderTokenConfig(app, html, data) {
 
   
   // Initialize the lines with the current values
-  let isoAnchorX = app.object.getFlag(MODULE_ID, 'isoAnchorX') ?? 0;
-  let isoAnchorY = app.object.getFlag(MODULE_ID, 'isoAnchorY') ?? 0;
-  let offsetX = app.object.getFlag(MODULE_ID, 'offsetX') ?? 0;
-  let offsetY = app.object.getFlag(MODULE_ID, 'offsetY') ?? 0;
+  let isoAnchorX = doc?.getFlag(MODULE_ID, 'isoAnchorX') ?? 0;
+  let isoAnchorY = doc?.getFlag(MODULE_ID, 'isoAnchorY') ?? 0;
+  let offsetX = doc?.getFlag(MODULE_ID, 'offsetX') ?? 0;
+  let offsetY = doc?.getFlag(MODULE_ID, 'offsetY') ?? 0;
   
-  // Add the button to reset the token settings
+  // Add the button to reset the token settings (avoid duplicates on re-render)
+  $html.find('.toggle-alignment-lines').remove();
   const toggleButton = document.createElement("button");
   toggleButton.classList.add("toggle-alignment-lines");
   toggleButton.textContent = game.i18n.localize('isometric-perspective.token_resetAlignmentButton_name'); //Reset Token Alignment Configuration
   toggleButton.title = game.i18n.localize('isometric-perspective.token_resetAlignmentButton_mouseover'); //Click to toggle the alignment lines
-  html.find(".anchor-point").append(toggleButton);
+  $html.find(".anchor-point").append(toggleButton);
 
   // Variables to control state
   let graphics;
@@ -178,13 +334,13 @@ async function handleRenderTokenConfig(app, html, data) {
     event.preventDefault(); // Evita que o clique feche a janela
 
     // Reset all alignment settings
-    html.find('input[name="texture.anchorX"]').val(0.5);
-    html.find('input[name="texture.anchorY"]').val(0.5);
-    html.find('input[name="flags.isometric-perspective.isoAnchorX"]').val(0.5);
-    html.find('input[name="flags.isometric-perspective.isoAnchorY"]').val(0.5);
-    html.find('input[name="flags.isometric-perspective.offsetX"]').val(0);
-    html.find('input[name="flags.isometric-perspective.offsetY"]').val(0);
-    html.find('input[name="flags.isometric-perspective.scale"]').val(1);
+    $html.find('input[name="texture.anchorX"]').val(0.5);
+    $html.find('input[name="texture.anchorY"]').val(0.5);
+    $html.find('input[name="flags.isometric-perspective.isoAnchorX"]').val(0.5);
+    $html.find('input[name="flags.isometric-perspective.isoAnchorY"]').val(0.5);
+    $html.find('input[name="flags.isometric-perspective.offsetX"]').val(0);
+    $html.find('input[name="flags.isometric-perspective.offsetY"]').val(0);
+    $html.find('input[name="flags.isometric-perspective.scale"]').val(1);
 
     graphics = drawAlignmentLines(updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY));
   });
@@ -200,12 +356,12 @@ async function handleRenderTokenConfig(app, html, data) {
   });
   
   // Update the lines when changing the inputs
-  html.find('input[name="flags.isometric-perspective.isoAnchorX"], input[name="flags.isometric-perspective.isoAnchorY"], input[name="flags.isometric-perspective.offsetX"], input[name="flags.isometric-perspective.offsetY"]').on('change', () => {
+  $html.find('input[name="flags.isometric-perspective.isoAnchorX"], input[name="flags.isometric-perspective.isoAnchorY"], input[name="flags.isometric-perspective.offsetX"], input[name="flags.isometric-perspective.offsetY"]').on('change', () => {
     // Take updated values ​​directly from inputs
-    let currentIsoAnchorX = html.find('input[name="flags.isometric-perspective.isoAnchorX"]').val();
-    let currentIsoAnchorY = html.find('input[name="flags.isometric-perspective.isoAnchorY"]').val();
-    let currentOffsetX = html.find('input[name="flags.isometric-perspective.offsetX"]').val();
-    let currentOffsetY = html.find('input[name="flags.isometric-perspective.offsetY"]').val();
+    let currentIsoAnchorX = $html.find('input[name="flags.isometric-perspective.isoAnchorX"]').val();
+    let currentIsoAnchorY = $html.find('input[name="flags.isometric-perspective.isoAnchorY"]').val();
+    let currentOffsetX = $html.find('input[name="flags.isometric-perspective.offsetX"]').val();
+    let currentOffsetY = $html.find('input[name="flags.isometric-perspective.offsetY"]').val();
     
     // Recalculate the position and creates the lines again
     const newAnchor = updateIsoAnchor(currentIsoAnchorX, currentIsoAnchorY, currentOffsetX, currentOffsetY);
@@ -218,17 +374,17 @@ async function handleRenderTokenConfig(app, html, data) {
 
 
   // Removes all lines when clicking on update token
-  html.find('button[type="submit"]').on('click', () => {
+  $html.find('button[type="submit"]').on('click', () => {
     if (!isoAnchorToggleCheckbox.prop("checked")) {
       cleanup();
     } else {
       // Take updated values ​​directly from inputs
-      let currentIsoAnchorX = html.find('input[name="flags.isometric-perspective.isoAnchorX"]').val();
-      let currentIsoAnchorY = html.find('input[name="flags.isometric-perspective.isoAnchorY"]').val();
+      let currentIsoAnchorX = $html.find('input[name="flags.isometric-perspective.isoAnchorX"]').val();
+      let currentIsoAnchorY = $html.find('input[name="flags.isometric-perspective.isoAnchorY"]').val();
       
       // Update the anchor basic values ​​in the token configuration
-      html.find('input[name="texture.anchorX"]').val(currentIsoAnchorY);
-      html.find('input[name="texture.anchorY"]').val(1-currentIsoAnchorX);
+      $html.find('input[name="texture.anchorX"]').val(currentIsoAnchorY);
+      $html.find('input[name="texture.anchorY"]').val(1-currentIsoAnchorX);
     }
   });
 

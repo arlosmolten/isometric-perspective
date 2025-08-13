@@ -52,6 +52,20 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
     return;
   }
   
+  // Auto switch between iso and top-down images
+  try {
+    const isoTokenDisabled = object.document.getFlag(MODULE_ID, 'isoTokenDisabled') ?? 0;
+    const isoImageSrc = object.document.getFlag(MODULE_ID, 'isoImageSrc');
+    const topdownImageSrc = object.document.getFlag(MODULE_ID, 'topdownImageSrc');
+    const currentSrc = object.document.texture?.src;
+    let desiredSrc = null;
+    if (isSceneIsometric && !isoTokenDisabled) desiredSrc = isoImageSrc || null;
+    else desiredSrc = topdownImageSrc || null;
+    if (desiredSrc && currentSrc !== desiredSrc) {
+      object.document.update({ 'texture.src': desiredSrc }, { animate: false });
+    }
+  } catch (_) { /* noop */ }
+
   // Disable isometric token projection, if the flag is active
   let isoTileDisabled = object.document.getFlag(MODULE_ID, 'isoTileDisabled') ?? 0;
   let isoTokenDisabled = object.document.getFlag(MODULE_ID, 'isoTokenDisabled') ?? 0;
@@ -75,7 +89,8 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
   // It undoes rotation and deformation
   object.mesh.rotation = ISOMETRIC_CONST.reverseRotation;
   object.mesh.skew.set(ISOMETRIC_CONST.reverseSkewX, ISOMETRIC_CONST.reverseSkewY);
-  //object.mesh.anchor.set(isoAnchorX, isoAnchorY);
+  // Fix token anchor to bottom
+  object.mesh.anchor.set(0.5, 1);
     
   // recovers the object characteristics of the object (token/tile)
   let texture = object.texture;
@@ -94,8 +109,13 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
   let gridDistance = canvas.scene.grid.distance;  // size of one unit of the grid
   let gridSize = canvas.scene.grid.size;
   let isoScale = object.document.getFlag(MODULE_ID, 'scale') ?? 1;  // dynamic scale
-  let offsetX = object.document.getFlag(MODULE_ID, 'offsetX') ?? 0; // art offset of object
-  let offsetY = object.document.getFlag(MODULE_ID, 'offsetY') ?? 0; // art offset of object
+  // Offsets: if no flag is set, apply a default offset
+  const flagOffsetX = object.document.getFlag(MODULE_ID, 'offsetX');
+  const flagOffsetY = object.document.getFlag(MODULE_ID, 'offsetY');
+  const tokenSize = Math.max(1, Number(object.document.width) || 1);
+  const DEFAULT_BASELINE_OFFSET_PER_SQUARE = -30; // px per square (1x1=-30, 2x2=-60)
+  let offsetX = (flagOffsetX !== undefined && flagOffsetX !== null) ? flagOffsetX : (DEFAULT_BASELINE_OFFSET_PER_SQUARE * tokenSize);
+  let offsetY = (flagOffsetY !== undefined && flagOffsetY !== null) ? flagOffsetY : 0;
   
   // if module settings flag is not set, don't move art token
   let ElevationAdjustment = game.settings.get(MODULE_ID, "enableHeightAdjustment");
@@ -105,7 +125,9 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
   
   
   
-  if (object instanceof Token) {
+  // Use a namespaced Token class to avoid deprecation warnings on V13+
+  const TokenClass = (typeof foundry !== 'undefined' && foundry?.canvas?.placeables?.Token) ? foundry.canvas.placeables.Token : (typeof Token !== 'undefined' ? Token : null);
+  if (TokenClass && object instanceof TokenClass) {
     let sx = 1; // standard x
     let sy = 1; // standard y
     let objTxtRatio_W = object.texture.width / canvas.scene.grid.size;
@@ -170,11 +192,41 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
     // Create shadow and line graphics elements
     updateTokenVisuals(object, elevation, gridSize, gridDistance);
 
-    // Position the token
+    // Position the token in the center
     object.mesh.position.set(
       object.document.x + (scaleX * gridSize/2) + (scaleX * isoOffsets.x),
       object.document.y + (scaleX * gridSize/2) + (scaleX * isoOffsets.y)
     );
+
+    // Auto-align correction
+    try {
+      const worldCenter = new PIXI.Point(
+        object.document.x + (scaleX * gridSize/2) + (scaleX * isoOffsets.x),
+        object.document.y + (scaleX * gridSize/2) + (scaleX * isoOffsets.y)
+      );
+
+      const targetScreen = canvas.stage.worldTransform.apply(worldCenter);
+      const b = object.mesh.getBounds();
+      const baseScreen = new PIXI.Point(b.x + b.width / 2, b.y + b.height);
+
+      const deltaScreenX = targetScreen.x - baseScreen.x;
+      const deltaScreenY = targetScreen.y - baseScreen.y;
+
+      if (Math.abs(deltaScreenX) > 0.1 || Math.abs(deltaScreenY) > 0.1) {
+        const inv = canvas.stage.worldTransform.clone().invert();
+        const to = inv.apply(new PIXI.Point(deltaScreenX, deltaScreenY));
+        const zero = inv.apply(new PIXI.Point(0, 0));
+        const deltaWorldX = to.x - zero.x;
+        const deltaWorldY = to.y - zero.y;
+
+        object.mesh.position.set(
+          object.mesh.position.x + deltaWorldX,
+          object.mesh.position.y + deltaWorldY
+        );
+      }
+    } catch (e) {
+      if (DEBUG_PRINT) console.warn('[Isometric Perspective] Auto-align correction failed:', e);
+    }
     // original code
     //object.mesh.position.set(
       //object.document.x + (isoOffsets.x * scaleX),
