@@ -1,5 +1,5 @@
 <!-- Isometric Token Configuration.html -->
-<div class="tab" data-tab="isometric">
+<div class="tab" data-group="sheet" data-tab="isometric">
   <div class="form-group">
     <label>{{localize 'isometric-perspective.token_enableIsometric_name'}}</label>
     <div class="form-fields">
@@ -64,6 +64,25 @@
     <p class="notes">{{localize 'isometric-perspective.token_disableScale_hint'}}</p>
   </div>
 
+  <hr>
+
+  <div class="form-group alt-art">
+    <label>Alternate Art (Iso / Top‑Down)</label>
+    <div class="form-fields column">
+      <label>Isometric Image</label>
+      <div class="file-row">
+        <input type="text" name="flags.isometric-perspective.isoImageSrc" value="{{isoImageSrc}}" placeholder="path/to/iso-image.png" />
+        <button type="button" class="file-picker-iso" title="Browse Files"><i class="fas fa-file-import"></i></button>
+      </div>
+      <label>Top‑Down Image</label>
+      <div class="file-row">
+        <input type="text" name="flags.isometric-perspective.topdownImageSrc" value="{{topdownImageSrc}}" placeholder="path/to/topdown-image.png" />
+        <button type="button" class="file-picker-top" title="Browse Files"><i class="fas fa-file-import"></i></button>
+      </div>
+    </div>
+    <p class="notes">Isometric and Top-Down art paths.</p>
+  </div>
+
   <style>
     .offset-point .form-fields {
       display: flex;
@@ -86,5 +105,8 @@
       text-align: center;
       line-height: var(--form-field-height);
     }
+    .alt-art .form-fields.column { display: flex; flex-direction: column; gap: 0.25rem; }
+    .alt-art .file-row { display: flex; gap: 0.5rem; align-items: center; }
+    .alt-art .file-row input { flex: 1; }
   </style>
 </div>
