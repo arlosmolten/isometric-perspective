@@ -120,7 +120,7 @@ export function registerDynamicTileConfig() {
     updateTokensOpacity(0);
 
     // Handler for the submit form
-    html.find('form').on('submit', async (event) => {
+    html.querySelector('form').on('submit', async (event) => {
       updateTokensOpacity(1);
     });
   });

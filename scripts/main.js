@@ -4,6 +4,7 @@ import { registerTileConfig } from './tile.js';
 import { registerHUDConfig } from './hud.js';
 import { registerSortingConfig } from './autosorting.js';
 import { registerDynamicTileConfig, increaseTilesOpacity, decreaseTilesOpacity } from './dynamictile.js';
+
 import { applyIsometricPerspective, applyBackgroundTransformation } from './transform.js';
 import { ISOMETRIC_CONST } from './consts.js';
 import { isoToCartesian, cartesianToIso } from './utils.js';
@@ -13,6 +14,10 @@ import { registerOcclusionConfig } from './occlusion.js';
 //import { registerOcclusionConfig } from './occlusion2 v15 (cpu gpu choose).js';  // choose between cpu (working, heavy on performance) and gpu (not fully working)
 //import { registerOcclusionConfig } from './occlusion2 v21 (simple test 2).js';   // different approach to solution (not fully working)
 //import { registerOcclusionConfig } from './occlusion3.js';                       // has token-token occlusion (not fully working)
+
+
+// application v2 update
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
 // ---------- CONSTANTS ----------
 const MODULE_ID = "isometric-perspective";
@@ -205,29 +210,36 @@ Hooks.once("init", function() {
 
   FOUNDRY_VERSION = parseInt(game.version.split(".")[0]); // Extrai a versão principal
 
-  
 });
 
 
 
-
-
 // Welcome Message Setup
-export class WelcomeScreen extends Application {
-  static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      template: "modules/isometric-perspective/templates/welcome.html",
+export class WelcomeScreen extends HandlebarsApplicationMixin(ApplicationV2) {
+
+  static DEFAULT_OPTIONS = {
+    classes: ["welcome-screen"],
+    position:{
       width: 600,
       height: 620,
-      classes: ["welcome-screen"],
+    },
+    window:{
       resizable: false,
-      title: "Isometric Perspective Module"
-    });
+      title: "isometric-perspective.title"
+    }
+  }
+
+  static PARTS = {
+    div: {
+      template: "modules/isometric-perspective/templates/welcome.hbs",
+    }
   }
 }
 
 // Verifica se deve mostrar a tela de boas-vindas
-Hooks.once('ready', async function() {
+// Checks whether to show the welcome screen
+
+Hooks.once('ready', ()=> {
   if (game.settings.get(MODULE_ID, "showWelcome")) {
     const welcome = new WelcomeScreen();
     welcome.render(true);
