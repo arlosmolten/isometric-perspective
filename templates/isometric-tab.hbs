@@ -1,9 +1,8 @@
-<section class="tab"data-tab="isometric">
+<section class="tab {{#if tab.active}} active{{/if}}"data-tab="isometric" data-group="sheet">
   {{!-- Tab content here --}}
   <div class="isometric-config-tab-content">
     <!-- form fields, etc. -->
-    <i class="fas fa-cube"></i>
-    {{localize "isometric-perspective.tab_isometric_name"}}
     this tab works!
+    {{log this}}
   </div>
 </section>

@@ -246,16 +246,31 @@ Hooks.once('ready', ()=> {
   }
 });
 
+// Adding the scene config data
+Hooks.on('ready', ()=> {
+  // Tabs component data
+  const label = game.i18n.localize("isometric-perspective.tab_isometric_name");
+  const tabGroup = "sheet";
+  const tabId = "isometric";
+  const icon = "fas fa-cube"
+  const isoTemplatePath = 'modules/isometric-perspective/templates/isometric-tab.hbs'
 
+  // Scene config data
+  const FoundrySceneConfig = foundry.applications.sheets.SceneConfig;
+  const DefaultSceneConfig = Object.values(CONFIG.Scene.sheetClasses.base).find((d) => d.default).cls;
+  const SceneConfig = DefaultSceneConfig?.prototype instanceof FoundrySceneConfig ? DefaultSceneConfig : FoundrySceneConfig;
 
+  // Adding the isometric tab data to the scene config parts
+  SceneConfig.TABS.sheet.tabs.push({ id: tabId, group: tabGroup, label , icon: icon }); 
+  
+  // Adding the part template
+  SceneConfig.PARTS.isometric = {template: isoTemplatePath};
+  
+  const footerPart = SceneConfig.PARTS.footer;
+  delete SceneConfig.PARTS.footer;
+  SceneConfig.PARTS.footer = footerPart;
 
-
-
-
-
-
-
-
+})
 
 
 /**
