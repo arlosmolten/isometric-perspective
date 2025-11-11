@@ -1,4 +1,4 @@
-import { registerSceneConfig } from './scene.js';
+// import { registerSceneConfig } from './scene.js';
 import { registerTokenConfig } from './token.js';
 import { registerTileConfig } from './tile.js';
 import { registerHUDConfig } from './hud.js';
@@ -6,6 +6,7 @@ import { registerSortingConfig } from './autosorting.js';
 import { registerDynamicTileConfig, increaseTilesOpacity, decreaseTilesOpacity } from './dynamictile.js';
 
 import { applyIsometricPerspective, applyBackgroundTransformation } from './transform.js';
+import { updateIsometricConstants, parseCustomProjection, updateCustomProjection, PROJECTION_TYPES, DEFAULT_PROJECTION, CUSTOM_PROJECTION } from './consts.js';
 import { ISOMETRIC_CONST } from './consts.js';
 import { isoToCartesian, cartesianToIso } from './utils.js';
 
@@ -15,6 +16,12 @@ import { registerOcclusionConfig } from './occlusion.js';
 //import { registerOcclusionConfig } from './occlusion2 v21 (simple test 2).js';   // different approach to solution (not fully working)
 //import { registerOcclusionConfig } from './occlusion3.js';                       // has token-token occlusion (not fully working)
 
+import { 
+  isometricTabInit,
+  handleUpdateScene,
+  handleCanvasReady,
+  handleCanvasResize, 
+} from './scene.js'
 
 // application v2 update
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
@@ -184,7 +191,7 @@ Hooks.once("init", function() {
 
 
   // ------------- Executa os hooks essenciais do módulo -------------
-  registerSceneConfig();
+  // registerSceneConfig();
   registerTokenConfig();
   registerTileConfig();
   registerHUDConfig();
@@ -211,7 +218,6 @@ Hooks.once("init", function() {
   FOUNDRY_VERSION = parseInt(game.version.split(".")[0]); // Extrai a versão principal
 
 });
-
 
 
 // Welcome Message Setup
@@ -246,31 +252,13 @@ Hooks.once('ready', ()=> {
   }
 });
 
-// Adding the scene config data
-Hooks.on('ready', ()=> {
-  // Tabs component data
-  const label = game.i18n.localize("isometric-perspective.tab_isometric_name");
-  const tabGroup = "sheet";
-  const tabId = "isometric";
-  const icon = "fas fa-cube"
-  const isoTemplatePath = 'modules/isometric-perspective/templates/isometric-tab.hbs'
+// add the isometric tab in the scene config
+Hooks.on('ready', isometricTabInit);
+//handle the isometric canvas
+Hooks.on("updateScene", handleUpdateScene);
+Hooks.on("canvasReady", handleCanvasReady);
+Hooks.on("canvasResize", handleCanvasResize);
 
-  // Scene config data
-  const FoundrySceneConfig = foundry.applications.sheets.SceneConfig;
-  const DefaultSceneConfig = Object.values(CONFIG.Scene.sheetClasses.base).find((d) => d.default).cls;
-  const SceneConfig = DefaultSceneConfig?.prototype instanceof FoundrySceneConfig ? DefaultSceneConfig : FoundrySceneConfig;
-
-  // Adding the isometric tab data to the scene config parts
-  SceneConfig.TABS.sheet.tabs.push({ id: tabId, group: tabGroup, label , icon: icon }); 
-  
-  // Adding the part template
-  SceneConfig.PARTS.isometric = {template: isoTemplatePath};
-  
-  const footerPart = SceneConfig.PARTS.footer;
-  delete SceneConfig.PARTS.footer;
-  SceneConfig.PARTS.footer = footerPart;
-
-})
 
 
 /**
