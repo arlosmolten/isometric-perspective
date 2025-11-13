@@ -184,6 +184,16 @@ Hooks.once("init", function() {
     reservedModifiers: [],
     precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL
   });
+  
+
+/**
+ * @param {----- TESTING AREA / ÁREA DE TESTES -----}
+*/
+// Wait for movement animation end
+// const anim = CanvasAnimation.getAnimation(token.animationName);
+// if(anim?.promise) await anim.promise;
+
+
 
   // ------------- Executa os hooks essenciais do módulo -------------
   // registerSceneConfig();
@@ -194,12 +204,7 @@ Hooks.once("init", function() {
   // ------------- Executa os hooks de funcionalidades adicionais do módulo -------------
   registerDynamicTileConfig();
   registerSortingConfig();
-  registerOcclusionConfig();
-
-  
-  
-  
-  
+  registerOcclusionConfig();  
   
   // Define global debug print variable
   if (game.settings.get(MODULE_ID, "debug"))
@@ -213,7 +218,6 @@ Hooks.once("init", function() {
   FOUNDRY_VERSION = parseInt(game.version.split(".")[0]); // Extrai a versão principal
 
 });
-
 
 // Welcome Message Setup
 export class WelcomeScreen extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -253,17 +257,6 @@ Hooks.on('ready', isometricTabInit);
 Hooks.on("updateScene", handleUpdateScene);
 Hooks.on("canvasReady", handleCanvasReady);
 Hooks.on("canvasResize", handleCanvasResize);
-
-
-
-/**
- * @param {----- TESTING AREA / ÁREA DE TESTES -----}
-*/
-// Wait for movement animation end
-// const anim = CanvasAnimation.getAnimation(token.animationName);
-// if(anim?.promise) await anim.promise;
-
-
 
 
 

@@ -2,7 +2,6 @@ import { MODULE_ID, DEBUG_PRINT, WORLD_ISO_FLAG } from './main.js';
 import { applyIsometricPerspective, applyBackgroundTransformation } from './transform.js';
 import { updateIsometricConstants, parseCustomProjection, updateCustomProjection, PROJECTION_TYPES, DEFAULT_PROJECTION, CUSTOM_PROJECTION } from './consts.js';
 
-
 export function isometricTabInit() {
     // Tabs component data
   const label = game.i18n.localize("isometric-perspective.tab_isometric_name");
