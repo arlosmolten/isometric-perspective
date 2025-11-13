@@ -3,163 +3,6 @@ import { applyIsometricPerspective, applyBackgroundTransformation } from './tran
 import { updateIsometricConstants, parseCustomProjection, updateCustomProjection, PROJECTION_TYPES, DEFAULT_PROJECTION, CUSTOM_PROJECTION } from './consts.js';
 
 
-// Hooks.on("updateScene")
-// function handleUpdateScene(scene, changes) {
-//   if (scene.id !== canvas.scene?.id) return;
-
-//   if (
-//     changes.img ||
-//     changes.background?.offsetX !== undefined ||
-//     changes.background?.offsetY !== undefined ||
-//     changes.flags?.[MODULE_ID]?.isometricEnabled !== undefined ||
-//     changes.flags?.[MODULE_ID]?.isometricBackground !== undefined ||
-//     changes.flags?.[MODULE_ID]?.projectionType !== undefined ||
-//     changes.grid !== undefined ||
-//     changes.gridType !== undefined ||
-//     changes.gridSize !== undefined
-//   ) {
-//     const isIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
-//     const shouldTransformBackground = scene.getFlag(MODULE_ID, "isometricBackground") ?? false;
-//     const projectionType = scene.getFlag(MODULE_ID, "projectionType") ?? DEFAULT_PROJECTION;
-
-//     // logic for custom projection
-//     if (projectionType === 'Custom Projection') {
-//       const customProjectionValue = scene.getFlag(MODULE_ID, "customProjection");
-//       if (customProjectionValue) {
-//         try {
-//           const parsedCustom = parseCustomProjection(customProjectionValue);
-//           updateCustomProjection(parsedCustom);
-//         } catch (error) {
-//           console.error("Error parsing custom projection:", error);
-//         }
-//       }
-//     }
-
-//     requestAnimationFrame(() => {
-//       updateIsometricConstants(projectionType);
-//       applyIsometricPerspective(scene, isIsometric);
-//       applyBackgroundTransformation(scene, isIsometric, shouldTransformBackground);
-//     });
-//   }
-// }
-
-
-// async function handleCanvasReady(canvas) {
-//   const scene = canvas.scene;
-//   if (!scene) return;
-
-//   const isSceneIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
-//   const shouldTransformBackground = scene.getFlag(MODULE_ID, "isometricBackground") ?? false;
-//   let projectionType = scene.getFlag(MODULE_ID, "projectionType");
-  
-//   // If no projection type is set, set the default
-//   if (!projectionType) {
-//     projectionType = DEFAULT_PROJECTION;
-//     await scene.setFlag(MODULE_ID, "projectionType", projectionType);
-//   }
-
-//   // logic to load and apply custom projection
-//   if (projectionType === 'Custom Projection') {
-//     const customProjectionValue = scene.getFlag(MODULE_ID, "customProjection");
-//     if (customProjectionValue) {
-//       try {
-//         const parsedCustom = parseCustomProjection(customProjectionValue);
-//         updateCustomProjection(parsedCustom);
-//       } catch (error) {
-//         console.error("Error parsing custom projection:", error);
-//       }
-//     }
-//   }
-  
-//   updateIsometricConstants(projectionType);
-//   applyIsometricPerspective(scene, isSceneIsometric);
-//   applyBackgroundTransformation(scene, isSceneIsometric, shouldTransformBackground);
-  
-//   // debug print
-//   if (DEBUG_PRINT) console.log("Hooks.on canvasReady");
-// }
-
-
-// function handleCanvasResize(canvas) {
-//   const scene = canvas.scene;
-//   if (!scene) return;
-  
-//   const isSceneIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
-//   const shouldTransformBackground = scene.getFlag(MODULE_ID, "isometricBackground") ?? false;
-//   const projectionType = scene.getFlag(MODULE_ID, "projectionType") ?? DEFAULT_PROJECTION;
-
-//   updateIsometricConstants(projectionType);
-  
-//   if (isSceneIsometric && shouldTransformBackground) {
-//     applyBackgroundTransformation(scene, isSceneIsometric, shouldTransformBackground);
-//   }
-  
-//   // debug print
-//   if (DEBUG_PRINT) console.log("Hooks.on canvasResize");
-// }
-
-/*
-Hooks.on("renderGridConfig", (app, html, data) => {
-  const scene = app.object;
-  if (!scene) return;
-  
-  const isIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
-  const shouldTransformBackground = scene.getFlag(MODULE_ID, "isometricBackground") ?? false;
-  
-  // Re-apply transformations when grid config is rendered
-  if (isIsometric) {
-    requestAnimationFrame(() => {
-      applyIsometricPerspective(scene, isIsometric);
-      applyBackgroundTransformation(scene, isIsometric, shouldTransformBackground);
-    });
-  }
-  
-  // Add listener for when grid config tool is being used
-  html.querySelector('.grid-config').on('change', () => {
-    if (isIsometric) {
-      requestAnimationFrame(() => {
-        applyIsometricPerspective(scene, isIsometric);
-        applyBackgroundTransformation(scene, isIsometric, shouldTransformBackground);
-      });
-    }
-  });
-});
-
-
-// Aplica a perspectiva isométrica quando a cena termina de ser renderizada
-Hooks.on("gridConfigUpdate", (event) => {
-  const scene = canvas.scene;
-  if (!scene) return;
-  
-  const isIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
-  const shouldTransformBackground = scene.getFlag(MODULE_ID, "isometricBackground") ?? false;
-  
-  // Re-apply isometric transformations after grid update
-  if (isIsometric) {
-    requestAnimationFrame(() => {
-      applyIsometricPerspective(scene, isIsometric);
-      applyBackgroundTransformation(scene, isIsometric, shouldTransformBackground);
-    });
-  }
-});
-
-Hooks.on("closeGridConfig", (app) => {
-  const scene = app.object;
-  if (!scene) return;
-  
-  const isIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
-  const isometricWorldEnabled = game.settings.get(MODULE_ID, "worldIsometricFlag");
-  const shouldTransformBackground = scene.getFlag(MODULE_ID, "isometricBackground") ?? false;
-  
-  if (isometricWorldEnabled && isIsometric) {
-    requestAnimationFrame(() => {
-      applyIsometricPerspective(scene, isIsometric);
-      applyBackgroundTransformation(scene, isIsometric, shouldTransformBackground);
-    });
-  }
-});
-*/
-
 export function isometricTabInit() {
     // Tabs component data
   const label = game.i18n.localize("isometric-perspective.tab_isometric_name");
@@ -177,7 +20,7 @@ export function isometricTabInit() {
 
   // const currentProjection = sceneConfig.object?.getFlag(MODULE_ID, 'projectionType') ?? DEFAULT_PROJECTION;
   
-  // Prepare data for the template
+  // Prepare data for the template // bug here
   // const templateData = {
   //     projectionTypes: [...Object.keys(PROJECTION_TYPES)],
   //     currentProjection: currentProjection
@@ -386,3 +229,160 @@ export function handleCanvasResize(canvas) {
   // debug print
   if (DEBUG_PRINT) console.log("Hooks.on canvasResize");
 }
+
+// Hooks.on("updateScene")
+// function handleUpdateScene(scene, changes) {
+//   if (scene.id !== canvas.scene?.id) return;
+
+//   if (
+//     changes.img ||
+//     changes.background?.offsetX !== undefined ||
+//     changes.background?.offsetY !== undefined ||
+//     changes.flags?.[MODULE_ID]?.isometricEnabled !== undefined ||
+//     changes.flags?.[MODULE_ID]?.isometricBackground !== undefined ||
+//     changes.flags?.[MODULE_ID]?.projectionType !== undefined ||
+//     changes.grid !== undefined ||
+//     changes.gridType !== undefined ||
+//     changes.gridSize !== undefined
+//   ) {
+//     const isIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
+//     const shouldTransformBackground = scene.getFlag(MODULE_ID, "isometricBackground") ?? false;
+//     const projectionType = scene.getFlag(MODULE_ID, "projectionType") ?? DEFAULT_PROJECTION;
+
+//     // logic for custom projection
+//     if (projectionType === 'Custom Projection') {
+//       const customProjectionValue = scene.getFlag(MODULE_ID, "customProjection");
+//       if (customProjectionValue) {
+//         try {
+//           const parsedCustom = parseCustomProjection(customProjectionValue);
+//           updateCustomProjection(parsedCustom);
+//         } catch (error) {
+//           console.error("Error parsing custom projection:", error);
+//         }
+//       }
+//     }
+
+//     requestAnimationFrame(() => {
+//       updateIsometricConstants(projectionType);
+//       applyIsometricPerspective(scene, isIsometric);
+//       applyBackgroundTransformation(scene, isIsometric, shouldTransformBackground);
+//     });
+//   }
+// }
+
+
+// async function handleCanvasReady(canvas) {
+//   const scene = canvas.scene;
+//   if (!scene) return;
+
+//   const isSceneIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
+//   const shouldTransformBackground = scene.getFlag(MODULE_ID, "isometricBackground") ?? false;
+//   let projectionType = scene.getFlag(MODULE_ID, "projectionType");
+  
+//   // If no projection type is set, set the default
+//   if (!projectionType) {
+//     projectionType = DEFAULT_PROJECTION;
+//     await scene.setFlag(MODULE_ID, "projectionType", projectionType);
+//   }
+
+//   // logic to load and apply custom projection
+//   if (projectionType === 'Custom Projection') {
+//     const customProjectionValue = scene.getFlag(MODULE_ID, "customProjection");
+//     if (customProjectionValue) {
+//       try {
+//         const parsedCustom = parseCustomProjection(customProjectionValue);
+//         updateCustomProjection(parsedCustom);
+//       } catch (error) {
+//         console.error("Error parsing custom projection:", error);
+//       }
+//     }
+//   }
+  
+//   updateIsometricConstants(projectionType);
+//   applyIsometricPerspective(scene, isSceneIsometric);
+//   applyBackgroundTransformation(scene, isSceneIsometric, shouldTransformBackground);
+  
+//   // debug print
+//   if (DEBUG_PRINT) console.log("Hooks.on canvasReady");
+// }
+
+
+// function handleCanvasResize(canvas) {
+//   const scene = canvas.scene;
+//   if (!scene) return;
+  
+//   const isSceneIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
+//   const shouldTransformBackground = scene.getFlag(MODULE_ID, "isometricBackground") ?? false;
+//   const projectionType = scene.getFlag(MODULE_ID, "projectionType") ?? DEFAULT_PROJECTION;
+
+//   updateIsometricConstants(projectionType);
+  
+//   if (isSceneIsometric && shouldTransformBackground) {
+//     applyBackgroundTransformation(scene, isSceneIsometric, shouldTransformBackground);
+//   }
+  
+//   // debug print
+//   if (DEBUG_PRINT) console.log("Hooks.on canvasResize");
+// }
+
+/*
+Hooks.on("renderGridConfig", (app, html, data) => {
+  const scene = app.object;
+  if (!scene) return;
+  
+  const isIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
+  const shouldTransformBackground = scene.getFlag(MODULE_ID, "isometricBackground") ?? false;
+  
+  // Re-apply transformations when grid config is rendered
+  if (isIsometric) {
+    requestAnimationFrame(() => {
+      applyIsometricPerspective(scene, isIsometric);
+      applyBackgroundTransformation(scene, isIsometric, shouldTransformBackground);
+    });
+  }
+  
+  // Add listener for when grid config tool is being used
+  html.querySelector('.grid-config').on('change', () => {
+    if (isIsometric) {
+      requestAnimationFrame(() => {
+        applyIsometricPerspective(scene, isIsometric);
+        applyBackgroundTransformation(scene, isIsometric, shouldTransformBackground);
+      });
+    }
+  });
+});
+
+
+// Aplica a perspectiva isométrica quando a cena termina de ser renderizada
+Hooks.on("gridConfigUpdate", (event) => {
+  const scene = canvas.scene;
+  if (!scene) return;
+  
+  const isIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
+  const shouldTransformBackground = scene.getFlag(MODULE_ID, "isometricBackground") ?? false;
+  
+  // Re-apply isometric transformations after grid update
+  if (isIsometric) {
+    requestAnimationFrame(() => {
+      applyIsometricPerspective(scene, isIsometric);
+      applyBackgroundTransformation(scene, isIsometric, shouldTransformBackground);
+    });
+  }
+});
+
+Hooks.on("closeGridConfig", (app) => {
+  const scene = app.object;
+  if (!scene) return;
+  
+  const isIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
+  const isometricWorldEnabled = game.settings.get(MODULE_ID, "worldIsometricFlag");
+  const shouldTransformBackground = scene.getFlag(MODULE_ID, "isometricBackground") ?? false;
+  
+  if (isometricWorldEnabled && isIsometric) {
+    requestAnimationFrame(() => {
+      applyIsometricPerspective(scene, isIsometric);
+      applyBackgroundTransformation(scene, isIsometric, shouldTransformBackground);
+    });
+  }
+});
+*/
