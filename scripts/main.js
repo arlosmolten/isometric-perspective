@@ -185,11 +185,6 @@ Hooks.once("init", function() {
     precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL
   });
 
-  
-
-  //nyan nyan
-
-
   // ------------- Executa os hooks essenciais do módulo -------------
   // registerSceneConfig();
   registerTokenConfig();
