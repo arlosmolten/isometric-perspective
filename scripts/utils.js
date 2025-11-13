@@ -1,4 +1,4 @@
-import { MODULE_ID, DEBUG_PRINT, WORLD_ISO_FLAG } from './main.js';
+import { MODULE_ID, DEBUG_PRINT, WORLD_ISO_FLAG } from './const.js';
 
 // Função auxiliar para converter coordenadas isométricas para cartesianas
 export function isoToCartesian(isoX, isoY) {

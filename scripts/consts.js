@@ -1,5 +1,3 @@
-import { MODULE_ID, DEBUG_PRINT, WORLD_ISO_FLAG } from './main.js';
-
 // Define all projection types
 export let PROJECTION_TYPES = {
   'True Isometric': {
@@ -151,6 +149,16 @@ export function parseCustomProjection(customInput) {
   };
 }
 
+// ---------- GLOBAL CONFIG CONSTANTS ----------
+const MODULE_ID = "isometric-perspective";
+const DEBUG_PRINT = false;
+const WORLD_ISO_FLAG = null;
+const FOUNDRY_VERSION = null;
+
+export { MODULE_ID };
+export { DEBUG_PRINT };
+export { WORLD_ISO_FLAG };
+export { FOUNDRY_VERSION };
 
 /*
 // values in degrees

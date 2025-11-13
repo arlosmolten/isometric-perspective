@@ -1,4 +1,4 @@
-import { MODULE_ID, DEBUG_PRINT, WORLD_ISO_FLAG } from './main.js';
+import { MODULE_ID, DEBUG_PRINT, WORLD_ISO_FLAG } from './const.js';
 
 export function registerSortingConfig() {
   const isometricWorldEnabled = game.settings.get(MODULE_ID, "worldIsometricFlag");

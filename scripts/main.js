@@ -26,17 +26,6 @@ import {
 // application v2 update
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
-// ---------- CONSTANTS ----------
-const MODULE_ID = "isometric-perspective";
-let DEBUG_PRINT;
-let WORLD_ISO_FLAG;
-let FOUNDRY_VERSION;
-
-export { MODULE_ID };
-export { DEBUG_PRINT };
-export { WORLD_ISO_FLAG };
-export { FOUNDRY_VERSION };
-
 
 // Hook to register module configuration in Foundry VTT
 Hooks.once("init", function() {

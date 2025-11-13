@@ -1,4 +1,4 @@
-import { MODULE_ID, DEBUG_PRINT, WORLD_ISO_FLAG } from './main.js';
+import { MODULE_ID, DEBUG_PRINT, WORLD_ISO_FLAG } from './const.js';
 import { applyIsometricTransformation, updateTokenVisuals } from './transform.js';
 import { cartesianToIso, isoToCartesian } from './utils.js';
 import { ISOMETRIC_CONST } from './consts.js';
