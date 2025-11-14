@@ -1,4 +1,4 @@
-import { MODULE_ID, DEBUG_PRINT } from './main.js';
+import { isometricModuleConfig } from './consts.js';
 import { applyIsometricTransformation } from './transform.js';
 
 export function registerTileConfig() {
@@ -10,18 +10,18 @@ export function registerTileConfig() {
 }
 
 async function handleRenderTileConfig(app, html, data) {
-  const linkedWallIds = app.object.getFlag(MODULE_ID, 'linkedWallIds') || [];
+  const linkedWallIds = app.object.getFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds') || [];
   const wallIdsString = Array.isArray(linkedWallIds) ? linkedWallIds.join(', ') : linkedWallIds;
 
   // Carrega o template HTML para a nova aba
   const tabHtml = await renderTemplate("modules/isometric-perspective/templates/tile-config.html", {
-    isoDisabled: app.object.getFlag(MODULE_ID, 'isoTileDisabled') ?? 1,
-    scale: app.object.getFlag(MODULE_ID, 'scale') ?? 1,
-    isFlipped: app.object.getFlag(MODULE_ID, 'tokenFlipped') ?? false,
-    offsetX: app.object.getFlag(MODULE_ID, 'offsetX') ?? 0,
-    offsetY: app.object.getFlag(MODULE_ID, 'offsetY') ?? 0,
+    isoDisabled: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'isoTileDisabled') ?? 1,
+    scale: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'scale') ?? 1,
+    isFlipped: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'tokenFlipped') ?? false,
+    offsetX: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'offsetX') ?? 0,
+    offsetY: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY') ?? 0,
     linkedWallIds: wallIdsString,
-    isOccluding: app.object.getFlag(MODULE_ID, 'OccludingTile') ?? false
+    isOccluding: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'OccludingTile') ?? false
   });
 
   // Adiciona a nova aba ao menu
@@ -53,10 +53,10 @@ async function handleRenderTileConfig(app, html, data) {
   const linkedWallInput = html.querySelector('input[name="flags.isometric-perspective.linkedWallIds"]');
   const occludingCheckbox = html.querySelector('input[name="flags.isometric-perspective.OccludingTile"]');
   
-  isoTileCheckbox.prop("checked", app.object.getFlag(MODULE_ID, "isoTileDisabled"));
-  flipCheckbox.prop("checked", app.object.getFlag(MODULE_ID, "tokenFlipped"));
+  isoTileCheckbox.prop("checked", app.object.getFlag(isometricModuleConfig.MODULE_ID, "isoTileDisabled"));
+  flipCheckbox.prop("checked", app.object.getFlag(isometricModuleConfig.MODULE_ID, "tokenFlipped"));
   linkedWallInput.val(wallIdsString);
-  occludingCheckbox.prop("checked", app.object.getFlag(MODULE_ID, "OccludingTile"));
+  occludingCheckbox.prop("checked", app.object.getFlag(isometricModuleConfig.MODULE_ID, "OccludingTile"));
   
   // Adiciona listener para atualizar o valor exibido do slider
   html.querySelector('.scale-slider').on('input', function() {
@@ -68,21 +68,21 @@ async function handleRenderTileConfig(app, html, data) {
   html.querySelector('form').on('submit', async (event) => {
     // Se o valor do checkbox é true, atualiza as flags com os novos valores
     if (html.querySelector('input[name="flags.isometric-perspective.isoTileDisabled"]').prop("checked")) {
-      await app.object.setFlag(MODULE_ID, "isoTileDisabled", true);
+      await app.object.setFlag(isometricModuleConfig.MODULE_ID, "isoTileDisabled", true);
     } else {
-      await app.object.unsetFlag(MODULE_ID, "isoTileDisabled");
+      await app.object.unsetFlag(isometricModuleConfig.MODULE_ID, "isoTileDisabled");
     }
 
     if (html.querySelector('input[name="flags.isometric-perspective.tokenFlipped"]').prop("checked")) {
-      await app.object.setFlag(MODULE_ID, "tokenFlipped", true);
+      await app.object.setFlag(isometricModuleConfig.MODULE_ID, "tokenFlipped", true);
     } else {
-      await app.object.unsetFlag(MODULE_ID, "tokenFlipped");
+      await app.object.unsetFlag(isometricModuleConfig.MODULE_ID, "tokenFlipped");
     }
 
     if (html.querySelector('input[name="flags.isometric-perspective.OccludingTile"]').prop("checked")) {
-      await app.object.setFlag(MODULE_ID, "OccludingTile", true);
+      await app.object.setFlag(isometricModuleConfig.MODULE_ID, "OccludingTile", true);
     } else {
-      await app.object.unsetFlag(MODULE_ID, "OccludingTile");
+      await app.object.unsetFlag(isometricModuleConfig.MODULE_ID, "OccludingTile");
     }
 
     // dynamictile.js linked wall logic
@@ -90,9 +90,9 @@ async function handleRenderTileConfig(app, html, data) {
     if (wallIdsValue) {
       // Convertemos a string em array antes de salvar
       const wallIdsArray = wallIdsValue.split(',').map(id => id.trim()).filter(id => id);
-      await app.object.setFlag(MODULE_ID, 'linkedWallIds', wallIdsArray);
+      await app.object.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', wallIdsArray);
     } else {
-      await app.object.setFlag(MODULE_ID, 'linkedWallIds', []);
+      await app.object.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', []);
     }
   });
 
@@ -105,12 +105,12 @@ async function handleRenderTileConfig(app, html, data) {
 
     Hooks.once('controlWall', async (wall) => {
       const selectedWallId = wall.id.toString();
-      const currentWallIds = app.object.getFlag(MODULE_ID, 'linkedWallIds') || [];
+      const currentWallIds = app.object.getFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds') || [];
       
       // Adiciona o novo ID apenas se ele ainda não estiver na lista
       if (!currentWallIds.includes(selectedWallId)) {
         const newWallIds = [...currentWallIds, selectedWallId];
-        await app.object.setFlag(MODULE_ID, 'linkedWallIds', newWallIds);
+        await app.object.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', newWallIds);
         html.querySelector('input[name="flags.isometric-perspective.linkedWallIds"]').val(newWallIds.join(', '));
       }
 
@@ -128,7 +128,7 @@ async function handleRenderTileConfig(app, html, data) {
   });
 
   html.querySelector('button.clear-wall').click(async () => {
-    await app.object.setFlag(MODULE_ID, 'linkedWallIds', []);
+    await app.object.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', []);
     html.querySelector('input[name="flags.isometric-perspective.linkedWallIds"]').val('');
 
     // Keep the tab selected
@@ -149,7 +149,7 @@ function handleCreateTile(tileDocument) {
   if (!tile) return;
   
   const scene = tile.scene;
-  const isSceneIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
+  const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   requestAnimationFrame(() => applyIsometricTransformation(tile, isSceneIsometric));
 }
 
@@ -159,7 +159,7 @@ function handleUpdateTile(tileDocument, updateData, options, userId) {
   if (!tile) return;
   
   const scene = tile.scene;
-  const isSceneIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
+  const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   
   if (updateData.x !== undefined ||
       updateData.y !== undefined ||
@@ -173,7 +173,7 @@ function handleUpdateTile(tileDocument, updateData, options, userId) {
 // Hooks.on("refreshTile")
 function handleRefreshTile(tile) {
   const scene = tile.scene;
-  const isSceneIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
+  const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   applyIsometricTransformation(tile, isSceneIsometric);
 }
 

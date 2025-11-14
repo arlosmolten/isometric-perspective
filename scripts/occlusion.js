@@ -1,8 +1,8 @@
-import { MODULE_ID, DEBUG_PRINT } from './main.js';
+import { isometricModuleConfig } from './consts.js';
 
 // Enhanced Occlusion Layer Module for Foundry VTT
 export function registerOcclusionConfig() {
-	const occlusionMode = game.settings.get(MODULE_ID, "enableOcclusionTokenSilhouette");
+	const occlusionMode = game.settings.get(isometricModuleConfig.MODULE_ID, "enableOcclusionTokenSilhouette");
 	if (occlusionMode === "off") return;
 
 	// Global Hook Registration
@@ -125,7 +125,7 @@ function updateOcclusionLayer() {
 
 	// Filtra apenas tiles com a flag OccludingTile
 	const occludingTiles = tiles.filter(tile => 
-		tile.document.getFlag(MODULE_ID, "OccludingTile")
+		tile.document.getFlag(isometricModuleConfig.MODULE_ID, "OccludingTile")
 	);
 
 	tokens.forEach(token => {
@@ -156,7 +156,7 @@ function updateOcclusionLayer() {
 // 	const tokenBounds = token.mesh.getBounds();
 // 	const tileBounds = tile.mesh.getBounds();
 	
-// 	if (DEBUG_PRINT) {
+// 	if (isometricModuleConfig.DEBUG_PRINT) {
 // 		let DEBUG_INTERSECTION = true;
 // 		debugVisualIntersection(token, tile, DEBUG_INTERSECTION);
 // 	}
@@ -184,7 +184,7 @@ function checkTokenTileIntersection(token, tile) {
 			y: tileBounds.y + (tileBounds.height / 2)
 	};
 
-	if (DEBUG_PRINT) {
+	if (isometricModuleConfig.DEBUG_PRINT) {
 		let DEBUG_INTERSECTION = true;
 		debugVisualIntersection(token, tile, DEBUG_INTERSECTION);
 	}
@@ -297,7 +297,7 @@ function createOcclusionMask(token, intersectingTiles) {
 	// 4+ = light on cpu in zoom out, heavy on cpu on zoom in, really pixelated
 	// 8+ = light on cpu on almost all scenarios, works only with rectangle tiles
 
-	const occlusionMode = game.settings.get(MODULE_ID, "enableOcclusionTokenSilhouette");
+	const occlusionMode = game.settings.get(isometricModuleConfig.MODULE_ID, "enableOcclusionTokenSilhouette");
 	const gpu = occlusionMode === "gpu" ? 1 : 0;
 	const chunkSize = occlusionMode.startsWith("cpu") ? parseInt(occlusionMode.slice(3)) : 2;
 

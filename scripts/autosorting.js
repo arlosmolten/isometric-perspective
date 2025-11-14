@@ -1,8 +1,8 @@
-import { MODULE_ID, DEBUG_PRINT, WORLD_ISO_FLAG } from './const.js';
+import { isometricModuleConfig } from './consts.js';
 
 export function registerSortingConfig() {
-  const isometricWorldEnabled = game.settings.get(MODULE_ID, "worldIsometricFlag");
-  const enableAutoSorting = game.settings.get(MODULE_ID, "enableAutoSorting");
+  const isometricWorldEnabled = game.settings.get(isometricModuleConfig.MODULE_ID, "worldIsometricFlag");
+  const enableAutoSorting = game.settings.get(isometricModuleConfig.MODULE_ID, "enableAutoSorting");
   if (!isometricWorldEnabled || !enableAutoSorting) return;
   if (game.version.startsWith("11")) return; //There isn't a sort method on v11. Needs another way to sort.
 

@@ -1,4 +1,4 @@
-import { MODULE_ID, DEBUG_PRINT, WORLD_ISO_FLAG } from './const.js';
+import { isometricModuleConfig } from './consts.js';
 import { applyIsometricTransformation, updateTokenVisuals } from './transform.js';
 import { cartesianToIso, isoToCartesian } from './utils.js';
 import { ISOMETRIC_CONST } from './consts.js';
@@ -16,13 +16,13 @@ export function registerTokenConfig() {
 async function handleRenderTokenConfig(app, html, data) {
   // Load the HTML template
   const tabHtml = await renderTemplate("modules/isometric-perspective/templates/token-config.html", {
-    isoDisabled: app.object.getFlag(MODULE_ID, 'isoTokenDisabled') ?? 1,
-    offsetX: app.object.getFlag(MODULE_ID, 'offsetX') ?? 0,
-    offsetY: app.object.getFlag(MODULE_ID, 'offsetY') ?? 0,
-    isoAnchorY: app.object.getFlag(MODULE_ID, 'isoAnchorY') ?? 0,
-    isoAnchorX: app.object.getFlag(MODULE_ID, 'isoAnchorX') ?? 0,
-    isoAnchorToggleCheckbox: app.object.getFlag(MODULE_ID, 'isoAnchorToggle') ?? 0,
-    scale: app.object.getFlag(MODULE_ID, 'scale') ?? 1
+    isoDisabled: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'isoTokenDisabled') ?? 1,
+    offsetX: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'offsetX') ?? 0,
+    offsetY: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY') ?? 0,
+    isoAnchorY: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorY') ?? 0,
+    isoAnchorX: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorX') ?? 0,
+    isoAnchorToggleCheckbox: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorToggle') ?? 0,
+    scale: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'scale') ?? 1
   });
   
   // Add a new tab to the menu
@@ -39,9 +39,9 @@ async function handleRenderTokenConfig(app, html, data) {
 
   // Initializes control values
   const isoTokenCheckbox = html.querySelector('input[name="flags.isometric-perspective.isoTokenDisabled"]');
-  isoTokenCheckbox.prop("checked", app.object.getFlag(MODULE_ID, "isoTokenDisabled"));
+  isoTokenCheckbox.prop("checked", app.object.getFlag(isometricModuleConfig.MODULE_ID, "isoTokenDisabled"));
   const isoScaleDisabled = html.querySelector('input[name="flags.isometric-perspective.isoScaleDisabled"]');
-  isoScaleDisabled.prop("checked", app.object.getFlag(MODULE_ID, "isoScaleDisabled"));
+  isoScaleDisabled.prop("checked", app.object.getFlag(isometricModuleConfig.MODULE_ID, "isoScaleDisabled"));
 
   // Add listener to update the shown value from Slider
   html.querySelector('.scale-slider').on('input', function() {
@@ -52,15 +52,15 @@ async function handleRenderTokenConfig(app, html, data) {
   html.querySelector('form').on('submit', async (event) => {
     // If the value of checkbox is true, updates the flags with the new values
     if (isoTokenCheckbox.prop("checked")) {
-      await app.object.setFlag(MODULE_ID, "isoTokenDisabled", true);
+      await app.object.setFlag(isometricModuleConfig.MODULE_ID, "isoTokenDisabled", true);
     } else {
-      await app.object.unsetFlag(MODULE_ID, "isoTokenDisabled");
+      await app.object.unsetFlag(isometricModuleConfig.MODULE_ID, "isoTokenDisabled");
     }
 
     if (isoScaleDisabled.prop("checked")) {
-      await app.object.setFlag(MODULE_ID, "isoScaleDisabled", true);
+      await app.object.setFlag(isometricModuleConfig.MODULE_ID, "isoScaleDisabled", true);
     } else {
-      await app.object.unsetFlag(MODULE_ID, "isoScaleDisabled");
+      await app.object.unsetFlag(isometricModuleConfig.MODULE_ID, "isoScaleDisabled");
     }
   });
 
@@ -93,7 +93,7 @@ async function handleRenderTokenConfig(app, html, data) {
   
   // Initializes control values
   const isoAnchorToggleCheckbox = html.querySelector('input[name="isoAnchorToggle"]');
-  isoAnchorToggleCheckbox.prop("unchecked", app.object.getFlag(MODULE_ID, "isoAnchorToggle") ?? false);
+  isoAnchorToggleCheckbox.prop("unchecked", app.object.getFlag(isometricModuleConfig.MODULE_ID, "isoAnchorToggle") ?? false);
 
   // Function to draw alignment lines
   function drawAlignmentLines(isoAnchor) {
@@ -157,10 +157,10 @@ async function handleRenderTokenConfig(app, html, data) {
 
   
   // Initialize the lines with the current values
-  let isoAnchorX = app.object.getFlag(MODULE_ID, 'isoAnchorX') ?? 0;
-  let isoAnchorY = app.object.getFlag(MODULE_ID, 'isoAnchorY') ?? 0;
-  let offsetX = app.object.getFlag(MODULE_ID, 'offsetX') ?? 0;
-  let offsetY = app.object.getFlag(MODULE_ID, 'offsetY') ?? 0;
+  let isoAnchorX = app.object.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorX') ?? 0;
+  let isoAnchorY = app.object.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorY') ?? 0;
+  let offsetX = app.object.getFlag(isometricModuleConfig.MODULE_ID, 'offsetX') ?? 0;
+  let offsetY = app.object.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY') ?? 0;
   
   // Add the button to reset the token settings
   const toggleButton = document.createElement("button");
@@ -269,7 +269,7 @@ function handleCreateToken(tokenDocument) {
   const token = canvas.tokens.get(tokenDocument.id);
   if (!token) return;
   
-  const isSceneIsometric = token.scene.getFlag(MODULE_ID, "isometricEnabled");
+  const isSceneIsometric = token.scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   applyIsometricTransformation(token, isSceneIsometric);
 }
 
@@ -279,25 +279,25 @@ function handleUpdateToken(tokenDocument, updateData, options, userId) {
   const token = canvas.tokens.get(tokenDocument.id);
   if (!token) return;
   
-  const isSceneIsometric = token.scene.getFlag(MODULE_ID, "isometricEnabled");
+  const isSceneIsometric = token.scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   applyIsometricTransformation(token, isSceneIsometric);
   
-  /*if (updateData.flags?.[MODULE_ID] ||
+  /*if (updateData.flags?.[isometricModuleConfig.MODULE_ID] ||
       updateData.x !== undefined ||
       updateData.y !== undefined ) {
         applyIsometricTransformation(token, isSceneIsometric);
   }*/
 
-  if (DEBUG_PRINT) console.log("Hooks.on token.js updateToken");
+  if (isometricModuleConfig.DEBUG_PRINT) console.log("Hooks.on token.js updateToken");
 }
 
 
 // Hooks.on("refreshToken")
 function handleRefreshToken(token) {
-  const isSceneIsometric = token.scene.getFlag(MODULE_ID, "isometricEnabled");
+  const isSceneIsometric = token.scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   applyIsometricTransformation(token, isSceneIsometric);
   
-  if (DEBUG_PRINT) console.log("Hooks.on token.js refreshToken");
+  if (isometricModuleConfig.DEBUG_PRINT) console.log("Hooks.on token.js refreshToken");
 }
 
 

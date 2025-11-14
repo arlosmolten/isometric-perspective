@@ -1,20 +1,20 @@
-<section class="tab scrollable {{#if tab.active}} active{{/if}}"data-tab="isometric" data-group="sheet">
+<section class="tab scrollable {{tab.cssClass}}"data-tab="isometric" data-group="sheet">
   {{!-- Tab content here --}}
   <div class="isometric-config-tab-content">
     <section>
         <!-- Enable Isometric -->
-        <div class="form-group">
+        <div class="form-group inline slim">
             <label>{{localize 'isometric-perspective.scene_enableIsometric'}}</label>
             <div class="form-fields">
-                <input type="checkbox" name="flags.isometric-perspective.isometricEnabled"/>
+                <input type="checkbox" name="flags.isometric-perspective.isometricEnabled" {{checked document.flags.isometric-perspective.isometricEnabled}}"/>
             </div>
         </div>
 
         <!-- Transform Background -->
-        <div class="form-group">
+        <div class="form-group inline slim">
             <label>{{localize 'isometric-perspective.scene_transform_name'}}</label>
             <div class="form-fields">
-                <input type="checkbox" name="flags.isometric-perspective.isometricBackground"/>
+                <input type="checkbox" name="flags.isometric-perspective.isometricBackground" {{checked document.flags.isometric-perspective.isometricBackground}}/>
             </div>
             <p class="notes">{{localize 'isometric-perspective.scene_transform_hint'}}</p>
         </div>
@@ -22,11 +22,16 @@
         <hr>
 
         <!-- Scale Control -->
-        <div class="form-group">
+        <div class="form-group inline slim">
             <label>{{localize 'isometric-perspective.scene_scale_name'}}</label>
             <div class="form-fields">
-                <input type="range" name="flags.isometric-perspective.isometricScale" 
-                       min="0.5" max="3" step="0.1" value="1"/>
+                <input 
+                    type="range" 
+                    name="flags.isometric-perspective.isometricScale" 
+                    min="0.5" 
+                    max="3" 
+                    step="0.1" 
+                    value="{{document.flags.isometric-perspective.isometricScale}}"/>
                 <span class="range-value">1</span>
             </div>
             <p class="notes">{{localize 'isometric-perspective.scene_scale_hint_1'}} <i class="fas fa-ruler"></i> {{localize 'isometric-perspective.scene_scale_hint_2'}}</p>
@@ -34,7 +39,7 @@
     </section>
 
     <!-- Projection Type Dropdown -->
-    <div class="form-group">
+    <div class="form-group inline slim">
         <label>{{localize 'isometric-perspective.scene_dropdown_name'}}</label>
         <div class="form-fields">
         <select name="flags.isometric-perspective.projectionType">
@@ -46,7 +51,7 @@
         <p class="notes">{{localize 'isometric-perspective.scene_dropdown_hint'}}</p>          
     </div>
 
-    <div class="form-group">
+    <div class="form-group inline slim">
         <label>{{localize 'isometric-perspective.custom_projection_name'}}</label>
         <div class="form-fields">
             <input 

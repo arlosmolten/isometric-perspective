@@ -150,15 +150,12 @@ export function parseCustomProjection(customInput) {
 }
 
 // ---------- GLOBAL CONFIG CONSTANTS ----------
-const MODULE_ID = "isometric-perspective";
-const DEBUG_PRINT = false;
-const WORLD_ISO_FLAG = null;
-const FOUNDRY_VERSION = null;
-
-export { MODULE_ID };
-export { DEBUG_PRINT };
-export { WORLD_ISO_FLAG };
-export { FOUNDRY_VERSION };
+export const isometricModuleConfig = {
+  MODULE_ID:"isometric-perspective",
+  DEBUG_PRINT:false,
+  WORLD_ISO_FLAG:false,
+  FOUNDRY_VERSION:0
+}
 
 /*
 // values in degrees
