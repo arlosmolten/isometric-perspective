@@ -4,16 +4,16 @@
     <section>
         <!-- Enable Isometric -->
         <div class="form-group inline slim">
-            <label>{{localize 'isometric-perspective.scene_enableIsometric'}}</label>
             <div class="form-fields">
-                <input type="checkbox" name="flags.isometric-perspective.isometricEnabled" {{checked document.flags.isometric-perspective.isometricEnabled}}/>
+                <label for="isometric-perspective-{{document.id}}">{{localize 'isometric-perspective.scene_enableIsometric'}}</label>
+                <input id="isometric-perspective-{{document.id}}" type="checkbox" name="flags.isometric-perspective.isometricEnabled" {{checked document.flags.isometric-perspective.isometricEnabled}}/>
             </div>
         </div>
 
         <!-- Transform Background -->
         <div class="form-group inline slim">
-            <label>{{localize 'isometric-perspective.scene_transform_name'}}</label>
             <div class="form-fields">
+                <label>{{localize 'isometric-perspective.scene_transform_name'}}</label>
                 <input type="checkbox" name="flags.isometric-perspective.isometricBackground" {{checked document.flags.isometric-perspective.isometricBackground}}/>
             </div>
             <p class="notes">{{localize 'isometric-perspective.scene_transform_hint'}}</p>
@@ -37,6 +37,8 @@
             <p class="notes">{{localize 'isometric-perspective.scene_scale_hint_1'}} <i class="fas fa-ruler"></i> {{localize 'isometric-perspective.scene_scale_hint_2'}}</p>
         </div>
     </section>
+
+    {{log this.projectionTypes}}
 
     <!-- Projection Type Dropdown -->
     <div class="form-group inline slim">

@@ -16,17 +16,8 @@ export function configureIsometricTab(app, html, context, options){
   const FoundrySceneConfig = foundry.applications.sheets.SceneConfig;
   const DefaultSceneConfig = Object.values(CONFIG.Scene.sheetClasses.base).find((d) => d.default)?.cls;
   const SceneConfig = DefaultSceneConfig?.prototype instanceof FoundrySceneConfig ? DefaultSceneConfig : FoundrySceneConfig;
-
-    // console.log("SCENE CONFIG ", sceneConfig.object?.getFlag(isometricModuleConfig.MODULE_ID, 'projectionType'))
-
-  const currentProjection = sceneConfig.object?.getFlag(isometricModuleConfig.MODULE_ID, 'projectionType') ?? DEFAULT_PROJECTION;
-  console.log("currentProjection",currentProjection);
-  
-  // Prepare data for the template // bug here
-  // const templateData = {
-  //     projectionTypes: [...Object.keys(PROJECTION_TYPES)],
-  //     currentProjection: currentProjection
-  // };
+  const projectionTypes =  [...Object.keys(PROJECTION_TYPES)];
+  const currentProjection = SceneConfig.object?.getFlag(isometricModuleConfig.MODULE_ID, 'projectionType') ?? DEFAULT_PROJECTION;
   
   // Adding the isometric tab data to the scene config parts
   SceneConfig.TABS.sheet.tabs.push({ id: tabId, group: tabGroup, label , icon: icon }); 
@@ -35,11 +26,43 @@ export function configureIsometricTab(app, html, context, options){
   SceneConfig.PARTS.isometric = {template: isoTemplatePath};
 
   //Adding the form actions
-  SceneConfig.DEFAULT_OPTIONS.actions
+  SceneConfig.DEFAULT_OPTIONS.tag = "form"; //TODO: not sure if its the right way to do this but i cant find an equivalent example in world-explorer i think they didnt needed to modify that.
+  SceneConfig.DEFAULT_OPTIONS.form = {
+    // handler:
+    submitOnChange: false,
+    closeOnSubmit: true
+  }
   
   const footerPart = SceneConfig.PARTS.footer;
   delete SceneConfig.PARTS.footer;
   SceneConfig.PARTS.footer = footerPart;
+
+  console.log("projectionTypes", projectionTypes); //TODO: need to figure out where to properly place the projection types flag
+
+  // Override part context to include the isometric-perspective config data
+  const defaultRenderPartContext = SceneConfig.prototype._preparePartContext;
+  SceneConfig.prototype._preparePartContext = async function(partId, context, options) {
+    if (partId === "isometric") {
+      const flags = this.document.flags[isometricModuleConfig.MODULE_ID] ?? null;
+      return {
+        ...(flags ?? {}),
+        projectionTypes: projectionTypes,
+        document: this.document,
+        tab: context.tabs[partId],
+      },
+      currentProjection
+    }
+    return defaultRenderPartContext.call(this, partId, context, options);
+  }
+
+  //TODO: need to also adjust the tempalte so they can read and get their values from the right flags in the .hbs template
+  console.log("SceneConfig", SceneConfig.DEFAULT_OPTIONS);  
+
+  // // Override onChangeForm to include isometric-perspective //TODO: need toalso figure out how that works 
+  // const default_onChangeForm = SceneConfig.prototype._onChangeForm;
+  // SceneConfig.prototype._onChangeForm = function(formConfig, event) {
+  //    const formElements = this.form.elements;
+  // }
 
   /*
   const isoCheckbox = html.querySelector('input[name="flags.isometric-perspective.isometricEnabled"]');
