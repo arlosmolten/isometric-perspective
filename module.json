@@ -2,7 +2,7 @@
   "title": "Isometric Perspective",
   "id": "isometric-perspective",
   "description": "Changes the canvas perspective from top-down to isometric.",
-  "version": "0.7.6",
+  "version": "2.0.0",
   "esmodules": [
     "scripts/main.js"
   ],
@@ -13,8 +13,8 @@
     }
   ],
   "compatibility": {
-    "minimum": "11",
-    "verified": "12"
+    "minimum": "13",
+    "verified": "13"
   },
   "url": "https://github.com/arlosmolten/isometric-perspective",
   "manifest": "https://github.com/arlosmolten/isometric-perspective/releases/latest/download/module.json",

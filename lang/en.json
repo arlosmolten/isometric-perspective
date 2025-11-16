@@ -1,5 +1,5 @@
 {
-    "isometric-perspective._comment": "Game Settings: Configure Settings",
+    "isometric-perspective._comment.settings": "Game Settings: Configure Settings",
     "isometric-perspective.settings_main_name": "Enable Isometric Perspective",
     "isometric-perspective.settings_main_hint": "Toggle whether the isometric perspective is applied to the canvas.",
     "isometric-perspective.settings_height_name": "Enable Height Adjustment",
@@ -9,24 +9,25 @@
     "isometric-perspective.settings_dynamic_tile_name": "Enable Dynamic Tile Occlusion",
     "isometric-perspective.settings_dynamic_tile_hint": "(BETA FEATURE. USE WITH CAUTION) Adjusts the visibility of tiles dynamically with the positioning of tokens. See how this feature works here.",
     "isometric-perspective.settings_token_sort_name": "Enable Automatic Token Sorting",
-    "isometric-perspective.settings_token_sort_hint": "(BETA FEATURE. USE WITH CAUTION. V12+ ONLY) Automatically adjusts the tokens sort property value when moving it around the canvas.",
+    "isometric-perspective.settings_token_sort_hint": "(BETA FEATURE. USE WITH CAUTION. V13+ ONLY) Automatically adjusts the tokens sort property value when moving it around the canvas.",
     "isometric-perspective.settings_token_silhouette_name": "Enable Occlusion: Token Silhouette",
     "isometric-perspective.settings_token_silhouette_hint": "(BETA FEATURE WITH PERFORMANCE ISSUES. USE SPARENTLY) Creates a shadow effect on the token when behind a tile. GPU mode isn't working properly, but it is lightning fast. CPU is always heavy in processing, but a higher chunk option is faster trading quality fidelity. 'Chunk Size = 2' is the probably the better mode.",
     "isometric-perspective.settings_welcome_name": "Show Welcome Screen",
     "isometric-perspective.settings_welcome_hint": "Displays a window with module information when starting Foundry VTT.",
+    "isometric-perspective.welcome_close_name": "Close",
     "isometric-perspective.settings_debug_name": "Enable Debug Mode",
     "isometric-perspective.settings_debug_hint": "Enables debug prints and drawings.",
 
-    "isometric-perspective._comment": "Game Settings: Configure Controls",
+    "isometric-perspective._comment.controls": "Game Settings: Configure Controls",
     "isometric-perspective.keybindings_increase_tile_opacity": "Increase Tile Opacity",
     "isometric-perspective.keybindings_increase_tile_opacity_hint": "Increases the opacity of always visible tiles linked with walls.",
     "isometric-perspective.keybindings_decrease_tile_opacity": "Decrease Tile Opacity",
     "isometric-perspective.keybindings_decrease_tile_opacity_hint": "Decreases the opacity of always visible tiles linked with walls.",
 
-    "isometric-perspective._comment": "Configuration Tab Name",
+    "isometric-perspective._comment.tab": "Configuration Tab Name",
     "isometric-perspective.tab_isometric_name": "Isometric",
 
-    "isometric-perspective._comment": "Scene Configuration",
+    "isometric-perspective._comment.scene": "Scene Configuration",
     "isometric-perspective.scene_enableIsometric": "Enable Isometric for this Scene",
     "isometric-perspective.scene_transform_name": "Transform Background Image",
     "isometric-perspective.scene_transform_hint": "Apply isometric transformation to the background image.",
@@ -37,8 +38,18 @@
     "isometric-perspective.scene_dropdown_hint": "Choose an isometric projection type for this scene.",
     "isometric-perspective.custom_projection_name": "Custom Isometric Values",
     "isometric-perspective.custom_projection_hint": "Enter the values of a custom isometric projection obtained from the app website.",
+    "isometric-perspective.presets_select": "Select a preset",
+    "isometric-perspective.presets_apply": "Apply",
+    "isometric-perspective.presets_save": "Save Current",
+    "isometric-perspective.presets_delete": "Delete",
+    "isometric-perspective.presets_namePlaceholder": "Preset Name",
+    "isometric-perspective.presets_help": "Save and reapply isometric configurations quickly across scenes.",
+    "isometric-perspective.presets_nameRequired": "Please enter a name before saving a preset.",
+    "isometric-perspective.presets_saved": "Saved preset \"{name}\".",
+    "isometric-perspective.presets_deleted": "Preset deleted.",
+    "isometric-perspective.presets_notFound": "Preset not found.",
 
-    "isometric-perspective._comment": "Token Configuration",
+    "isometric-perspective._comment.token": "Token Configuration",
     "isometric-perspective.token_enableIsometric_name": "Disable Isometric Token",
     "isometric-perspective.token_enableIsometric_hint": "Disable isometric transformation on this token.",
     "isometric-perspective.token_artOffset_name": "Art Offset",
@@ -54,7 +65,7 @@
     "isometric-perspective.token_disableScale_name": "Disable Isometric Auto-Scale",
     "isometric-perspective.token_disableScale_hint": "If checked, this token will not auto-resize his art when its dimensions change.",
 
-    "isometric-perspective._comment": "Tile Configuration",
+    "isometric-perspective._comment.tile": "Tile Configuration",
     "isometric-perspective.tile_enableIsometric_name": "Disable Isometric Tile",
     "isometric-perspective.tile_enableIsometric_hint": "Disable isometric transformation on this tile.",
     "isometric-perspective.tile_artOffset_name": "Art Offset",
@@ -71,6 +82,6 @@
     "isometric-perspective.tile_link_wall_clear_wall": "Clear Wall",
     "isometric-perspective.tile_link_wall_hint": "Click the button to select a wall. This wall will be used to determine the tile's visibility with a selected token.",
     
-    "isometric-perspective._comment": "Warnings and Error Messages",
+    "isometric-perspective._comment.warnings": "Warnings and Error Messages",
     "isometric-perspective.error_test": "Test error message"
 }

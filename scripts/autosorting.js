@@ -1,10 +1,10 @@
-import { MODULE_ID, DEBUG_PRINT, WORLD_ISO_FLAG } from './main.js';
+import { MODULE_ID, isDebugEnabled, isWorldIsometricEnabled, getFoundryVersion } from './config.js';
 
 export function registerSortingConfig() {
-  const isometricWorldEnabled = game.settings.get(MODULE_ID, "worldIsometricFlag");
+  const isometricWorldEnabled = isWorldIsometricEnabled();
   const enableAutoSorting = game.settings.get(MODULE_ID, "enableAutoSorting");
   if (!isometricWorldEnabled || !enableAutoSorting) return;
-  if (game.version.startsWith("11")) return; //There isn't a sort method on v11. Needs another way to sort.
+  // The Jetpack includes token sorting APIs on v13+; v13 supports the same changes.
 
   Hooks.on('createToken', async (tokenDocument, options, userId) => {
     // If the movement is from the current user

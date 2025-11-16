@@ -1,9 +1,12 @@
-<!-- Isometric Tile Configuration.html -->
-<div class="tab" data-tab="isometric">
+<!-- Isometric Tile Configuration -->
+<section class="isometric-form tile-isometric">
   <div class="form-group">
     <label>{{localize 'isometric-perspective.tile_enableIsometric_name'}}</label>
     <div class="form-fields">
-        <input type="checkbox" name="flags.isometric-perspective.isoTileDisabled" {{#if isoTileDisabled}}checked{{/if}}>
+      <input type="checkbox"
+             name="flags.isometric-perspective.isoTileDisabled"
+             title="Disable isometric transform on this tile"
+             {{#if isoTileDisabled}}checked{{/if}}>
     </div>
     <p class="notes">{{localize 'isometric-perspective.tile_enableIsometric_hint'}}</p>
   </div>
@@ -14,13 +17,17 @@
     <label>{{localize 'isometric-perspective.tile_artOffset_name'}}</label>
     <div class="form-fields">
       <label class="axisX">X</label>
-      <input type="number" name="flags.isometric-perspective.offsetY" 
+      <input type="number"
+             name="flags.isometric-perspective.offsetY"
+             title="Offset Y in pixels"
              value="{{offsetY}}"
-             step="1" />
+             step="1">
       <button class="fine-adjust" title="Hold and drag to fine-tune X and Y">✥</button>
-      <input type="number" name="flags.isometric-perspective.offsetX"
+      <input type="number"
+             name="flags.isometric-perspective.offsetX"
+             title="Offset X in pixels"
              value="{{offsetX}}"
-             step="1" />
+             step="1">
       <label class="axisY">Y</label>
     </div>
     <p class="notes">{{localize 'isometric-perspective.tile_artOffset_hint'}}</p>
@@ -29,10 +36,12 @@
   <div class="form-group">
     <label>{{localize 'isometric-perspective.tile_scale_name'}}</label>
     <div class="form-fields">
-      <input type="range" name="flags.isometric-perspective.scale"
+      <input type="range"
+             name="flags.isometric-perspective.scale"
+             title="Tile isometric scale"
              value="{{scale}}"
              min="0.01" max="3" step="0.01"
-             class="scale-slider" />
+             class="scale-slider">
       <span class="range-value">{{scale}}</span>
     </div>
     <p class="notes">{{localize 'isometric-perspective.tile_scale_hint'}}</p>
@@ -41,7 +50,10 @@
   <div class="form-group">
     <label>{{localize 'isometric-perspective.tile_flip_name'}}</label>
     <div class="form-fields">
-        <input type="checkbox" name="flags.isometric-perspective.tokenFlipped" {{#if isFlipped}}checked{{/if}}>
+      <input type="checkbox"
+             name="flags.isometric-perspective.tokenFlipped"
+             title="Flip tile horizontally"
+             {{#if isFlipped}}checked{{/if}}>
     </div>
     <p class="notes">{{localize 'isometric-perspective.tile_flip_hint'}}</p>
   </div>
@@ -49,7 +61,10 @@
   <div class="form-group">
     <label>{{localize 'isometric-perspective.tile_occluding_name'}}</label>
     <div class="form-fields">
-      <input type="checkbox" name="flags.isometric-perspective.OccludingTile" {{#if isOccluding}}checked{{/if}}>
+      <input type="checkbox"
+             name="flags.isometric-perspective.OccludingTile"
+             title="Occluding tokens behind this tile"
+             {{#if isOccluding}}checked{{/if}}>
     </div>
     <p class="notes">{{localize 'isometric-perspective.tile_occluding_hint'}}</p>
   </div>
@@ -58,16 +73,38 @@
 
   <div class="form-group">
     <label>{{localize 'isometric-perspective.tile_link_wall_name'}}</label>
-    <input type="text" name="flags.isometric-perspective.linkedWallIds" value="{{linkedWallIds}}" readonly>
+    <input type="text"
+           name="flags.isometric-perspective.linkedWallIds"
+           value="{{linkedWallIds}}"
+           title="Wall IDs linked to this tile"
+           readonly>
   </div>
-  
+
   <div class="form-group">
-    <button type="button" class="select-wall"><i class="fas fa-plug"></i> {{localize 'isometric-perspective.tile_link_wall_select_wall'}}</button>
-    <button type="button" class="clear-wall"><i class="fa-solid fa-burst"></i> {{localize 'isometric-perspective.tile_link_wall_clear_wall'}}</button>
+    <button type="button" class="select-wall">
+      <i class="fas fa-plug"></i> {{localize 'isometric-perspective.tile_link_wall_select_wall'}}
+    </button>
+    <button type="button" class="clear-wall">
+      <i class="fa-solid fa-burst"></i> {{localize 'isometric-perspective.tile_link_wall_clear_wall'}}
+    </button>
     <p class="notes">{{localize 'isometric-perspective.tile_link_wall_hint'}}</p>
   </div>
 
   <style>
+    .offset-point .form-fields {
+      display: flex;
+      gap: 0.5em;
+    }
+    .offset-point .axisX,
+    .offset-point .axisY {
+      flex: 0 0 60px;
+      line-height: var(--form-field-height);
+      text-align: center;
+      color: var(--color-text-dark-secondary);
+    }
+    .offset-point input {
+      flex: 1;
+    }
     .scale-slider {
       flex: 4;
     }
@@ -77,4 +114,4 @@
       line-height: var(--form-field-height);
     }
   </style>
-</div>
+</section>

@@ -1,134 +1,55 @@
-import { MODULE_ID, DEBUG_PRINT, WORLD_ISO_FLAG } from './main.js';
+import { MODULE_ID, logDebug, logError } from './config.js';
 import { applyIsometricPerspective, applyBackgroundTransformation } from './transform.js';
-import { updateIsometricConstants, parseCustomProjection, updateCustomProjection, PROJECTION_TYPES, DEFAULT_PROJECTION, CUSTOM_PROJECTION } from './consts.js';
+import { updateIsometricConstants, parseCustomProjection, updateCustomProjection, DEFAULT_PROJECTION } from './consts.js';
+import { SceneIsoSettings } from './apps/scene-iso-app.js';
 
 export function registerSceneConfig() {
-  Hooks.on("renderSceneConfig", handleRenderSceneConfig);
+  Hooks.on('renderSceneConfig', addSceneIsoButton);
   Hooks.on("updateScene", handleUpdateScene);
   Hooks.on("canvasReady", handleCanvasReady);
   Hooks.on("canvasResize", handleCanvasResize); 
 }
 
-async function handleRenderSceneConfig(sceneConfig, html, data) {
-  // Get current projection type or default
-  const currentProjection = sceneConfig.object.getFlag(MODULE_ID, 'projectionType') ?? DEFAULT_PROJECTION;
-  
-  // Prepare data for the template
-  const templateData = {
-    projectionTypes: [...Object.keys(PROJECTION_TYPES)],
-    currentProjection: currentProjection
-  };
-  
-  // Render the template HTML
-  const tabHtml = await renderTemplate("modules/isometric-perspective/templates/scene-config.html", templateData);
+function addSceneIsoButton(sceneConfig, html) {
+  const $html = html.jquery ? html : $(html);
+  if ($html.find('button.iso-scene-config-open').length) return;
 
-  // Add the button and tab content after the last tab
-  html.find('nav.sheet-tabs:not(.secondary-tabs)').append(`<a class="item" data-tab="isometric"><i class="fas fa-cube"></i> ${game.i18n.localize('isometric-perspective.tab_isometric_name')}</a>`);
-  html.find('div.tab[data-tab="ambience"]').after(tabHtml);
+  const titleSelectors = [
+    '.window-header .window-title',
+    '.window-header .app-title',
+    '.window-header h1'
+  ];
 
-  // Initialize control values
-  const isoCheckbox = html.find('input[name="flags.isometric-perspective.isometricEnabled"]');
-  const bgCheckbox = html.find('input[name="flags.isometric-perspective.isometricBackground"]');
-  const scaleSlider = html.find('input[name="flags.isometric-perspective.isometricScale"]');
-  const scaleDisplay = html.find('.range-value');
-  let projectionSelect = html.find('select[name="flags.isometric-perspective.projectionType"]');
-  let customProjectionInput = html.find('input[name="flags.isometric-perspective.customProjection"]');
-  
-  // Set initial values
-  isoCheckbox.prop("checked", sceneConfig.object.getFlag(MODULE_ID, "isometricEnabled"));
-  bgCheckbox.prop("checked", sceneConfig.object.getFlag(MODULE_ID, "isometricBackground"));
-  
-  // Initialize slider value
-  const currentScale = sceneConfig.object.getFlag(MODULE_ID, "isometricScale") ?? 1;
-  scaleSlider.val(currentScale);
-  scaleDisplay.text(currentScale);
-
-  // Add slider value update listener
-  scaleSlider.on('input', function() {
-    scaleDisplay.text(this.value);
-  });
-
-  // Custom projection type handling
-  projectionSelect.on('change', function() {
-    const isCustom = $(this).val() === 'Custom Projection';
-    customProjectionInput.prop('disabled', !isCustom);
-    
-    // Set initial custom projection input if available
-    if (isCustom) {
-      const currentCustom = sceneConfig.object.getFlag(MODULE_ID, "customProjection");
-      customProjectionInput.val(currentCustom || '0, 0, 0, 0, 0, 0, 0, 0');
+  let titleArea = $();
+  for (const selector of titleSelectors) {
+    const match = $html.find(selector);
+    if (match.length) {
+      titleArea = match.last();
+      break;
     }
-  });
+  }
 
-  // Trigger initial state
-  projectionSelect.trigger('change');
+  const header = $html.find('.window-header');
+  if (!header.length) return;
 
-  // Adiciona listener para atualizar o valor exibido do slider
-  /*html.find('input[name="flags.isometric-perspective.isometricScale"]').on('input', function() {
-    html.find('.range-value').text(this.value);
-  });
-
-  // Handler for the dropdown change event
-  html.find('select[name="scene_dropdown"]').on('change', function() {
-    updateIsometricConstants(this.value);
-  });*/
-
-  // Handler for the form submission
-  html.find('form').on('submit', async (event) => {
-    // Coleta os valores atuais dos controles
-    let newIsometric = isoCheckbox.prop("checked");
-    let newBackground = bgCheckbox.prop("checked");
-    let newScale = parseFloat(scaleSlider.val());
-    let newProjection = html.find('select[name="flags.isometric-perspective.projectionType"]').val();
-    
-    // If custom projection is selected, validate and set the custom values
-    if (newProjection === 'Custom Projection') {
-      try {
-        let customInput = customProjectionInput.val();
-        let parsedCustom = parseCustomProjection(customInput);
-        
-        // Set the custom projection values
-        updateCustomProjection(parsedCustom);
-        
-        // Save the custom input string to scene flags
-        await sceneConfig.object.setFlag(MODULE_ID, "customProjection", customInput);
-      } catch (error) {
-        ui.notifications.error(error.message);
-        event.preventDefault();
-        return;
-      }
+  const label = game.i18n.localize('isometric-perspective.tab_isometric_name');
+  const button = $(`<button type="button" class="iso-scene-config-open header-control" title="${label}"><span>${label}</span></button>`);
+  if (titleArea.length) {
+    titleArea.after(button);
+  } else {
+    const firstControl = header.find('.header-control').first();
+    if (firstControl.length) {
+      button.insertBefore(firstControl);
+    } else {
+      header.append(button);
     }
-    
-    // Atualiza as flags com os novos valores
-    await sceneConfig.object.setFlag(MODULE_ID, "isometricEnabled", newIsometric);
-    await sceneConfig.object.setFlag(MODULE_ID, "isometricBackground", newBackground);
-    await sceneConfig.object.setFlag(MODULE_ID, "isometricScale", newScale);
-    await sceneConfig.object.setFlag(MODULE_ID, "projectionType", newProjection);
+  }
 
-    // Se a cena sendo editada for a atual, aplica as transformações
-    if (canvas.scene.id === sceneConfig.object.id) {
-      requestAnimationFrame(() => {
-        updateIsometricConstants(newProjection);
-        applyIsometricPerspective(sceneConfig.object, newIsometric);
-        applyBackgroundTransformation(sceneConfig.object, newIsometric, newBackground);
-        canvas.draw(); // Redraw the scene
-      });
-    }
-
-    //requestAnimationFrame(() => {
-      //await canvas.draw();
-      //console.log("teste");
-      //await canvas.background.refresh();
-    //});
+  button.on('click', () => {
+    const isoApp = new SceneIsoSettings(sceneConfig.object);
+    isoApp.render(true);
   });
-
-  /*// Re-inicializa as tabs
-  sceneConfig.options.tabs[0].active = "isometric";
-  const tabs = sceneConfig._tabs[0];
-  tabs.bind(html[0]);
-  */
 }
-
 
 
 // Hooks.on("updateScene")
@@ -141,6 +62,7 @@ function handleUpdateScene(scene, changes) {
     changes.background?.offsetY !== undefined ||
     changes.flags?.[MODULE_ID]?.isometricEnabled !== undefined ||
     changes.flags?.[MODULE_ID]?.isometricBackground !== undefined ||
+  changes.flags?.[MODULE_ID]?.customProjection !== undefined ||
     changes.flags?.[MODULE_ID]?.projectionType !== undefined ||
     changes.grid !== undefined ||
     changes.gridType !== undefined ||
@@ -158,7 +80,7 @@ function handleUpdateScene(scene, changes) {
           const parsedCustom = parseCustomProjection(customProjectionValue);
           updateCustomProjection(parsedCustom);
         } catch (error) {
-          console.error("Error parsing custom projection:", error);
+          logError("Error parsing custom projection:", error);
         }
       }
     }
@@ -194,7 +116,7 @@ async function handleCanvasReady(canvas) {
         const parsedCustom = parseCustomProjection(customProjectionValue);
         updateCustomProjection(parsedCustom);
       } catch (error) {
-        console.error("Error parsing custom projection:", error);
+        logError("Error parsing custom projection:", error);
       }
     }
   }
@@ -204,7 +126,7 @@ async function handleCanvasReady(canvas) {
   applyBackgroundTransformation(scene, isSceneIsometric, shouldTransformBackground);
   
   // debug print
-  if (DEBUG_PRINT) console.log("Hooks.on canvasReady");
+  logDebug("Hooks.on canvasReady");
 }
 
 
@@ -223,69 +145,5 @@ function handleCanvasResize(canvas) {
   }
   
   // debug print
-  if (DEBUG_PRINT) console.log("Hooks.on canvasResize");
+  logDebug("Hooks.on canvasResize");
 }
-
-/*
-Hooks.on("renderGridConfig", (app, html, data) => {
-  const scene = app.object;
-  if (!scene) return;
-  
-  const isIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
-  const shouldTransformBackground = scene.getFlag(MODULE_ID, "isometricBackground") ?? false;
-  
-  // Re-apply transformations when grid config is rendered
-  if (isIsometric) {
-    requestAnimationFrame(() => {
-      applyIsometricPerspective(scene, isIsometric);
-      applyBackgroundTransformation(scene, isIsometric, shouldTransformBackground);
-    });
-  }
-  
-  // Add listener for when grid config tool is being used
-  html.find('.grid-config').on('change', () => {
-    if (isIsometric) {
-      requestAnimationFrame(() => {
-        applyIsometricPerspective(scene, isIsometric);
-        applyBackgroundTransformation(scene, isIsometric, shouldTransformBackground);
-      });
-    }
-  });
-});
-
-
-// Aplica a perspectiva isométrica quando a cena termina de ser renderizada
-Hooks.on("gridConfigUpdate", (event) => {
-  const scene = canvas.scene;
-  if (!scene) return;
-  
-  const isIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
-  const shouldTransformBackground = scene.getFlag(MODULE_ID, "isometricBackground") ?? false;
-  
-  // Re-apply isometric transformations after grid update
-  if (isIsometric) {
-    requestAnimationFrame(() => {
-      applyIsometricPerspective(scene, isIsometric);
-      applyBackgroundTransformation(scene, isIsometric, shouldTransformBackground);
-    });
-  }
-});
-
-
-
-Hooks.on("closeGridConfig", (app) => {
-  const scene = app.object;
-  if (!scene) return;
-  
-  const isIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
-  const isometricWorldEnabled = game.settings.get(MODULE_ID, "worldIsometricFlag");
-  const shouldTransformBackground = scene.getFlag(MODULE_ID, "isometricBackground") ?? false;
-  
-  if (isometricWorldEnabled && isIsometric) {
-    requestAnimationFrame(() => {
-      applyIsometricPerspective(scene, isIsometric);
-      applyBackgroundTransformation(scene, isIsometric, shouldTransformBackground);
-    });
-  }
-});
-*/

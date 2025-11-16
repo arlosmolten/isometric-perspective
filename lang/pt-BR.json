@@ -1,5 +1,5 @@
 {
-    "isometric-perspective._comment": "Configurações do Jogo: Configurar Configurações",
+    "isometric-perspective._comment.settings": "Configurações do Jogo: Configurar Configurações",
     "isometric-perspective.settings_main_name": "Habilitar Perspectiva Isométrica",
     "isometric-perspective.settings_main_hint": "Ativa ou desativa a perspectiva isométrica no canvas.",
     "isometric-perspective.settings_height_name": "Habilitar Ajuste de Altura",
@@ -9,24 +9,25 @@
     "isometric-perspective.settings_dynamic_tile_name": "Ativar Oclusão: Tile Dinâmico",
     "isometric-perspective.settings_dynamic_tile_hint": "(RECURSO EM TESTES. USE COM CUIDADO) Ajusta a visibilidade dos tiles dinamicamente com a posição dos tokens. Veja como esta funcionalidade funciona aqui.",
     "isometric-perspective.settings_token_sort_name": "Habilitar Ordenação Automática de Tokens",
-    "isometric-perspective.settings_token_sort_hint": "(RECURSO EM TESTES. USE COM CUIDADO. SOMENTE PARA V12+) Ajusta automaticamente o valor de ordenação dos tokens ao movê-los pelo canvas.",
+    "isometric-perspective.settings_token_sort_hint": "(RECURSO EM TESTES. USE COM CUIDADO. SOMENTE PARA V13+) Ajusta automaticamente o valor de ordenação dos tokens ao movê-los pelo canvas.",
     "isometric-perspective.settings_token_silhouette_name": "Habilitar Oclusão: Silhueta de Token",
     "isometric-perspective.settings_token_silhouette_hint": "(RECURSO EM TESTES COM PROBLEMAS DE PERFORMANCE. USE DE FORMA LEVE) Cria um efeito de sombra sobre o token que estiver por trás de um tile. GPU não está funcionando corretamente, mas é super rápido. CPU é sempre pesado no processamento, mas é possível diminuir o impacto escolhendo um valor de chunk maior. 'Chunk Size = 2' é provavelmente a melhor opção.",
     "isometric-perspective.settings_welcome_name": "Mostrar Janela de Boas-Vindas",
     "isometric-perspective.settings_welcome_hint": "Exibe uma janela com informações do módulo ao iniciar o Foundry VTT.",
+    "isometric-perspective.welcome_close_name": "Fechar",
     "isometric-perspective.settings_debug_name": "Habilitar Modo de Depuração",
     "isometric-perspective.settings_debug_hint": "Mostra prints e desenhos de depuração.",
 
-    "isometric-perspective._comment": "Configurações do Jogo: Configurar Controles",
+    "isometric-perspective._comment.controls": "Configurações do Jogo: Configurar Controles",
     "isometric-perspective.keybindings_increase_tile_opacity": "Aumentar Opacidade do Tile",
     "isometric-perspective.keybindings_increase_tile_opacity_hint": "Aumenta a opacidade dos tiles sempre visíveis que estão ligados a paredes.",
     "isometric-perspective.keybindings_decrease_tile_opacity": "Diminuir Opacidade do Tile",
     "isometric-perspective.keybindings_decrease_tile_opacity_hint": "Diminui a opacidade dos tiles sempre visíveis que estão ligados a paredes.",
 
-    "isometric-perspective._comment": "Nome da Aba de Configuração",
+    "isometric-perspective._comment.tab": "Nome da Aba de Configuração",
     "isometric-perspective.tab_isometric_name": "Isométrico",
 
-    "isometric-perspective._comment": "Configuração da Cena",
+    "isometric-perspective._comment.scene": "Configuração da Cena",
     "isometric-perspective.scene_enableIsometric": "Habilitar Isométrico para esta Cena",
     "isometric-perspective.scene_transform_name": "Transformar Imagem de Fundo",
     "isometric-perspective.scene_transform_hint": "Aplica transformação isométrica à imagem de fundo.",
@@ -37,8 +38,18 @@
     "isometric-perspective.scene_dropdown_hint": "Escolha um tipo de projeção isométrica para esta cena.",
     "isometric-perspective.custom_projection_name": "Projeção Isométrica Customizada",
     "isometric-perspective.custom_projection_hint": "Insira os valores da projeção isométrica customizada obtida do website.",
+    "isometric-perspective.presets_select": "Selecionar um preset",
+    "isometric-perspective.presets_apply": "Aplicar",
+    "isometric-perspective.presets_save": "Salvar Atual",
+    "isometric-perspective.presets_delete": "Excluir",
+    "isometric-perspective.presets_namePlaceholder": "Nome do Preset",
+    "isometric-perspective.presets_help": "Salve e reaplique configurações isométricas rapidamente entre cenas.",
+    "isometric-perspective.presets_nameRequired": "Informe um nome antes de salvar.",
+    "isometric-perspective.presets_saved": "Preset \"{name}\" salvo.",
+    "isometric-perspective.presets_deleted": "Preset excluído.",
+    "isometric-perspective.presets_notFound": "Preset não encontrado.",
     
-    "isometric-perspective._comment": "Configuração de Tokens",
+    "isometric-perspective._comment.token": "Configuração de Tokens",
     "isometric-perspective.token_enableIsometric_name": "Desabilitar Token Isométrico",
     "isometric-perspective.token_enableIsometric_hint": "Desabilita a transformação isométrica neste token.",
     "isometric-perspective.token_artOffset_name": "Deslocamento da Arte",
@@ -54,7 +65,7 @@
     "isometric-perspective.token_disableScale_name": "Desabilita Escala Isométrica Automática",
     "isometric-perspective.token_disableScale_hint": "Se estiver marcado, este token não irá redimensionar sua arte automaticamente ao ter suas dimensões alteradas.",
 
-    "isometric-perspective._comment": "Configuração de Tiles",
+    "isometric-perspective._comment.tile": "Configuração de Tiles",
     "isometric-perspective.tile_enableIsometric_name": "Desabilitar Tile Isométrico",
     "isometric-perspective.tile_enableIsometric_hint": "Desabilita a transformação isométrica neste tile.",
     "isometric-perspective.tile_artOffset_name": "Deslocamento da Arte",
@@ -71,6 +82,6 @@
     "isometric-perspective.tile_link_wall_clear_wall": "Limpar Parede",
     "isometric-perspective.tile_link_wall_hint": "Clique no botão para selecionar uma parede. Ela será usada para determinar a visibilidade do tile com um token selecionado.",
 
-    "isometric-perspective._comment": "Avisos e Mensagens de Erro",
+    "isometric-perspective._comment.warnings": "Avisos e Mensagens de Erro",
     "isometric-perspective.error_test": "Mensagem de erro de teste"
 }

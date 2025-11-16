@@ -35,18 +35,24 @@
             </tr>
         </table>
 
-        <p class="support-text">For detailed information about all features, installation guides, and video tutorials, visit our <a href="https://github.com/arlosmolten/isometric-perspective/wiki" target="_blank"><i class="fas fa-book"></i> Wiki</a> on GitHub. You can disable this screen on module settings.<br><br> If you need help with the module, join our Discord community. If you find this module useful, consider supporting its development through Ko-fi.</p>
+    <p class="support-text">For detailed information about all features, installation guides, and video tutorials, visit our <a href="https://github.com/arlosmolten/isometric-perspective/wiki" target="_blank" rel="noopener noreferrer"><i class="fas fa-book"></i> Wiki</a> on GitHub. You can disable this screen on module settings.<br><br> If you need help with the module, join our Discord community. If you find this module useful, consider supporting its development through Ko-fi.</p>
 
         <div class="welcome-links">
-            <a href="https://github.com/arlosmolten/isometric-perspective" target="_blank">
+            <a href="https://github.com/arlosmolten/isometric-perspective" target="_blank" rel="noopener noreferrer">
                 <i class="fab fa-github"></i> GitHub
             </a>
-            <a href="https://discord.gg/64p6ZqQBNX" target="_blank">
+            <a href="https://discord.gg/64p6ZqQBNX" target="_blank" rel="noopener noreferrer">
                 <i class="fab fa-discord"></i> Discord
             </a>
-            <a href="https://ko-fi.com/H2H1160UID" target="_blank">
+            <a href="https://ko-fi.com/H2H1160UID" target="_blank" rel="noopener noreferrer">
                 <i class="fas fa-mug-hot"></i> Ko-fi
             </a>
+        </div>
+    </div>
+    <div class="welcome-footer">
+        <label class="show-startup"><input type="checkbox" id="show-on-start"> {{localize "isometric-perspective.settings_welcome_name"}}</label>
+        <div class="btn-row">
+            <button class="close-welcome">{{localize 'isometric-perspective.welcome_close_name'}}</button>
         </div>
     </div>
 </div>
@@ -162,5 +168,33 @@ h3 {
 
 .features-table td {
     padding: 2px; /* Define o padding mínimo */
+}
+
+.welcome-footer {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.welcome-footer .show-startup {
+    font-size: 12px;
+}
+
+.welcome-footer .btn-row {
+    display: flex;
+}
+
+.close-welcome {
+    padding: 8px 10px;
+    border: none;
+    background: #666;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.close-welcome:hover {
+    background: #444;
 }
 </style>

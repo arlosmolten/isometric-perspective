@@ -1,8 +1,43 @@
-import { MODULE_ID, DEBUG_PRINT, FOUNDRY_VERSION } from './main.js';
+import { MODULE_ID, isDebugEnabled, getFoundryVersion, isWorldIsometricEnabled, logWarn, logError } from './config.js';
+
+function resolveTilesControl(controls) {
+  if (!controls) return null;
+
+  if (Array.isArray(controls)) {
+    return controls.find((control) => control?.name === 'tiles') ?? null;
+  }
+
+  if (typeof controls.get === 'function') {
+    const direct = controls.get('tiles');
+    if (direct) return direct;
+  }
+
+  if (typeof controls.values === 'function') {
+    for (const control of controls.values()) {
+      if (control?.name === 'tiles') return control;
+    }
+  }
+
+  if (typeof controls.forEach === 'function') {
+    let match = null;
+    controls.forEach((control) => {
+      if (!match && control?.name === 'tiles') match = control;
+    });
+    if (match) return match;
+  }
+
+  return null;
+}
 
 export function registerDynamicTileConfig() {
-  const enableOcclusionDynamicTile = game.settings.get(MODULE_ID, "enableOcclusionDynamicTile");
-  const worldIsometricFlag = game.settings.get(MODULE_ID, "worldIsometricFlag");
+  let enableOcclusionDynamicTile = false;
+  try {
+    enableOcclusionDynamicTile = game.settings.get(MODULE_ID, 'enableOcclusionDynamicTile');
+  } catch (error) {
+    logWarn('Dynamic Tile: enableOcclusionDynamicTile setting missing, skipping registration.', error);
+    return;
+  }
+  const worldIsometricFlag = isWorldIsometricEnabled();
   
   if (!worldIsometricFlag || !enableOcclusionDynamicTile) return;
   
@@ -43,6 +78,16 @@ export function registerDynamicTileConfig() {
       alwaysVisibleContainer.destroy({ children: true });
       
       // Reset references
+      alwaysVisibleContainer = null;
+      tilesLayer = null;
+      tokensLayer = null;
+    }
+  });
+  // Add hook to cleanup on canvas destroy
+  Hooks.on('canvasDestroyed', () => {
+    if (alwaysVisibleContainer) {
+      canvas.stage.removeChild(alwaysVisibleContainer);
+      alwaysVisibleContainer.destroy({ children: true });
       alwaysVisibleContainer = null;
       tilesLayer = null;
       tokensLayer = null;
@@ -120,7 +165,7 @@ export function registerDynamicTileConfig() {
     updateTokensOpacity(0);
 
     // Handler for the submit form
-    html.find('form').on('submit', async (event) => {
+  html.on('submit', 'form', async (event) => {
       updateTokensOpacity(1);
     });
   });
@@ -153,23 +198,31 @@ export function registerDynamicTileConfig() {
 
   // Additional buttons for the tile layer
   Hooks.on("getSceneControlButtons", (controls) => {
-    const newButtons = controls.find(b => b.name === "tiles"); // "token, measure, tiles, drawings, walls, lightning"
-  
-    newButtons.tools.push({
-      name: 'dynamic-tile-increase',
-      title: 'Increase Dynamic Tile Opacity',
-      icon: 'fa-solid fa-layer-group',
-      active: true,
-      onClick: () => increaseTilesOpacity(),
-      button: true
-    },{
-      name: 'dynamic-tile-decrease',
-      title: 'Decrease Dynamic Tile Opacity',
-      icon: 'fa-duotone fa-solid fa-layer-group',
-      active: true,
-      onClick: () => decreaseTilesOpacity(),
-      button: true
-    });
+    const tilesControl = resolveTilesControl(controls);
+    if (!tilesControl) return;
+
+    const tools = tilesControl.tools ?? (tilesControl.tools = []);
+    if (!tools.some((tool) => tool?.name === 'dynamic-tile-increase')) {
+      tools.push({
+        name: 'dynamic-tile-increase',
+        title: 'Increase Dynamic Tile Opacity',
+        icon: 'fa-solid fa-layer-group',
+        active: true,
+        onClick: () => increaseTilesOpacity(),
+        button: true
+      });
+    }
+
+    if (!tools.some((tool) => tool?.name === 'dynamic-tile-decrease')) {
+      tools.push({
+        name: 'dynamic-tile-decrease',
+        title: 'Decrease Dynamic Tile Opacity',
+        icon: 'fa-duotone fa-solid fa-layer-group',
+        active: true,
+        onClick: () => decreaseTilesOpacity(),
+        button: true
+      });
+    }
   });
 }
 
@@ -268,7 +321,7 @@ function cloneTileSprite(tile, walls) {
 
 function cloneTokenSprite(token) {
   if (!token || !token.texture) {
-    if (DEBUG_PRINT) { console.warn("Dynamic Tile cloneTokenSprite() common error.") }
+    if (isDebugEnabled()) { logWarn("Dynamic Tile cloneTokenSprite() common error.") }
     return null;
   }
   try {
@@ -292,7 +345,7 @@ function cloneTokenSprite(token) {
 
     return sprite;
   } catch (error) {
-    console.error("Erro ao clonar sprite do token:", error);
+    logError("Erro ao clonar sprite do token:", error);
     return null;
   }
 }
@@ -545,14 +598,10 @@ function getWallDirection(x1, y1, x2, y2) {
 * @returns {boolean} - true se o token estiver em frente à parede, false caso contrário
 */
 function isTokenInFrontOfWall(token, wall) {
-  if (FOUNDRY_VERSION === 11) {
-    if (!wall?.A || !wall?.B || !token?.center) return false;
-  } else {
-    if (!wall?.edge?.a || !wall?.edge?.b || !token?.center) return false;
-  }
+  if (!wall?.edge?.a || !wall?.edge?.b || !token?.center) return false;
 
-  const { x: x1, y: y1 } = FOUNDRY_VERSION === 11 ? wall.A : wall.edge.a;
-  const { x: x2, y: y2 } = FOUNDRY_VERSION === 11 ? wall.B : wall.edge.b;
+  const { x: x1, y: y1 } = wall.edge.a;
+  const { x: x2, y: y2 } = wall.edge.b;
   const { x: tokenX, y: tokenY } = token.center;
 
   // Verifica se a parede é horizontal (ângulo próximo a 0°)
@@ -605,15 +654,15 @@ function canTokenSeeWall(token, wall) {
   if (!wall || !token) return false;
 
   // Verifica se o token está em frente à parede
-  const isInFront = isTokenInFrontOfWall(token, wall);
+    const isInFront = isTokenInFrontOfWall(token, wall);
   if (!isInFront) return false;
 
   // Verifica colisão com outros objetos entre o token e os pontos da parede
-  const wallPoints = FOUNDRY_VERSION === 11 ? [wall.A, wall.center, wall.B] : [wall.edge.a, wall.center, wall.edge.b];
+  const wallPoints = [wall.edge.a, wall.center, wall.edge.b];
   const tokenPosition = token.center;
 
   for (const point of wallPoints) {
-    const visibilityTest = FOUNDRY_VERSION === 11 ? canvas.effects.visibility.testVisibility(point, { tolerance: 2 }) : canvas.visibility?.testVisibility(point, { tolerance: 2 });
+  const visibilityTest = canvas.visibility?.testVisibility(point, { tolerance: 2 });
     // Usa o testVisibility do token para verificar se ele pode ver o ponto
     if (visibilityTest) {
       const ray = new Ray(tokenPosition, point);

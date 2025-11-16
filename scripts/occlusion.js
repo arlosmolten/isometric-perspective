@@ -1,4 +1,5 @@
-import { MODULE_ID, DEBUG_PRINT } from './main.js';
+import { MODULE_ID, isDebugEnabled, logWarn, logError } from './config.js';
+import { mergeRectangles } from './utils.js';
 
 // Enhanced Occlusion Layer Module for Foundry VTT
 export function registerOcclusionConfig() {
@@ -15,12 +16,23 @@ export function registerOcclusionConfig() {
 			'controlToken', 
 			'refreshToken',
 			'preUpdateScene',
-			'updateScene'
+			'updateScene',
+			'updateTile',
+			'deleteTile',
+			'deleteToken'
 		];
 
 		updateTriggers.forEach(hookName => {
-			Hooks.on(hookName, () => {
-				updateOcclusionLayer(); //debouncedUpdate();
+			Hooks.on(hookName, (obj, update) => {
+				// For events affecting a specific tile or token try invalidating only related cache entries
+				if (hookName === 'updateTile' || hookName === 'deleteTile') {
+					const tileId = obj?.id ?? (update?.id ?? null);
+					if (tileId) invalidateMaskCacheForTile(tileId);
+				} else if (hookName === 'updateToken' || hookName === 'deleteToken') {
+					const tokenId = obj?.id ?? (update?.id ?? null);
+					if (tokenId) invalidateMaskCacheForToken(tokenId);
+				}
+				scheduleOcclusionUpdate();
 			});
 		});
 	}
@@ -37,6 +49,18 @@ export function registerOcclusionConfig() {
 	// Initialize on canvas setup
 	Hooks.on('canvasInit', () => {
 		initializeOcclusionLayer();
+	});
+
+	// When canvas is destroyed, cleanup occlusion container
+	Hooks.on('canvasDestroyed', () => {
+		if (occlusionConfig.container) {
+			canvas.stage.removeChild(occlusionConfig.container);
+			occlusionConfig.container.destroy({ children: true });
+			occlusionConfig.container = null;
+			occlusionConfig.tokensLayer = null;
+			occlusionConfig.initialized = false;
+			maskCache.clear();
+		}
 	});
 
 	// Reset on scene change
@@ -76,6 +100,27 @@ const occlusionConfig = {
 	initialized: false
 };
 
+// Basic mask cache keyed by 'tokenId|tileIds' to reduce recalculation
+const maskCache = new Map();
+
+function invalidateMaskCacheForTile(tileId) {
+	if (!tileId) return;
+	for (const key of Array.from(maskCache.keys())) {
+		if (key.includes(`|${tileId},`) || key.endsWith(`,${tileId}`) || key.endsWith(`|${tileId}`) || key.includes(`,${tileId},`)) {
+			maskCache.delete(key);
+		}
+	}
+}
+
+function invalidateMaskCacheForToken(tokenId) {
+	if (!tokenId) return;
+	for (const key of Array.from(maskCache.keys())) {
+		if (key.startsWith(`${tokenId}|`)) {
+			maskCache.delete(key);
+		}
+	}
+}
+
 // Initialize or reset the occlusion layer
 function initializeOcclusionLayer() {
 	// Remove existing container if it exists
@@ -102,6 +147,7 @@ function initializeOcclusionLayer() {
 	canvas.stage.sortChildren();
 
 	occlusionConfig.initialized = true;
+	maskCache.clear();
 }
 
 
@@ -175,32 +221,29 @@ function checkTokenTileIntersection(token, tile) {
 
 	// Calculate centers
 	const tokenCenter = {
-			x: tokenBounds.x + (tokenBounds.width / 2),
-			y: tokenBounds.y + (tokenBounds.height / 2)
-	};
-	
-	const tileCenter = {
-			x: tileBounds.x + (tileBounds.width / 2),
-			y: tileBounds.y + (tileBounds.height / 2)
+		x: tokenBounds.x + (tokenBounds.width / 2),
+		y: tokenBounds.y + (tokenBounds.height / 2)
 	};
 
-	if (DEBUG_PRINT) {
+	const tileCenter = {
+		x: tileBounds.x + (tileBounds.width / 2),
+		y: tileBounds.y + (tileBounds.height / 2)
+	};
+
+	if (isDebugEnabled()) {
 		let DEBUG_INTERSECTION = true;
 		debugVisualIntersection(token, tile, DEBUG_INTERSECTION);
 	}
-	
+
 	// First check if token center is "behind" tile center
-	//if (tokenCenter.x <= tileCenter.x || tileCenter.y <= tokenCenter.y) {
-	if (tileCenter.y <= tokenCenter.y) {
-			return false;
-	}
+	if (tileCenter.y <= tokenCenter.y) return false;
 
 	// Then do the regular intersection check
 	return (
-			tokenBounds.x < tileBounds.x + tileBounds.width &&
-			tokenBounds.x + tokenBounds.width > tileBounds.x &&
-			tokenBounds.y < tileBounds.y + tileBounds.height &&
-			tokenBounds.y + tokenBounds.height > tileBounds.y
+		tokenBounds.x < tileBounds.x + tileBounds.width &&
+		tokenBounds.x + tokenBounds.width > tileBounds.x &&
+		tokenBounds.y < tileBounds.y + tileBounds.height &&
+		tokenBounds.y + tokenBounds.height > tileBounds.y
 	);
 }
 
@@ -221,8 +264,13 @@ function createOcclusionSprite(token, intersectingTiles) {
 	sprite.angle = token.mesh.angle;
 	sprite.scale.set(token.mesh.scale.x, token.mesh.scale.y);
 
-	// Create a mask for the occlusion
-	const mask = createOcclusionMask(token, intersectingTiles);
+	// Create or reuse a mask for the interception area
+	const key = `${token.id}|${intersectingTiles.map(t => t.id).join(',')}`;
+	let mask = maskCache.get(key);
+	if (!mask) {
+		mask = createOcclusionMask(token, intersectingTiles);
+		if (mask) maskCache.set(key, mask);
+	}
 	
 	if (mask) {
 		sprite.mask = mask;
@@ -309,10 +357,10 @@ function createOcclusionMask(token, intersectingTiles) {
 }
 
 function createOcclusionMask_gpu(token, intersectingTiles) {
-	const maskGraphics = new PIXI.Graphics();
-	maskGraphics.beginFill(0xffffff);
-
-	intersectingTiles.forEach(tile => {
+	try {
+		const maskGraphics = new PIXI.Graphics();
+		maskGraphics.beginFill(0xffffff);
+		intersectingTiles.forEach(tile => {
 		const tokenBounds = token.mesh.getBounds();
 		const tileBounds = tile.mesh.getBounds();
 
@@ -321,25 +369,28 @@ function createOcclusionMask_gpu(token, intersectingTiles) {
 		const y = Math.max(tokenBounds.y, tileBounds.y);
 		const width = Math.min(tokenBounds.x + tokenBounds.width, tileBounds.x + tileBounds.width) - x;
 		const height = Math.min(tokenBounds.y + tokenBounds.height, tileBounds.y + tileBounds.height) - y;
-
-		if (width <= 0 || height <= 0) return;
+			if (width <= 0 || height <= 0) return;
 
 		// Draw intersection area
-		maskGraphics.drawRect(x, y, width, height);
+			maskGraphics.drawRect(x, y, width, height);
 
 		// Create and apply alpha filter
-		const alphaFilter = new PIXI.Filter(undefined, alphaFragmentShader, {
+			const alphaFilter = new PIXI.Filter(undefined, alphaFragmentShader, {
 			uTileMask: tile.texture,
 			dimensions: new Float32Array([x, y, width, height]),
 			tileDimensions: new Float32Array([
 				tileBounds.x, tileBounds.y, tileBounds.width, tileBounds.height
 			])
 		});
-		maskGraphics.filters = [...(maskGraphics.filters || []), alphaFilter];
+			maskGraphics.filters = [...(maskGraphics.filters || []), alphaFilter];
 	});
 
-	maskGraphics.endFill();
-	return maskGraphics;
+		maskGraphics.endFill();
+		return maskGraphics;
+	} catch (error) {
+		logWarn('GPU occlusion mask failed, falling back to CPU mode:', error);
+		return createOcclusionMask_cpu(token, intersectingTiles, 2);
+	}
 }
 
 
@@ -480,8 +531,12 @@ function createOcclusionMask_cpu(token, intersectingTiles, chunkSize) {
 	// Apply matrix transform
 	maskGraphics.transform.setFromMatrix(stage.transform.worldTransform);
 
+	// Use shared utility function to merge rectangles
+
+	const optimizedRects = mergeRectangles(rectangles);
+
 	// Draw rectangles
-	for (const rect of rectangles) {
+	for (const rect of optimizedRects) {
 		maskGraphics.drawRect(
 			rect.x / sceneScale,
 			rect.y / sceneScale,
@@ -583,7 +638,7 @@ if (typeof PIXI !== 'undefined' && PIXI.filters) {
 	// Add the isooutlinefilter to the PIXI.filters namepace
 	PIXI.filters.isoOutlineFilter = IsoOutlineFilter;
 } else {
-	console.error('PIXI ou PIXI.filters não estão disponíveis.');
+	logError('PIXI ou PIXI.filters não estão disponíveis.');
 }
 
 // Create new outline filter
@@ -710,4 +765,14 @@ function debugVisualIntersection(token, tile, DEBUG_INTERSECTION) {
 		// Add to canvas stage with high z-index
 		graphics.zIndex = 999999;
 		canvas.stage.addChild(graphics);
+}
+
+// Simple debounce for occlusion updates
+let occlusionUpdateTimer = null;
+function scheduleOcclusionUpdate(delay = 100) {
+	if (occlusionUpdateTimer) clearTimeout(occlusionUpdateTimer);
+	occlusionUpdateTimer = setTimeout(() => {
+		updateOcclusionLayer();
+		occlusionUpdateTimer = null;
+	}, delay);
 }

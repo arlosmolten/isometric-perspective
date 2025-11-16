@@ -1,60 +1,96 @@
-<!-- Isometric Scene Configuration.html -->
-<div class="tab isometric" data-tab="isometric">
-    <section>
-        <!-- Enable Isometric -->
-        <div class="form-group">
-            <label>{{localize 'isometric-perspective.scene_enableIsometric'}}</label>
-            <div class="form-fields">
-                <input type="checkbox" name="flags.isometric-perspective.isometricEnabled"/>
-            </div>
+<!-- Isometric Scene Configuration -->
+<section class="isometric-form scene-isometric">
+    <div class="form-group presets">
+        <label>Scene Presets</label>
+        <div class="form-fields">
+            <select class="iso-preset-select" aria-label="Choose a saved isometric preset">
+                <option value="">{{localize 'isometric-perspective.presets_select'}}</option>
+                {{#each presets}}
+                    <option value="{{id}}">{{name}}</option>
+                {{/each}}
+            </select>
+            <button type="button" class="iso-preset-apply">{{localize 'isometric-perspective.presets_apply'}}</button>
+            <button type="button" class="iso-preset-delete" disabled>{{localize 'isometric-perspective.presets_delete'}}</button>
         </div>
-
-        <!-- Transform Background -->
-        <div class="form-group">
-            <label>{{localize 'isometric-perspective.scene_transform_name'}}</label>
-            <div class="form-fields">
-                <input type="checkbox" name="flags.isometric-perspective.isometricBackground"/>
-            </div>
-            <p class="notes">{{localize 'isometric-perspective.scene_transform_hint'}}</p>
+        <div class="form-fields">
+            <input class="iso-preset-name" type="text" placeholder="{{localize 'isometric-perspective.presets_namePlaceholder'}}">
+            <button type="button" class="iso-preset-save">{{localize 'isometric-perspective.presets_save'}}</button>
         </div>
-
-        <hr>
-
-        <!-- Scale Control -->
-        <div class="form-group">
-            <label>{{localize 'isometric-perspective.scene_scale_name'}}</label>
-            <div class="form-fields">
-                <input type="range" name="flags.isometric-perspective.isometricScale" 
-                       min="0.5" max="3" step="0.1" value="1"/>
-                <span class="range-value">1</span>
-            </div>
-            <p class="notes">{{localize 'isometric-perspective.scene_scale_hint_1'}} <i class="fas fa-ruler"></i> {{localize 'isometric-perspective.scene_scale_hint_2'}}</p>
+        <p class="notes">{{localize 'isometric-perspective.presets_help'}}</p>
+    </div>
+    <div class="form-group">
+        <label>{{localize 'isometric-perspective.scene_enableIsometric'}}</label>
+        <div class="form-fields">
+            <input type="checkbox"
+                         name="flags.isometric-perspective.isometricEnabled"
+                         title="Enable isometric projection for this scene"
+                         {{#if isIsometric}}checked{{/if}}>
         </div>
-    </section>
+    </div>
 
-    <!-- Projection Type Dropdown -->
+    <div class="form-group">
+        <label>{{localize 'isometric-perspective.scene_transform_name'}}</label>
+        <div class="form-fields">
+            <input type="checkbox"
+                         name="flags.isometric-perspective.isometricBackground"
+                         title="Apply isometric transform to the background image"
+                         {{#if transformBackground}}checked{{/if}}>
+        </div>
+        <p class="notes">{{localize 'isometric-perspective.scene_transform_hint'}}</p>
+    </div>
+
+    <hr>
+
+    <div class="form-group">
+        <label>{{localize 'isometric-perspective.scene_scale_name'}}</label>
+        <div class="form-fields">
+            <input type="range"
+                         name="flags.isometric-perspective.isometricScale"
+                         title="Scene isometric scale"
+                         value="{{scale}}"
+                         min="0.5" max="3" step="0.1"
+                         class="scale-slider">
+            <span class="range-value">{{scale}}</span>
+        </div>
+        <p class="notes">{{localize 'isometric-perspective.scene_scale_hint_1'}} <i class="fas fa-ruler"></i> {{localize 'isometric-perspective.scene_scale_hint_2'}}</p>
+    </div>
+
     <div class="form-group">
         <label>{{localize 'isometric-perspective.scene_dropdown_name'}}</label>
         <div class="form-fields">
-        <select name="flags.isometric-perspective.projectionType">
-            {{#each projectionTypes}}
-                <option value="{{this}}" {{#if (eq this ../currentProjection)}}selected{{/if}}>{{this}}</option>
-            {{/each}}
+            <select name="flags.isometric-perspective.projectionType" aria-label="Choose isometric projection">
+                {{#each projectionOptions}}
+                    <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+                {{/each}}
             </select>
         </div>
-        <p class="notes">{{localize 'isometric-perspective.scene_dropdown_hint'}}</p>          
+        <p class="notes">{{localize 'isometric-perspective.scene_dropdown_hint'}}</p>
     </div>
 
-    <div class="form-group">
+    <div class="form-group custom-projection">
         <label>{{localize 'isometric-perspective.custom_projection_name'}}</label>
         <div class="form-fields">
-            <input 
-                type="text" 
-                name="flags.isometric-perspective.customProjection" 
-                placeholder="0, 0, 0, 0, 0, 0, 0" 
-                disabled
-            >
+            <input type="text"
+                         name="flags.isometric-perspective.customProjection"
+                         value="{{customProjection}}"
+                         placeholder="0, 0, 0, 0, 0, 0, 0, 0"
+                         {{#unless isCustomProjection}}disabled{{/unless}}>
         </div>
-        <p class="hint">{{localize 'isometric-perspective.custom_projection_hint'}}  <a href='https://github.com/arlosmolten/isometric-perspective/wiki/2.-Advanced-Features#2-custom-isometric-projection'>Manual</a> &  <a href='https://arlosmolten.github.io/isometric-perspective/'>Website</a></p>
+        <p class="hint">{{localize 'isometric-perspective.custom_projection_hint'}}
+            <a href='https://github.com/arlosmolten/isometric-perspective/wiki/2.-Advanced-Features#2-custom-isometric-projection'>Manual</a>
+            &amp;
+            <a href='https://arlosmolten.github.io/isometric-perspective/'>Website</a>
+        </p>
     </div>
-</div>
+
+    <style>
+        .scale-slider {
+            flex: 4;
+        }
+        .range-value {
+            flex: 1;
+            text-align: center;
+            line-height: var(--form-field-height);
+        }
+    </style>
+</section>

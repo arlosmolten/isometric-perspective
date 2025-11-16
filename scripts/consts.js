@@ -1,4 +1,4 @@
-import { MODULE_ID, DEBUG_PRINT, WORLD_ISO_FLAG } from './main.js';
+import { MODULE_ID, isDebugEnabled, isWorldIsometricEnabled } from './config.js';
 
 // Define all projection types
 export let PROJECTION_TYPES = {

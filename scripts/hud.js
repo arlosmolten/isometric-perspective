@@ -1,4 +1,4 @@
-import { MODULE_ID, DEBUG_PRINT, WORLD_ISO_FLAG } from './main.js';
+import { MODULE_ID, isDebugEnabled, isWorldIsometricEnabled, logDebug } from './config.js';
 import { ISOMETRIC_CONST, PROJECTION_TYPES, DEFAULT_PROJECTION } from './consts.js';
 
 export function registerHUDConfig() {
@@ -9,7 +9,7 @@ export function registerHUDConfig() {
 function handleRenderTokenHUD(hud, html, data) {
   const scene = game.scenes.current;
   const isSceneIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
-  const isometricWorldEnabled = game.settings.get(MODULE_ID, "worldIsometricFlag");
+  const isometricWorldEnabled = isWorldIsometricEnabled();
 
   if (isometricWorldEnabled && isSceneIsometric) {
     requestAnimationFrame(() => adjustHUDPosition(hud, html));
@@ -19,7 +19,7 @@ function handleRenderTokenHUD(hud, html, data) {
 function handleRenderTileHUD(hud, html, data) {
   const scene = game.scenes.current;
   const isSceneIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
-  const isometricWorldEnabled = game.settings.get(MODULE_ID, "worldIsometricFlag");
+  const isometricWorldEnabled = isWorldIsometricEnabled();
 
   if (isometricWorldEnabled && isSceneIsometric) {
     requestAnimationFrame(() => adjustHUDPosition(hud, html));
@@ -64,7 +64,7 @@ export function adjustHUDPosition(hud, html) {
       isotranslate = 'translate(33%, -50%)';
       break;
   }
-  console.log('projection', projection);
+  logDebug('projection', projection);
   */
 
   if (object instanceof Token) {
@@ -131,7 +131,7 @@ function isometricToCartesianGPT(x_iso, y_iso) {
   // Cria uma matriz de transformação com base nas rotações e distorções fornecidas
   // Criando um objeto "dummy" para aplicar a transformação
   const obj = new PIXI.Graphics();
-  console.log("obj", obj);
+  logDebug("obj", obj);
 
   // Aplica a transformação com setTransform
   obj.setTransform(x_iso, y_iso, 0, 0, 1, 1, -rotation, skewX, skewY);
@@ -141,8 +141,8 @@ function isometricToCartesianGPT(x_iso, y_iso) {
 
   // Inverter a matriz para reverter a transformação
   const invertedMatrix = matrix.invert();
-  console.log(matrix);
-  console.log(invertedMatrix);
+  logDebug(matrix);
+  logDebug(invertedMatrix);
 
   // Aplicar a inversa da matriz nas coordenadas isométricas
   const cartesian = invertedMatrix.apply({ x: x_iso, y: y_iso });

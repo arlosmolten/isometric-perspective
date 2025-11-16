@@ -1,11 +1,11 @@
-import { MODULE_ID, DEBUG_PRINT, FOUNDRY_VERSION } from './main.js';
+import { MODULE_ID, isDebugEnabled, getFoundryVersion, isWorldIsometricEnabled, logDebug } from './config.js';
 import { cartesianToIso } from './utils.js';
 import { ISOMETRIC_CONST } from './consts.js';
 
 
 // Função principal que muda o canvas da cena
 export function applyIsometricPerspective(scene, isSceneIsometric) {
-  const isometricWorldEnabled = game.settings.get(MODULE_ID, "worldIsometricFlag");
+  const isometricWorldEnabled = isWorldIsometricEnabled();
   //const isoAngle = ISOMETRIC_TRUE_ROTATION;
   //const scale = scene.getFlag(MODULE_ID, "isometricScale") ?? 1;
   
@@ -43,12 +43,12 @@ export function adjustAllTokensAndTilesForIsometric() {
 // Função que aplica a transformação isométrica para um token ou tile -------------------------------------------------
 export function applyIsometricTransformation(object, isSceneIsometric) {
   // Don't make any transformation if the isometric module isn't active
-  const isometricWorldEnabled = game.settings.get(MODULE_ID, "worldIsometricFlag");
+  const isometricWorldEnabled = isWorldIsometricEnabled();
   if (!isometricWorldEnabled) return
 
   // Don't make any transformation if there isn't any mesh
   if (!object.mesh) {
-    if (DEBUG_PRINT) {console.warn("Mesh not found:", object)}
+    if (isDebugEnabled()) { logDebug("Mesh not found:", object) }
     return;
   }
   
@@ -145,14 +145,7 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
         sy = 1
         break;
       default:
-        // V11 Compatibility change
-        if (FOUNDRY_VERSION === 11) {
-          sx = (objTxtRatio_W) / (objTxtRatio_H);
-          sy = 1;
-          break;
-        }
-        //throw new Error(`Invalid fill type passed to ${this.constructor.name}#resize (fit=${fit}).`);
-        console.warn("Invalid fill type passed to: ", object);
+        logDebug("Invalid fill type passed to: ", object);
         sx = 1;
         sy = 1;
     }
@@ -225,13 +218,13 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
 // Função para transformar o background da cena
 export function applyBackgroundTransformation(scene, isSceneIsometric, shouldTransform) {
   if (!canvas?.primary?.background) {
-    if (DEBUG_PRINT) console.warn("Background not found.");
+    if (isDebugEnabled()) logDebug("Background not found.");
     return;
   }
 
   //const background = scene.stage.background; //don't work
   const background = canvas.environment.primary.background;
-  const isometricWorldEnabled = game.settings.get(MODULE_ID, "worldIsometricFlag");
+  const isometricWorldEnabled = isWorldIsometricEnabled();
   const scale = scene.getFlag(MODULE_ID, "isometricScale") ?? 1;
   
   if (isometricWorldEnabled && isSceneIsometric && shouldTransform) {
@@ -284,7 +277,7 @@ export function applyBackgroundTransformation(scene, isSceneIsometric, shouldTra
     //background.scale.set(1, 1);
     //background.transform.position.set(canvas.scene.width/2, canvas.scene.height/2);
     
-    if (DEBUG_PRINT) console.log("applyBackgroundTransformation RESET")
+  logDebug("applyBackgroundTransformation RESET");
   }
 }
 
@@ -377,34 +370,9 @@ Hooks.on('deleteToken', (token) => {
   removeTokenVisuals(token);
 });
 
-
-
-
-
-
-// HOOK SETUP FOR COMPATIBILITY WITH FOUNDRY V11
-Hooks.once('ready', () => {
-  setupCompatibilityHooks();
+// Also clear visuals on scene change (cleanup)
+Hooks.on('changeScene', () => {
+  clearAllVisuals();
 });
 
-function setupCompatibilityHooks() {
-  if (FOUNDRY_VERSION === 11) {
-    Hooks.on('dropCanvasData', (canvas, object) => {
-      const globalPoint = {
-        x: event.clientX,
-        y: event.clientY
-      };
-  
-      // Converts to local coordinates of the stage
-      const localPos = canvas.stage.toLocal(globalPoint);
-      object.x = Math.round(localPos.x);
-      object.y = Math.round(localPos.y);
-    });
-    // Hooks.on('dropCanvasData', (canvas, object) => {
-    //   let {x, y} = canvas.stage.worldTransform.applyInverse({x: event.clientX, y: event.clientY})
-
-    //   object.x = x;
-    //   object.y = y;
-    // });
-  }
-}
+// We target Foundry v13+, compatibility for v11 is removed.
