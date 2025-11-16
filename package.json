@@ -1,0 +1,14 @@
+{
+  "name": "isometric-perspective",
+  "version": "0.7.6",
+  "description": "Isometric Module for Foundry VTT v12",
+  "dependencies": {
+    "archiver": "^5.3.1"
+  },
+  "scripts": {
+    "build": "node release.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

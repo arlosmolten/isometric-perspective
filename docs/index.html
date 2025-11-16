@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PixiJS App</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="dark-mode.css" id="dark-mode-css">
+</head>
+<body>
+    <div class="container">
+        <div id="pixiApp"></div> <!-- Canvas da imagem à esquerda -->
+        <div class="controls"> <!-- Controles à direita -->
+            <input type="file" id="imageLoader" accept="image/*">
+            <button id="clearImage">Clear Image</button>
+            <div class="sliders">
+                <label>Scale:
+                    <input type="range"  id="scaleX"      value="1" step="0.5" min="0.5" max="1">
+                    <input type="number" id="scaleXValue" value="1" step="0.5" min="0.5" max="1">
+                </label>
+                <label>Rotate:
+                    <input type="range"  id="rotation"      value="0" step="5" min="-90" max="90">
+                    <input type="number" id="rotationValue" value="0" step="5" min="-90" max="90">
+                </label>
+                <label>SkewX:
+                    <input type="range"  id="skewX"      value="0" step="5" min="-60" max="60">
+                    <input type="number" id="skewXValue" value="0" step="5" min="-60" max="60">
+                </label>
+                <label>SkewY:
+                    <input type="range"  id="skewY"      value="0" step="5" min="-60" max="60">
+                    <input type="number" id="skewYValue" value="0" step="5" min="-60" max="60">
+                </label>
+                <label>PosX:
+                    <input type="range"  id="positionX"      value="400" step="1" min="0" max="800">
+                    <input type="number" id="positionXValue" value="400" step="1" min="0" max="800">
+                </label>
+                <label>PosY:
+                    <input type="range"  id="positionY"      value="300" step="1" min="0" max="600">
+                    <input type="number" id="positionYValue" value="300" step="1" min="0" max="600">
+                </label>
+                <label for="pivotSelector">Pivot:
+                    <select id="pivotSelector">
+                        <option value="top-left">Top Left</option>
+                        <option value="top-right">Top Right</option>
+                        <option value="bottom-left">Bottom Left</option>
+                        <option value="bottom-right">Bottom Right</option>
+                        <option value="center">Center</option>
+                    </select>
+                </label>
+                <button id="togglePivot">Show/Hide Helper Graphics</button>
+                <button id="toggleLimits">Unlock Control Limits</button>
+            </div>
+            <textarea id="outputValues" readonly></textarea>
+            <!--
+            <button id="themeToggle" class="theme-toggle">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                </svg>
+            </button>
+            -->
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.2.1/pixi.min.js"></script>
+    <script src="app.js"></script>
+    <script src="theme-toggle.js"></script>
+</body>
+</html>
