@@ -233,7 +233,6 @@ Hooks.once('ready', ()=> {
 
 // add the isometric tab in the scene config
 Hooks.on('ready', configureIsometricTab);
-// Hooks.on('renderSceneConfig', insertIsometricTab);
 //handle the isometric canvas
 Hooks.on("updateScene", handleUpdateScene);
 Hooks.on("canvasReady", handleCanvasReady);
