@@ -14,6 +14,7 @@ export function configureIsometricTab(app, html, context, options){
   const FoundrySceneConfig = foundry.applications.sheets.SceneConfig;
   const DefaultSceneConfig = Object.values(CONFIG.Scene.sheetClasses.base).find((d) => d.default)?.cls;
   const SceneConfig = DefaultSceneConfig?.prototype instanceof FoundrySceneConfig ? DefaultSceneConfig : FoundrySceneConfig;
+
   const projectionTypes =  [...Object.keys(PROJECTION_TYPES)];
   const currentProjection = SceneConfig.object?.getFlag(isometricModuleConfig.MODULE_ID, 'projectionType') ?? DEFAULT_PROJECTION;
   
@@ -47,8 +48,6 @@ export function configureIsometricTab(app, html, context, options){
 }
 
 export function handleUpdateScene(scene, changes) {
-
-  //the errors when the changes are applied are probably here
 
   if (scene.id !== canvas.scene?.id) return;
 

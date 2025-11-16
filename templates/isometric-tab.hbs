@@ -5,16 +5,16 @@
         <!-- Enable Isometric -->
         <div class="form-group inline slim">
             <div class="form-fields">
-                <label for="isometric-perspective-enable-isometrics">{{localize 'isometric-perspective.scene_enableIsometric'}}</label>
-                <input id="isometric-perspective-enable-isometrics" type="checkbox" name="flags.isometric-perspective.isometricEnabled" {{checked document.flags.isometric-perspective.isometricEnabled}}/>
+                <label for="{{rootId}}-isometric-perspective-enable-isometrics">{{localize 'isometric-perspective.scene_enableIsometric'}}</label>
+                <input id="{{rootId}}-isometric-perspective-enable-isometrics" type="checkbox" name="flags.isometric-perspective.isometricEnabled" {{checked document.flags.isometric-perspective.isometricEnabled}}/>
             </div>
         </div>
 
         <!-- Transform Background -->
         <div class="form-group inline slim">
             <div class="form-fields">
-                <label for="isometric-perspective-isometrics-background-transfrom" >{{localize 'isometric-perspective.scene_transform_name'}}</label>
-                <input id="isometric-perspective-isometrics-background-transfrom" type="checkbox" name="flags.isometric-perspective.isometricBackground" {{checked document.flags.isometric-perspective.isometricBackground}}/>
+                <label for="{{rootId}}-isometric-perspective-isometrics-background-transfrom" >{{localize 'isometric-perspective.scene_transform_name'}}</label>
+                <input id="{{rootId}}-isometric-perspective-isometrics-background-transfrom" type="checkbox" name="flags.isometric-perspective.isometricBackground" {{checked document.flags.isometric-perspective.isometricBackground}}/>
             </div>
             <p class="notes">{{localize 'isometric-perspective.scene_transform_hint'}}</p>
         </div>
@@ -25,15 +25,7 @@
         <div class="form-group inline slim">
             <label for="isometric-perspective-isometrics-scale" >{{localize 'isometric-perspective.scene_scale_name'}}</label>
             <div class="form-fields">
-                <input
-                    id="isometric-perspective-isometrics-scale"
-                    type="range" 
-                    name="flags.isometric-perspective.isometricScale" 
-                    min="0.5" 
-                    max="3" 
-                    step="0.1" 
-                    value="{{this.isometricScale}}"/>
-                <span class="range-value">{{this.isometricScale}}</span>
+                <range-picker id="{{rootId}}-isometric-perspective-isometrics-scale" name="flags.isometric-perspective.isometricScale" value="{{document.flags.isometric-perspective.isometricScale}}" min="0.5" max="3" step="0.5"></range-picker>
             </div>
             <p class="notes">{{localize 'isometric-perspective.scene_scale_hint_1'}} <i class="fas fa-ruler"></i> {{localize 'isometric-perspective.scene_scale_hint_2'}}</p>
         </div>
@@ -45,7 +37,7 @@
         <div class="form-fields">
         <select name="flags.isometric-perspective.projectionType">
             {{#each projectionTypes}}
-                <option value="{{this}}" {{#if (eq this ../currentProjection)}}selected{{/if}}>{{this}}</option>
+                <option value="{{this}}" {{#if (eq this ../document.flags.isometric-perspective.projectionType)}}selected{{/if}}>{{this}}</option>
             {{/each}}
             </select>
         </div>
