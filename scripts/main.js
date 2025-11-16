@@ -20,7 +20,6 @@ import { registerOcclusionConfig } from './occlusion.js';
 
 import { 
   configureIsometricTab,
-  insertIsometricTab,
   handleUpdateScene,
   handleCanvasReady,
   handleCanvasResize, 
