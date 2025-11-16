@@ -47,6 +47,9 @@ export function configureIsometricTab(app, html, context, options){
 }
 
 export function handleUpdateScene(scene, changes) {
+
+  //the errors when the changes are applied are probably here
+
   if (scene.id !== canvas.scene?.id) return;
 
   if (
@@ -117,7 +120,7 @@ export async function handleCanvasReady(canvas) {
   applyBackgroundTransformation(scene, isSceneIsometric, shouldTransformBackground);
   
   // debug print
-  // if (isometricModuleConfig.DEBUG_PRINT) console.log("Hooks.on canvasReady");
+  if (isometricModuleConfig.DEBUG_PRINT) console.log("handleCanvasReady");
 }
 
 export function handleCanvasResize(canvas) {
@@ -135,7 +138,7 @@ export function handleCanvasResize(canvas) {
   }
   
   // debug print
-  if (isometricModuleConfig.DEBUG_PRINT) console.log("Hooks.on canvasResize");
+  if (isometricModuleConfig.DEBUG_PRINT) console.log("handleCanvasResize");
 }
 
 

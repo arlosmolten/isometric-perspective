@@ -1,6 +1,5 @@
 <section class="tab scrollable {{tab.cssClass}}"data-tab="isometric" data-group="sheet">
   {{!-- Tab content here --}}
-    {{ log "HERE THIS" this}}
   <div class="isometric-config-tab-content">
     <section>
         <!-- Enable Isometric -->
@@ -34,8 +33,6 @@
                     max="3" 
                     step="0.1" 
                     value="{{this.isometricScale}}"/>
-
-                    {{log "HERE SCALE" this}}
                 <span class="range-value">{{this.isometricScale}}</span>
             </div>
             <p class="notes">{{localize 'isometric-perspective.scene_scale_hint_1'}} <i class="fas fa-ruler"></i> {{localize 'isometric-perspective.scene_scale_hint_2'}}</p>
@@ -69,4 +66,3 @@
     </div>
   </div>
 </section>
-    {{!-- {{log this}} --}}
