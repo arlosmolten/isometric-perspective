@@ -1,4 +1,6 @@
 {
+    "isometric-perspective.title": "Isometric Perspective Module",
+
     "isometric-perspective._comment": "Game Settings: Configure Settings",
     "isometric-perspective.settings_main_name": "Enable Isometric Perspective",
     "isometric-perspective.settings_main_hint": "Toggle whether the isometric perspective is applied to the canvas.",
@@ -72,5 +74,19 @@
     "isometric-perspective.tile_link_wall_hint": "Click the button to select a wall. This wall will be used to determine the tile's visibility with a selected token.",
     
     "isometric-perspective._comment": "Warnings and Error Messages",
-    "isometric-perspective.error_test": "Test error message"
+    "isometric-perspective.error_test": "Test error message",
+
+    "isometric-perspective.welcome.title": "Welcome to Isometric Perspective!",
+    "isometric-perspective.welcome.subtitle": "This module transforms your maps and tokens into an isometric perspective in Foundry VTT, offering a unique and immersive gaming experience.",
+    "isometric-perspective.welcome.feature_table_projections.header": "Multiple Canvas Perspectives and Projections",
+    "isometric-perspective.welcome.feature_table_projections.content": "Use either native isometric maps or top-down maps in isometric perspective with any projection as true isometric, dimetric and even a custom one.",
+    "isometric-perspective.welcome.feature_table_tokens.header": "Token and Tile Adjustments and Features",
+    "isometric-perspective.welcome.feature_table_tokens.content": "Fine-tune position and scale, easily arrange tiles in canvas, and enable visual cues for elevation tokens and automatically sort tokens in canvas.",
+    "isometric-perspective.welcome.feature_table_dynamic_tiles.header": "Dynamic Tile",
+    "isometric-perspective.welcome.feature_table_dynamic_tiles.content": "Create immersive isometric environments automatically hiding them based on token positions, with the dynamic tile feature.",
+    "isometric-perspective.welcome.support_text_visit": "For detailed information about all features, installation guides, and video tutorials, visit our ",
+    "isometric-perspective.welcome.support_text_wiki": "Wiki",
+    "isometric-perspective.welcome.support_text_on_github": "on GitHub. You can disable this screen on module settings.",
+    "isometric-perspective.welcome.support_text_help": "If you need help with the module, join our Discord community. If you find this module useful, consider supporting its development through Ko-fi."
+    
 }
