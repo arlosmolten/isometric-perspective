@@ -1,8 +1,20 @@
 import { isometricModuleConfig } from './consts.js';
 
-import { registerTokenConfig } from './token.js';
+import { 
+  handleRenderTokenConfig,
+  handleCreateToken,
+  handleUpdateToken,
+  handleRefreshToken,
+  handleDeleteToken
+ } from './token.js';
+ 
 import { registerTileConfig } from './tile.js';
-import { registerHUDConfig } from './hud.js';
+
+import { 
+  handleRenderTokenHUD,
+  handleRenderTileHUD 
+} from './hud.js';
+
 import { registerSortingConfig } from './autosorting.js';
 import { registerDynamicTileConfig, increaseTilesOpacity, decreaseTilesOpacity } from './dynamictile.js';
 
@@ -175,9 +187,9 @@ Hooks.once("init", function() {
 
 
   // ------------- Executa os hooks essenciais do módulo -------------
-  registerTokenConfig();
+  // registerTokenConfig();
   registerTileConfig();
-  registerHUDConfig();
+  // registerHUDConfig();
 
   // ------------- Executa os hooks de funcionalidades adicionais do módulo -------------
   registerDynamicTileConfig();
@@ -237,6 +249,17 @@ Hooks.on('ready', configureIsometricTab);
 Hooks.on("updateScene", handleUpdateScene);
 Hooks.on("canvasReady", handleCanvasReady);
 Hooks.on("canvasResize", handleCanvasResize);
+
+//handle tokens updates
+Hooks.on("renderTokenConfig", handleRenderTokenConfig);
+Hooks.on("createToken", handleCreateToken);
+Hooks.on("updateToken", handleUpdateToken);
+Hooks.on("refreshToken", handleRefreshToken);
+Hooks.on("deleteToken", handleDeleteToken);
+
+Hooks.on("renderTokenHUD", handleRenderTokenHUD);
+Hooks.on("renderTileHUD", handleRenderTileHUD);
+
 
 
 
