@@ -40,84 +40,8 @@ export async function handleRenderTokenConfig(app, html, data) {
     }
     return defaultRenderPartContext.call(this, partId, context, options);
   }  
-
-  // const tabHtml = await renderTemplate("modules/isometric-perspective/templates/token-config.html", {
-  //   isoDisabled: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'isoTokenDisabled') ?? 1,
-  //   offsetX: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'offsetX') ?? 0,
-  //   offsetY: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY') ?? 0,
-  //   isoAnchorY: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorY') ?? 0,
-  //   isoAnchorX: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorX') ?? 0,
-  //   isoAnchorToggleCheckbox: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorToggle') ?? 0,
-  //   scale: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'scale') ?? 1
-  // });
   
-  // Add a new tab to the menu
-  // const tabs = html.querySelector('.tabs:not(.secondary-tabs)');
-  // tabs.append(`<a class="item" data-tab="isometric"><i class="fas fa-cube"></i> ${game.i18n.localize('isometric-perspective.tab_isometric_name')}</a>`);
-  
-  // // Adds the tab contents after the last existing tab
-  // const lastTab = html.querySelector('.tab').last();
-  // lastTab.after(tabHtml);
-
-  // // Update the offset fine adjustment button
-  // updateAdjustOffsetButton(html);
-  // updateAdjustAnchorButton(html);
-
-  // Initializes control values
-  // const isoTokenCheckbox = html.querySelector('input[name="flags.isometric-perspective.isoTokenDisabled"]');
-  // isoTokenCheckbox.prop("checked", app.object.getFlag(isometricModuleConfig.MODULE_ID, "isoTokenDisabled"));
-  // const isoScaleDisabled = html.querySelector('input[name="flags.isometric-perspective.isoScaleDisabled"]');
-  // isoScaleDisabled.prop("checked", app.object.getFlag(isometricModuleConfig.MODULE_ID, "isoScaleDisabled"));
-
-  // // Add listener to update the shown value from Slider
-  // html.querySelector('.scale-slider').on('input', function() {
-  //   html.querySelector('.range-value').text(this.value);
-  // });
-
-  // Handler for the submit form
-  // html.querySelector('form').on('submit', async (event) => {
-  //   // If the value of checkbox is true, updates the flags with the new values
-  //   if (isoTokenCheckbox.prop("checked")) {
-  //     await app.object.setFlag(isometricModuleConfig.MODULE_ID, "isoTokenDisabled", true);
-  //   } else {
-  //     await app.object.unsetFlag(isometricModuleConfig.MODULE_ID, "isoTokenDisabled");
-  //   }
-
-  //   if (isoScaleDisabled.prop("checked")) {
-  //     await app.object.setFlag(isometricModuleConfig.MODULE_ID, "isoScaleDisabled", true);
-  //   } else {
-  //     await app.object.unsetFlag(isometricModuleConfig.MODULE_ID, "isoScaleDisabled");
-  //   }
-  // });
-
-  // Fix tab init
-  // if (!app._tabs || app._tabs.length === 0) {
-  //   app._tabs = [new Tabs({
-  //     navSelector: ".tabs",
-  //     contentSelector: ".sheet-body",
-  //     initial: "appearance",
-  //     callback: () => {}
-  //   })];
-  //   app._tabs[0].bind(html[0]);
-  // }
-
-
-
-
-
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  // Initializes control values
+  // Initializes control values // might delete later but keeping in case absolutely needed later.
   // const isoAnchorToggleCheckbox = html.querySelector('input[name="isoAnchorToggle"]');
   // isoAnchorToggleCheckbox.prop("unchecked", app.object.getFlag(isometricModuleConfig.MODULE_ID, "isoAnchorToggle") ?? false);
 
@@ -172,8 +96,6 @@ export async function handleRenderTokenConfig(app, html, data) {
       y: (tokenMesh.y - textureValues.y/2) + isoOffsets.y + isoAnchors.y
     };
   };
-
-  
 
   // Function to remove the lines
   function cleanup() {
@@ -238,11 +160,6 @@ export async function handleRenderTokenConfig(app, html, data) {
   //   graphics = drawAlignmentLines(newAnchor); // Adicionar novas
   // });
 
-  
-  
-  
-
-
   // Removes all lines when clicking on update token
   // html.querySelector('button[type="submit"]').on('click', () => {
   //   if (!isoAnchorToggleCheckbox.prop("checked")) {
@@ -270,25 +187,6 @@ export async function handleRenderTokenConfig(app, html, data) {
   //   app._isCloseModified = true;
   // }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // Hooks.on("createToken")
 export function handleCreateToken(tokenDocument) {
@@ -331,17 +229,6 @@ export function handleRefreshToken(token) {
 export function handleDeleteToken(token) {
   updateTokenVisuals(token);
 }
-
-
-
-
-
-
-
-
-
-
-
 
 // Generic function to create adjustable buttons with drag functionality
 function createAdjustableButton(options) {
@@ -455,22 +342,6 @@ function updateAdjustAnchorButton(html) {
     roundingPrecision: 2     // Two decimal places for anchor values
   });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 /*
