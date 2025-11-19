@@ -1,0 +1,94 @@
+<section class="iso-sidebar">
+  <section class="iso-gm-hub flexcol">
+    <header>
+      <h2>{{localize 'isometric-perspective.sidebar_title'}}</h2>
+      <p class="iso-gm-hub__scene-name">
+        {{#if sceneName}}
+          {{localize 'isometric-perspective.gmHub_sceneLabel' name=sceneName}}
+        {{else}}
+          {{localize 'isometric-perspective.sidebar_noScene'}}
+        {{/if}}
+      </p>
+    </header>
+
+    <section class="iso-gm-hub__section">
+      <h3>{{localize 'isometric-perspective.gmHub_sceneHeading'}}</h3>
+      <p class="status">
+        {{#if sceneIsIso}}
+          {{localize 'isometric-perspective.gmHub_sceneStatusEnabled'}}
+        {{else}}
+          {{localize 'isometric-perspective.gmHub_sceneStatusDisabled'}}
+        {{/if}}
+      </p>
+      <p class="status">
+        {{#if sceneBackground}}
+          {{localize 'isometric-perspective.gmHub_backgroundStatusEnabled'}}
+        {{else}}
+          {{localize 'isometric-perspective.gmHub_backgroundStatusDisabled'}}
+        {{/if}}
+      </p>
+      <p class="status">{{localize 'isometric-perspective.gmHub_sceneScaleLabel' scale=sceneScale}}</p>
+
+      <div class="iso-gm-hub__actions">
+        <button type="button" data-action="toggle-scene-iso" {{#unless sceneCanToggle}}disabled{{/unless}}>
+          {{#if sceneIsIso}}
+            {{localize 'isometric-perspective.gmHub_sceneToggleDisable'}}
+          {{else}}
+            {{localize 'isometric-perspective.gmHub_sceneToggleEnable'}}
+          {{/if}}
+        </button>
+        <button type="button" data-action="toggle-scene-background" {{#unless sceneCanToggle}}disabled{{/unless}}>
+          {{#if sceneBackground}}
+            {{localize 'isometric-perspective.gmHub_backgroundToggleDisable'}}
+          {{else}}
+            {{localize 'isometric-perspective.gmHub_backgroundToggleEnable'}}
+          {{/if}}
+        </button>
+        <button type="button" data-action="scene-settings">
+          {{localize 'isometric-perspective.sidebar_sceneButton'}}
+        </button>
+      </div>
+      {{#unless sceneCanToggle}}
+        <p class="hint">{{localize 'isometric-perspective.gmHub_sceneNoAccess'}}</p>
+      {{/unless}}
+    </section>
+
+    <section class="iso-gm-hub__section">
+      <h3>{{localize 'isometric-perspective.gmHub_tokenHeading'}}</h3>
+      {{#if hasTokenSelection}}
+        <p class="status">{{localize 'isometric-perspective.gmHub_tokenSelected' token=tokenName}}</p>
+        <p class="status">{{localize 'isometric-perspective.gmHub_tokenScaleLabel' scale=tokenScale}}</p>
+        <p class="status">
+          {{#if tokenIsoEnabled}}
+            {{localize 'isometric-perspective.gmHub_tokenStatusEnabled'}}
+          {{else}}
+            {{localize 'isometric-perspective.gmHub_tokenStatusDisabled'}}
+          {{/if}}
+        </p>
+        <div class="iso-gm-hub__actions">
+          <button type="button" data-action="toggle-token-iso">
+            {{#if tokenIsoEnabled}}
+              {{localize 'isometric-perspective.gmHub_tokenToggleDisable'}}
+            {{else}}
+              {{localize 'isometric-perspective.gmHub_tokenToggleEnable'}}
+            {{/if}}
+          </button>
+          <button type="button" data-action="token-settings">
+            {{localize 'isometric-perspective.sidebar_tokenButton'}}
+          </button>
+        </div>
+      {{else}}
+        <p class="hint">{{localize 'isometric-perspective.gmHub_tokenNone'}}</p>
+        <button type="button" data-action="token-settings" disabled>
+          {{localize 'isometric-perspective.sidebar_tokenButton'}}
+        </button>
+      {{/if}}
+    </section>
+
+    <footer class="iso-gm-hub__footer">
+      <button type="button" data-action="tile-settings" {{#unless hasTileSelection}}disabled{{/unless}}>
+        {{localize 'isometric-perspective.sidebar_tileButton'}}
+      </button>
+      <p class="hint">{{localize 'isometric-perspective.gmHub_hint'}}</p>
+    </footer>
+  </section>

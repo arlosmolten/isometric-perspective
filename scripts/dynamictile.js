@@ -159,20 +159,6 @@ export function registerDynamicTileConfig() {
   Hooks.on("refreshToken", (token) => {
     updateAlwaysVisibleElements();
   });
-  /*
-  Hooks.on('renderTokenConfig', (app, html, data) => {
-    // hide all tokens
-    updateTokensOpacity(0);
-
-    // Handler for the submit form
-  html.on('submit', 'form', async (event) => {
-      updateTokensOpacity(1);
-    });
-  });
-  */
-
-
-
   // ---------------------- OTHERS ----------------------
   Hooks.on('sightRefresh', () => {
     if (canvas.ready && alwaysVisibleContainer) {

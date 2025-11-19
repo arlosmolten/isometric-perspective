@@ -10,18 +10,37 @@ export function registerTileConfig() {
 }
 
 function addTileIsoButton(app, html) {
-  const header = html.find('.window-header .window-title');
-  if (!header.length) return;
-  if (html.find('button.iso-tile-config-open').length) return;
+  const root = resolveElement(html);
+  if (!root) return;
+
+  const header = root.querySelector('.window-header .window-title');
+  if (!header) return;
+  if (root.querySelector('button.iso-tile-config-open')) return;
 
   const label = game.i18n.localize('isometric-perspective.tab_isometric_name');
-  const button = $(`<button type="button" class="iso-tile-config-open" title="${label}">${label}</button>`);
-  header.after(button);
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.classList.add('iso-tile-config-open');
+  button.title = label;
+  button.textContent = label;
 
-  button.on('click', () => {
+  header.insertAdjacentElement('afterend', button);
+
+  button.addEventListener('click', () => {
     const isoApp = new TileIsoSettings(app.object);
     isoApp.render(true);
   });
+}
+
+function resolveElement(element) {
+  if (element instanceof HTMLElement) return element;
+  if (element?.[0] instanceof HTMLElement) return element[0];
+  if (Array.isArray(element)) {
+    for (const entry of element) {
+      if (entry instanceof HTMLElement) return entry;
+    }
+  }
+  return null;
 }
 
 function handleTileMutation(tileDocument, updateData = {}) {
@@ -33,7 +52,7 @@ function handleTileMutation(tileDocument, updateData = {}) {
 }
 
 function handleTileRefresh(tile) {
-  if (!(tile instanceof Tile)) return;
+  if (!(tile instanceof foundry.canvas.placeables.Tile)) return;
   scheduleTileTransform(tile);
 }
 

@@ -11,18 +11,55 @@ export function registerTokenConfig() {
 }
 
 function addTokenIsoButton(app, html) {
-  const header = html.find('.window-header .window-title');
-  if (!header.length) return;
-  if (html.find('button.iso-config-open').length) return;
+  const appElement = resolveAppElement(app, html);
+  if (!appElement) return;
+
+  const header = appElement.querySelector('.window-header');
+  if (!header) return;
+
+  if (header.querySelector('button.iso-config-open')) return;
 
   const label = game.i18n.localize('isometric-perspective.tab_isometric_name');
-  const button = $(`<button type="button" class="iso-config-open" title="${label}">${label}</button>`);
-  header.after(button);
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.classList.add('iso-config-open', 'header-control', 'icon', 'fa-solid', 'fa-cubes');
+  button.setAttribute('aria-label', label);
+  button.dataset.tooltip = label;
 
-  button.on('click', () => {
+  const title = [...header.querySelectorAll('.window-title, .app-title, h1')].pop();
+  if (title?.parentElement === header) {
+    title.insertAdjacentElement('afterend', button);
+  } else {
+    const reference = header.querySelector('.header-control');
+    if (reference) header.insertBefore(button, reference);
+    else header.append(button);
+  }
+
+  button.addEventListener('click', () => {
     const isoApp = new TokenIsoSettings(app.object);
     isoApp.render(true);
   });
+}
+
+function resolveAppElement(app, html) {
+  const candidates = [
+    app?.element?.[0],
+    app?.element,
+    html?.[0],
+    html
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate instanceof HTMLElement) return candidate.closest('.app, .application') ?? candidate;
+  }
+
+  if (Array.isArray(html)) {
+    for (const entry of html) {
+      if (entry instanceof HTMLElement) return entry.closest('.app, .application') ?? entry;
+    }
+  }
+
+  return null;
 }
 
 function handleTokenMutation(tokenDocument) {
@@ -37,7 +74,7 @@ function handleTokenMutation(tokenDocument) {
 }
 
 function handleTokenRefresh(token) {
-  if (!(token instanceof Token)) return;
+  if (!(token instanceof foundry.canvas.placeables.Token)) return;
 
   const scene = token.scene;
   if (!scene) return;

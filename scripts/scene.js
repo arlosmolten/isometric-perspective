@@ -11,44 +11,57 @@ export function registerSceneConfig() {
 }
 
 function addSceneIsoButton(sceneConfig, html) {
-  const $html = html.jquery ? html : $(html);
-  if ($html.find('button.iso-scene-config-open').length) return;
+  const appElement = resolveAppElement(sceneConfig, html);
+  if (!appElement) return;
 
-  const titleSelectors = [
-    '.window-header .window-title',
-    '.window-header .app-title',
-    '.window-header h1'
-  ];
+  const header = appElement.querySelector('.window-header');
+  if (!header) return;
 
-  let titleArea = $();
-  for (const selector of titleSelectors) {
-    const match = $html.find(selector);
-    if (match.length) {
-      titleArea = match.last();
-      break;
-    }
-  }
-
-  const header = $html.find('.window-header');
-  if (!header.length) return;
+  if (header.querySelector('button.iso-scene-config-open')) return;
 
   const label = game.i18n.localize('isometric-perspective.tab_isometric_name');
-  const button = $(`<button type="button" class="iso-scene-config-open header-control" title="${label}"><span>${label}</span></button>`);
-  if (titleArea.length) {
-    titleArea.after(button);
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.classList.add('iso-scene-config-open', 'header-control', 'icon', 'fa-solid', 'fa-cubes');
+  button.setAttribute('aria-label', label);
+  button.dataset.tooltip = label;
+
+  const title = header.querySelector('.window-title, .app-title, h1');
+  if (title?.parentElement === header) {
+    title.insertAdjacentElement('afterend', button);
   } else {
-    const firstControl = header.find('.header-control').first();
-    if (firstControl.length) {
-      button.insertBefore(firstControl);
-    } else {
-      header.append(button);
-    }
+    const toggle = header.querySelector('button[data-action="toggleControls"], button.fa-ellipsis-vertical');
+    if (toggle) header.insertBefore(button, toggle);
+    else header.append(button);
   }
 
-  button.on('click', () => {
+  button.addEventListener('click', () => {
     const isoApp = new SceneIsoSettings(sceneConfig.object);
     isoApp.render(true);
   });
+}
+
+function resolveAppElement(sceneConfig, html) {
+  const candidates = [
+    sceneConfig?.element?.[0],
+    sceneConfig?.element,
+    html?.[0],
+    html
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate instanceof HTMLElement) return candidate.closest('.app, .application') ?? candidate;
+  }
+
+  if (Array.isArray(html)) {
+    for (const entry of html) {
+      if (entry instanceof HTMLElement) {
+        return entry.closest('.app, .application') ?? entry;
+      }
+    }
+  }
+
+  return null;
 }
 
 

@@ -1,6 +1,5 @@
 import { MODULE_ID } from '../config.js';
 import { applyIsometricPerspective, applyBackgroundTransformation } from '../transform.js';
-const { FormApplicationV2 } = foundry.applications.api;
 
 import {
   updateIsometricConstants,
@@ -11,6 +10,13 @@ import {
 } from '../consts.js';
 import { getScenePresets, getScenePreset, saveScenePreset, deleteScenePreset } from '../presets.js';
 
+const SceneFormApplication = foundry?.applications?.api?.FormApplicationV2
+  ?? foundry?.applications?.FormApplication
+  ?? globalThis.FormApplication;
+
+const USES_FORM_APPLICATION_V2 = Boolean(foundry?.applications?.api?.FormApplicationV2);
+const LEGACY_SCENE_TEMPLATE = 'modules/isometric-perspective/templates/scene-config.html';
+
 function buildProjectionOptions(selected) {
   return Object.keys(PROJECTION_TYPES).map((label) => ({
     value: label,
@@ -19,51 +25,83 @@ function buildProjectionOptions(selected) {
   }));
 }
 
-export class SceneIsoSettings extends FormApplicationV2 {
+export class SceneIsoSettings extends SceneFormApplication {
+  static PARTS = USES_FORM_APPLICATION_V2
+    ? {
+        form: {
+          template: LEGACY_SCENE_TEMPLATE
+        }
+      }
+    : undefined;
+
+  static get template() {
+    if (USES_FORM_APPLICATION_V2) {
+      return super.template ?? LEGACY_SCENE_TEMPLATE;
+    }
+    return LEGACY_SCENE_TEMPLATE;
+  }
+
   static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
+    const options = foundry.utils.mergeObject(super.defaultOptions ?? {}, {
       id: 'scene-iso-settings',
-      template: 'modules/isometric-perspective/templates/scene-config.html',
       classes: ['isometric-settings', 'scene-isometric'],
       width: 560,
       height: 'auto',
       resizable: true,
       title: game.i18n.localize('isometric-perspective.tab_isometric_name')
     });
+    if (!USES_FORM_APPLICATION_V2) {
+      options.template = LEGACY_SCENE_TEMPLATE;
+    }
+    return options;
   }
 
   constructor(scene, options = {}) {
     super(scene, options);
+    if (!USES_FORM_APPLICATION_V2 && !this.options?.template) {
+      this.options.template = LEGACY_SCENE_TEMPLATE;
+    }
   }
 
   async getData(options = {}) {
-    const base = await super.getData(options);
-    const scene = this.document ?? canvas.scene;
-    const rawPresets = getScenePresets();
+    // SAFEGUARD: Ensure base is an object to prevent spread errors
+    const base = (await super.getData(options)) || {};
+    const scene = this._resolveSceneDocument();
+
+    // SAFEGUARD: Handle null presets
+    const rawPresets = getScenePresets() || {};
     const presets = Object.entries(rawPresets).map(([id, preset]) => ({
       id,
-      name: preset.name
+      name: preset.name || 'Unnamed Preset'
     }));
 
+    // Default fallback values
+    const defaults = {
+      isIsometric: false,
+      transformBackground: false,
+      scale: 1,
+      projectionOptions: buildProjectionOptions(DEFAULT_PROJECTION),
+      customProjection: this._defaultCustomProjectionString(),
+      isCustomProjection: false,
+      presets,
+      // SAFEGUARD: Add potential missing fields that template might request as empty strings
+      isoBackgroundImage: "",
+      isoPath: ""
+    };
+
     if (!scene) {
-      return {
-        ...base,
-        isIsometric: false,
-        transformBackground: false,
-        scale: 1,
-        projectionOptions: buildProjectionOptions(DEFAULT_PROJECTION),
-        customProjection: this._defaultCustomProjectionString(),
-        isCustomProjection: false,
-        presets
-      };
+      return { ...base, ...defaults };
     }
 
-    const isIsometric = scene.getFlag(MODULE_ID, 'isometricEnabled') ?? false;
-    const transformBackground = scene.getFlag(MODULE_ID, 'isometricBackground') ?? false;
+    // SAFEGUARD: Use || as a fallback for null (?? only catches undefined)
+    const isIsometric = scene.getFlag(MODULE_ID, 'isometricEnabled') || false;
+    const transformBackground = scene.getFlag(MODULE_ID, 'isometricBackground') || false;
     const scale = scene.getFlag(MODULE_ID, 'isometricScale') ?? 1;
-    const projectionType = scene.getFlag(MODULE_ID, 'projectionType') ?? DEFAULT_PROJECTION;
+    const projectionType = scene.getFlag(MODULE_ID, 'projectionType') || DEFAULT_PROJECTION;
+
+    // Explicitly convert to string and trim, defaulting to internal default if null/empty
     const storedCustom = scene.getFlag(MODULE_ID, 'customProjection');
-    const customProjection = storedCustom ?? this._defaultCustomProjectionString();
+    const customProjection = storedCustom ? storedCustom.toString() : this._defaultCustomProjectionString();
 
     return {
       ...base,
@@ -71,81 +109,90 @@ export class SceneIsoSettings extends FormApplicationV2 {
       transformBackground,
       scale,
       projectionOptions: buildProjectionOptions(projectionType),
-      customProjection,
+      customProjection: customProjection, // Guaranteed string
       isCustomProjection: projectionType === 'Custom Projection',
-      presets
+      presets,
+      // If your template uses a background image override, ensure it isn't null
+      isoBackgroundImage: scene.getFlag(MODULE_ID, 'isoBackgroundImage') || ""
     };
   }
 
   activateListeners(html) {
     super.activateListeners(html);
+    const root = ensureHTMLElement(html);
+    if (!root) return;
 
-    html.on('input', '.scale-slider', function () {
-      html.find('.range-value').text(this.value);
-    });
+    const scaleSlider = root.querySelector('.scale-slider');
+    const rangeValue = root.querySelector('.range-value');
+    if (scaleSlider && rangeValue) {
+      scaleSlider.addEventListener('input', (event) => {
+        rangeValue.textContent = event.currentTarget.value;
+      });
+    }
 
-    const projectionSelect = html.find('select[name="flags.isometric-perspective.projectionType"]');
-    const customInput = html.find('input[name="flags.isometric-perspective.customProjection"]');
+    const projectionSelect = root.querySelector('select[name="flags.isometric-perspective.projectionType"]');
+    const customInput = root.querySelector('input[name="flags.isometric-perspective.customProjection"]');
 
     const toggleCustom = () => {
-      const isCustom = projectionSelect.val() === 'Custom Projection';
-      customInput.prop('disabled', !isCustom);
-      if (isCustom && !customInput.val()) {
-        customInput.val(this._defaultCustomProjectionString());
+      if (!projectionSelect || !customInput) return;
+      const isCustom = projectionSelect.value === 'Custom Projection';
+      customInput.disabled = !isCustom;
+      if (isCustom && !customInput.value) {
+        customInput.value = this._defaultCustomProjectionString();
       }
     };
 
     toggleCustom();
-    projectionSelect.on('change', toggleCustom);
+    projectionSelect?.addEventListener('change', toggleCustom);
 
-    const presetSelect = html.find('.iso-preset-select');
-    const presetApply = html.find('.iso-preset-apply');
-    const presetDelete = html.find('.iso-preset-delete');
-    const presetSave = html.find('.iso-preset-save');
-    const presetName = html.find('.iso-preset-name');
+    const presetSelect = root.querySelector('.iso-preset-select');
+    const presetApply = root.querySelector('.iso-preset-apply');
+    const presetDelete = root.querySelector('.iso-preset-delete');
+    const presetSave = root.querySelector('.iso-preset-save');
+    const presetName = root.querySelector('.iso-preset-name');
 
     const togglePresetActions = () => {
-      const hasSelection = Boolean(presetSelect.val());
-      presetApply.prop('disabled', !hasSelection);
-      presetDelete.prop('disabled', !hasSelection);
+      const hasSelection = Boolean(presetSelect?.value);
+      if (presetApply) presetApply.disabled = !hasSelection;
+      if (presetDelete) presetDelete.disabled = !hasSelection;
     };
 
     const toggleSaveState = () => {
-      const hasName = Boolean(presetName.val()?.toString().trim());
-      presetSave.prop('disabled', !hasName);
+      const hasName = Boolean(presetName?.value?.toString().trim());
+      if (presetSave) presetSave.disabled = !hasName;
     };
 
-    presetSelect.on('change', togglePresetActions);
-    presetName.on('input', toggleSaveState);
+    presetSelect?.addEventListener('change', togglePresetActions);
+    presetName?.addEventListener('input', toggleSaveState);
 
     togglePresetActions();
     toggleSaveState();
 
-    presetSave.on('click', async () => {
-      const name = presetName.val()?.toString().trim();
+    presetSave?.addEventListener('click', async () => {
+      const name = presetName?.value?.toString().trim();
       if (!name) {
         ui.notifications.warn(game.i18n.localize('isometric-perspective.presets_nameRequired'));
         return;
       }
 
-      const payload = this._normalizePresetPayload(this._collectPresetPayload(html));
+      const payload = this._normalizePresetPayload(this._collectPresetPayload(root));
       await saveScenePreset(name, payload);
-      presetName.val('');
+      if (presetName) presetName.value = '';
       toggleSaveState();
       ui.notifications.info(game.i18n.localize('isometric-perspective.presets_saved', { name }));
       await this.render(true);
     });
 
-    presetDelete.on('click', async () => {
-      const id = presetSelect.val();
+    presetDelete?.addEventListener('click', async () => {
+      const id = presetSelect?.value;
       if (!id) return;
       await deleteScenePreset(id);
       ui.notifications.info(game.i18n.localize('isometric-perspective.presets_deleted'));
       await this.render(true);
     });
 
-    presetApply.on('click', async () => {
-      const id = presetSelect.val();
+    presetApply?.addEventListener('click', async () => {
+      const id = presetSelect?.value;
       if (!id) return;
       const preset = getScenePreset(id);
       if (!preset) {
@@ -154,9 +201,11 @@ export class SceneIsoSettings extends FormApplicationV2 {
       }
 
       const payload = this._normalizePresetPayload(preset.data);
-      this._populateFormFields(html, payload);
+      this._populateFormFields(root, payload);
       await this._applySceneFlags(payload);
     });
+
+    this._wireAutoApply(root);
   }
 
   async _updateObject(event, formData) {
@@ -164,18 +213,48 @@ export class SceneIsoSettings extends FormApplicationV2 {
     await this._applySceneFlags(payload);
   }
 
-  _collectPresetPayload(html) {
-    const scaleInput = html.find('input[name="flags.isometric-perspective.isometricScale"]');
-    const projectionSelect = html.find('select[name="flags.isometric-perspective.projectionType"]');
-    const customInput = html.find('input[name="flags.isometric-perspective.customProjection"]');
+  _collectPresetPayload(root) {
+    const getInput = (selector) => root.querySelector(selector);
+    const scaleInput = getInput('input[name="flags.isometric-perspective.isometricScale"]');
+    const projectionSelect = getInput('select[name="flags.isometric-perspective.projectionType"]');
+    const customInput = getInput('input[name="flags.isometric-perspective.customProjection"]');
+    const isoEnabled = getInput('input[name="flags.isometric-perspective.isometricEnabled"]');
+    const transformBackground = getInput('input[name="flags.isometric-perspective.isometricBackground"]');
 
     return {
-      isometricEnabled: html.find('input[name="flags.isometric-perspective.isometricEnabled"]').prop('checked'),
-      transformBackground: html.find('input[name="flags.isometric-perspective.isometricBackground"]').prop('checked'),
-      scale: Number(scaleInput.val() ?? 1),
-      projectionType: projectionSelect.val() ?? DEFAULT_PROJECTION,
-      customProjection: (customInput.val() ?? '').toString()
+      isometricEnabled: Boolean(isoEnabled?.checked),
+      transformBackground: Boolean(transformBackground?.checked),
+      scale: Number(scaleInput?.value ?? 1),
+      projectionType: projectionSelect?.value ?? DEFAULT_PROJECTION,
+      customProjection: (customInput?.value ?? '').toString()
     };
+  }
+
+  _wireAutoApply(root) {
+    if (!root) return;
+
+    const applyChanges = () => {
+      const payload = this._normalizePresetPayload(this._collectPresetPayload(root));
+      return this._applySceneFlags(payload);
+    };
+
+    const debouncedApply = foundry?.utils?.debounce
+      ? foundry.utils.debounce(() => { void applyChanges(); }, 150)
+      : () => { void applyChanges(); };
+
+    const bindings = [
+      { selector: 'input[name="flags.isometric-perspective.isometricEnabled"]', event: 'change' },
+      { selector: 'input[name="flags.isometric-perspective.isometricBackground"]', event: 'change' },
+      { selector: 'input[name="flags.isometric-perspective.isometricScale"]', event: 'input' },
+      { selector: 'select[name="flags.isometric-perspective.projectionType"]', event: 'change' },
+      { selector: 'input[name="flags.isometric-perspective.customProjection"]', event: 'change' }
+    ];
+
+    bindings.forEach(({ selector, event }) => {
+      const element = root.querySelector(selector);
+      if (!element) return;
+      element.addEventListener(event, () => debouncedApply());
+    });
   }
 
   _normalizePresetPayload(source) {
@@ -223,28 +302,29 @@ export class SceneIsoSettings extends FormApplicationV2 {
     };
   }
 
-  _populateFormFields(html, payload) {
+  _populateFormFields(root, payload) {
     if (!payload) return;
 
-    const projectionSelect = html.find('select[name="flags.isometric-perspective.projectionType"]');
-    const customInput = html.find('input[name="flags.isometric-perspective.customProjection"]');
+    const projectionSelect = root.querySelector('select[name="flags.isometric-perspective.projectionType"]');
+    const customInput = root.querySelector('input[name="flags.isometric-perspective.customProjection"]');
+    const isoEnabled = root.querySelector('input[name="flags.isometric-perspective.isometricEnabled"]');
+    const transformBackground = root.querySelector('input[name="flags.isometric-perspective.isometricBackground"]');
+    const scaleInput = root.querySelector('input[name="flags.isometric-perspective.isometricScale"]');
+    const rangeValue = root.querySelector('.range-value');
 
-    html.find('input[name="flags.isometric-perspective.isometricEnabled"]').prop('checked', payload.isometricEnabled);
-    html.find('input[name="flags.isometric-perspective.isometricBackground"]').prop('checked', payload.transformBackground);
-
-    const scaleInput = html.find('input[name="flags.isometric-perspective.isometricScale"]');
-    scaleInput.val(payload.scale);
-    html.find('.range-value').text(payload.scale);
-
-    projectionSelect.val(payload.projectionType);
-    customInput.val(payload.customProjection);
-    projectionSelect.trigger('change');
+    if (isoEnabled) isoEnabled.checked = payload.isometricEnabled;
+    if (transformBackground) transformBackground.checked = payload.transformBackground;
+    if (scaleInput) scaleInput.value = payload.scale;
+    if (rangeValue) rangeValue.textContent = payload.scale;
+    if (projectionSelect) projectionSelect.value = payload.projectionType;
+    if (customInput) customInput.value = payload.customProjection;
+    projectionSelect?.dispatchEvent(new Event('change'));
   }
 
   async _applySceneFlags(payload) {
     if (!payload) return;
 
-    const scene = this.document;
+    const scene = this._resolveSceneDocument();
     if (!scene) return;
 
     const isoEnabled = Boolean(payload.isometricEnabled);
@@ -252,6 +332,14 @@ export class SceneIsoSettings extends FormApplicationV2 {
     const scale = payload.scale;
     const projectionType = payload.projectionType || DEFAULT_PROJECTION;
     const customProjectionInput = (payload.customProjection ?? '').toString().trim();
+
+    console.debug('[isometric-perspective] Applying scene flags', {
+      sceneId: scene.id,
+      isoEnabled,
+      transformBackground,
+      scale,
+      projectionType
+    });
 
     await scene.setFlag(MODULE_ID, 'isometricEnabled', isoEnabled);
     await scene.setFlag(MODULE_ID, 'isometricBackground', transformBackground);
@@ -280,7 +368,31 @@ export class SceneIsoSettings extends FormApplicationV2 {
     }
   }
 
+    _resolveSceneDocument() {
+      const candidates = [
+        this.document,
+        this.object,
+        this.options?.document,
+        this.options?.scene,
+        canvas?.scene
+      ];
+
+      for (const candidate of candidates) {
+        if (!candidate) continue;
+        if (typeof candidate.getFlag === 'function') return candidate;
+        if (candidate.document && typeof candidate.document.getFlag === 'function') {
+          return candidate.document;
+        }
+      }
+
+      return null;
+    }
+
   _defaultCustomProjectionString() {
+    // Fallback if consts.js import fails
+    if (!PROJECTION_TYPES || !PROJECTION_TYPES['Custom Projection']) {
+        return "30, 30, 0, 0, 0, 0, 0, 1.73";
+    }
     const projection = PROJECTION_TYPES['Custom Projection'];
     return [
       projection.rotation,
@@ -293,4 +405,19 @@ export class SceneIsoSettings extends FormApplicationV2 {
       projection.ratio
     ].join(', ');
   }
+}
+
+if (!USES_FORM_APPLICATION_V2) {
+  Reflect.deleteProperty(SceneIsoSettings, 'PARTS');
+}
+
+function ensureHTMLElement(element) {
+  if (element instanceof HTMLElement) return element;
+  if (element?.[0] instanceof HTMLElement) return element[0];
+  if (Array.isArray(element)) {
+    for (const entry of element) {
+      if (entry instanceof HTMLElement) return entry;
+    }
+  }
+  return null;
 }

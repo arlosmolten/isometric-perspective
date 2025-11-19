@@ -40,8 +40,11 @@ export function calculateIsometricPosition(x, y) {
 }
 
 export function adjustHUDPosition(hud, html) {
-  let object = hud.object;
-  let { x, y } = object.position;
+  const element = ensureHTMLElement(html);
+  if (!element) return;
+
+  const object = hud.object;
+  const { x, y } = object.position;
 
   /*
   const currentProjection = canvas.scene.getFlag(MODULE_ID, 'projectionType') ?? DEFAULT_PROJECTION;
@@ -69,23 +72,19 @@ export function adjustHUDPosition(hud, html) {
 
   if (object instanceof Token) {
     const topCenter = calculateIsometricPosition(x, y);
-    
-    html.css({
+    applyStyles(element, {
       left: `${topCenter.x}px`,
-      top:  `${topCenter.y}px`,
+      top: `${topCenter.y}px`,
       transform: 'translate(33%, -50%)'
     });
   }
-  
+
   else if (object instanceof Tile) {
     const topCenter = calculateIsometricPosition(x, y);
-    //const offsetY = height * Math.sin(Math.PI / 6);
 
-    // Adjusts the HUD's position
-    html.css({
+    applyStyles(element, {
       left: `${topCenter.x}px`,
-      top: `${topCenter.y}px`,
-      //transform: 'translate(0%, 0%)' // Centers horizontally and positions above the token
+      top: `${topCenter.y}px`
     });
   }
 }
@@ -214,3 +213,20 @@ function isometricToCartesianGPT4o(x, y) {
   return { x: cartesianX, y: cartesianY };
 }
 */
+
+function ensureHTMLElement(element) {
+  if (element instanceof HTMLElement) return element;
+  if (element?.[0] instanceof HTMLElement) return element[0];
+  if (Array.isArray(element)) {
+    for (const entry of element) {
+      if (entry instanceof HTMLElement) return entry;
+    }
+  }
+  return null;
+}
+
+function applyStyles(element, styles) {
+  Object.entries(styles).forEach(([key, value]) => {
+    element.style[key] = value;
+  });
+}

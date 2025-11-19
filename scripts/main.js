@@ -4,6 +4,8 @@ import { registerTileConfig } from './tile.js';
 import { registerHUDConfig } from './hud.js';
 import { registerSortingConfig } from './autosorting.js';
 import { registerDynamicTileConfig } from './dynamictile.js';
+import { registerSidebarControl } from './sidebar-control.js';
+import { registerSidebarButton } from './sidebar-button.js';
 import { MODULE_ID } from './config.js';
 
 //import { registerOcclusionConfig } from './silhouetetoken.js';
@@ -120,6 +122,8 @@ Hooks.once("init", function() {
   registerDynamicTileConfig();
   registerSortingConfig();
   registerOcclusionConfig();
+  registerSidebarControl();
+  registerSidebarButton();
 
   // No explicit FOUNDRY_VERSION variable needed; use getFoundryVersion().major when necessary
 
@@ -150,20 +154,19 @@ export class WelcomeScreen extends Application {
   activateListeners(html) {
     super.activateListeners(html);
 
-    // Initialize checkbox with the current setting
-    const checkbox = html.find('#show-on-start');
-    if (checkbox.length) checkbox.prop('checked', game.settings.get(MODULE_ID, 'showWelcome'));
+    const root = ensureHTMLElement(html);
+    if (!root) return;
 
-    // Toggle setting when user changes the checkbox
-    html.find('#show-on-start').on('change', async (ev) => {
-      const checked = ev.currentTarget.checked;
-      await game.settings.set(MODULE_ID, 'showWelcome', checked);
-    });
+    const checkbox = root.querySelector('#show-on-start');
+    if (checkbox) {
+      checkbox.checked = game.settings.get(MODULE_ID, 'showWelcome');
+      checkbox.addEventListener('change', async (ev) => {
+        const checked = ev.currentTarget.checked;
+        await game.settings.set(MODULE_ID, 'showWelcome', checked);
+      });
+    }
 
-    // Close button
-    html.find('.close-welcome').on('click', (ev) => {
-      this.close();
-    });
+    root.querySelector('.close-welcome')?.addEventListener('click', () => this.close());
   }
 }
 
@@ -173,3 +176,14 @@ Hooks.once('ready', async function() {
     welcome.render(true);
   }
 });
+
+function ensureHTMLElement(element) {
+  if (element instanceof HTMLElement) return element;
+  if (element?.[0] instanceof HTMLElement) return element[0];
+  if (Array.isArray(element)) {
+    for (const entry of element) {
+      if (entry instanceof HTMLElement) return entry;
+    }
+  }
+  return null;
+}
