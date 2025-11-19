@@ -251,7 +251,7 @@ Hooks.on("canvasReady", handleCanvasReady);
 Hooks.on("canvasResize", handleCanvasResize);
 
 //handle tokens updates
-Hooks.on("renderTokenConfig", handleRenderTokenConfig);
+Hooks.on("ready", handleRenderTokenConfig);
 Hooks.on("createToken", handleCreateToken);
 Hooks.on("updateToken", handleUpdateToken);
 Hooks.on("refreshToken", handleRefreshToken);
