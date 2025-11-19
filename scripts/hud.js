@@ -1,25 +1,24 @@
-import { MODULE_ID, DEBUG_PRINT, WORLD_ISO_FLAG } from './main.js';
+import { isometricModuleConfig } from './consts.js';
 import { ISOMETRIC_CONST, PROJECTION_TYPES, DEFAULT_PROJECTION } from './consts.js';
 
 export function registerHUDConfig() {
-  Hooks.on("renderTokenHUD", handleRenderTokenHUD);
-  Hooks.on("renderTileHUD", handleRenderTileHUD);
+
 }
 
-function handleRenderTokenHUD(hud, html, data) {
+export function handleRenderTokenHUD(hud, html, data) {
   const scene = game.scenes.current;
-  const isSceneIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
-  const isometricWorldEnabled = game.settings.get(MODULE_ID, "worldIsometricFlag");
+  const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
+  const isometricWorldEnabled = game.settings.get(isometricModuleConfig.MODULE_ID, "worldIsometricFlag");
 
   if (isometricWorldEnabled && isSceneIsometric) {
     requestAnimationFrame(() => adjustHUDPosition(hud, html));
   }
 }
 
-function handleRenderTileHUD(hud, html, data) {
+export function handleRenderTileHUD(hud, html, data) {
   const scene = game.scenes.current;
-  const isSceneIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
-  const isometricWorldEnabled = game.settings.get(MODULE_ID, "worldIsometricFlag");
+  const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
+  const isometricWorldEnabled = game.settings.get(isometricModuleConfig.MODULE_ID, "worldIsometricFlag");
 
   if (isometricWorldEnabled && isSceneIsometric) {
     requestAnimationFrame(() => adjustHUDPosition(hud, html));
@@ -44,7 +43,7 @@ export function adjustHUDPosition(hud, html) {
   let { x, y } = object.position;
 
   /*
-  const currentProjection = canvas.scene.getFlag(MODULE_ID, 'projectionType') ?? DEFAULT_PROJECTION;
+  const currentProjection = canvas.scene.getFlag(isometricModuleConfig.MODULE_ID, 'projectionType') ?? DEFAULT_PROJECTION;
   const projection = PROJECTION_TYPES[currentProjection];
   let isotranslate;
   switch (projection) {
@@ -70,11 +69,11 @@ export function adjustHUDPosition(hud, html) {
   if (object instanceof Token) {
     const topCenter = calculateIsometricPosition(x, y);
     
-    html.css({
-      left: `${topCenter.x}px`,
-      top:  `${topCenter.y}px`,
-      transform: 'translate(33%, -50%)'
-    });
+    // html.css({
+    //   left: `${topCenter.x}px`,
+    //   top:  `${topCenter.y}px`,
+    //   transform: 'translate(33%, -50%)'
+    // });
   }
   
   else if (object instanceof Tile) {
@@ -82,11 +81,11 @@ export function adjustHUDPosition(hud, html) {
     //const offsetY = height * Math.sin(Math.PI / 6);
 
     // Adjusts the HUD's position
-    html.css({
-      left: `${topCenter.x}px`,
-      top: `${topCenter.y}px`,
-      //transform: 'translate(0%, 0%)' // Centers horizontally and positions above the token
-    });
+    // html.css({
+    //   left: `${topCenter.x}px`,
+    //   top: `${topCenter.y}px`,
+    //   //transform: 'translate(0%, 0%)' // Centers horizontally and positions above the token
+    // });
   }
 }
 

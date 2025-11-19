@@ -1,37 +1,51 @@
-import { registerSceneConfig } from './scene.js';
-import { registerTokenConfig } from './token.js';
+import { isometricModuleConfig } from './consts.js';
+
+import { 
+  handleRenderTokenConfig,
+  handleCreateToken,
+  handleUpdateToken,
+  handleRefreshToken,
+  handleDeleteToken
+ } from './token.js';
+ 
 import { registerTileConfig } from './tile.js';
-import { registerHUDConfig } from './hud.js';
+
+import { 
+  handleRenderTokenHUD,
+  handleRenderTileHUD 
+} from './hud.js';
+
 import { registerSortingConfig } from './autosorting.js';
 import { registerDynamicTileConfig, increaseTilesOpacity, decreaseTilesOpacity } from './dynamictile.js';
+
 import { applyIsometricPerspective, applyBackgroundTransformation } from './transform.js';
+import { updateIsometricConstants, parseCustomProjection, updateCustomProjection, PROJECTION_TYPES, DEFAULT_PROJECTION, CUSTOM_PROJECTION } from './consts.js';
 import { ISOMETRIC_CONST } from './consts.js';
 import { isoToCartesian, cartesianToIso } from './utils.js';
 
-//import { registerOcclusionConfig } from './silhouetetoken.js';
 import { registerOcclusionConfig } from './occlusion.js';
+
+//import { registerOcclusionConfig } from './silhouetetoken.js';
 //import { registerOcclusionConfig } from './occlusion2 v15 (cpu gpu choose).js';  // choose between cpu (working, heavy on performance) and gpu (not fully working)
 //import { registerOcclusionConfig } from './occlusion2 v21 (simple test 2).js';   // different approach to solution (not fully working)
 //import { registerOcclusionConfig } from './occlusion3.js';                       // has token-token occlusion (not fully working)
 
-// ---------- CONSTANTS ----------
-const MODULE_ID = "isometric-perspective";
-let DEBUG_PRINT;
-let WORLD_ISO_FLAG;
-let FOUNDRY_VERSION;
+import { 
+  configureIsometricTab,
+  handleUpdateScene,
+  handleCanvasReady,
+  handleCanvasResize, 
+} from './scene.js'
 
-export { MODULE_ID };
-export { DEBUG_PRINT };
-export { WORLD_ISO_FLAG };
-export { FOUNDRY_VERSION };
-
+// application v2 update
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
 // Hook to register module configuration in Foundry VTT
 Hooks.once("init", function() {
-  
+
   // ------------- Registra as configurações do módulo ------------- 
   // Checkbox configuration to enable or disable isometric mode globally
-  game.settings.register(MODULE_ID, "worldIsometricFlag", {
+  game.settings.register(isometricModuleConfig.MODULE_ID, "worldIsometricFlag", {
     name: game.i18n.localize('isometric-perspective.settings_main_name'), //name: "Enable Isometric Perspective",
     hint: game.i18n.localize('isometric-perspective.settings_main_hint'), //hint: "Toggle whether the isometric perspective is applied to the canvas.",
     scope: "world",  // "world" = sync to db, "client" = local storage
@@ -42,7 +56,7 @@ Hooks.once("init", function() {
     //onChange: settings => window.location.reload() // recarrega automaticamente
   });
 
-  game.settings.register(MODULE_ID, 'enableHeightAdjustment', {
+  game.settings.register(isometricModuleConfig.MODULE_ID, 'enableHeightAdjustment', {
     name: game.i18n.localize('isometric-perspective.settings_height_name'), //name: 'Enable Height Adjustment',
     hint: game.i18n.localize('isometric-perspective.settings_height_hint'), //hint: 'Toggle whether token sprites adjust their position to reflect their elevation',
     scope: 'client',
@@ -52,7 +66,7 @@ Hooks.once("init", function() {
     requiresReload: true
   });
 
-  game.settings.register(MODULE_ID, 'enableTokenVisuals', {
+  game.settings.register(isometricModuleConfig.MODULE_ID, 'enableTokenVisuals', {
     name: game.i18n.localize('isometric-perspective.settings_visuals_name'), //name: 'Enable Token Visuals',
     hint: game.i18n.localize('isometric-perspective.settings_visuals_hint'), //hint: 'Displays a circular shadow and a vertical red line to indicate token elevation. Requires "Enable Height Adjustment" to be active.',
     scope: 'client',
@@ -62,7 +76,7 @@ Hooks.once("init", function() {
     requiresReload: true
   });
 
-  game.settings.register(MODULE_ID, 'enableOcclusionDynamicTile', {
+  game.settings.register(isometricModuleConfig.MODULE_ID, 'enableOcclusionDynamicTile', {
     name: game.i18n.localize('isometric-perspective.settings_dynamic_tile_name'), //name: 'Enable Occlusion: Dynamic Tile',
     hint: game.i18n.localize('isometric-perspective.settings_dynamic_tile_hint'), //hint: '(BETA FEATURE. USE WITH CAUTION) Adjusts the visibility of tiles dynamically with the positioning of tokens. See how this feature works here.',
     scope: 'world',
@@ -72,7 +86,7 @@ Hooks.once("init", function() {
     requiresReload: true
   });
 
-  game.settings.register(MODULE_ID, 'enableAutoSorting', {
+  game.settings.register(isometricModuleConfig.MODULE_ID, 'enableAutoSorting', {
     name: game.i18n.localize('isometric-perspective.settings_token_sort_name'), //name: 'Enable Automatic Token Sorting',
     hint: game.i18n.localize('isometric-perspective.settings_token_sort_hint'), //hint: '(BETA FEATURE. USE WITH CAUTION) Automatically adjusts the token\'s sort property value when moving it around the canvas.',
     scope: 'world',
@@ -83,7 +97,7 @@ Hooks.once("init", function() {
   });
 
   /*
-  game.settings.register(MODULE_ID, 'enableOcclusionTokenSilhouette', {
+  game.settings.register(isometricModuleConfig.MODULE_ID, 'enableOcclusionTokenSilhouette', {
     name: game.i18n.localize('isometric-perspective.settings_token_silhouette_name'), //name: 'Enable Occlusion: Token Silhouette',
     hint: game.i18n.localize('isometric-perspective.settings_token_silhouette_hint'), //hint: 'Adjusts the visibility of tiles dynamically with the positioning of tokens. See how this feature works here.',
     scope: 'client',
@@ -94,7 +108,7 @@ Hooks.once("init", function() {
   });
   */
   
-  game.settings.register(MODULE_ID, 'enableOcclusionTokenSilhouette', {
+  game.settings.register(isometricModuleConfig.MODULE_ID, 'enableOcclusionTokenSilhouette', {
     name: game.i18n.localize('isometric-perspective.settings_token_silhouette_name'), //'Enable Occlusion: Token Silhouette',
     hint: game.i18n.localize('isometric-perspective.settings_token_silhouette_hint'), //'Adjusts the visibility of tiles dynamically with the positioning of tokens.',
     scope: 'client',
@@ -115,7 +129,7 @@ Hooks.once("init", function() {
     requiresReload: true
   });
 
-  game.settings.register(MODULE_ID, "showWelcome", {
+  game.settings.register(isometricModuleConfig.MODULE_ID, "showWelcome", {
     name: game.i18n.localize('isometric-perspective.settings_welcome_name'),
     hint: game.i18n.localize('isometric-perspective.settings_welcome_hint'),
     scope: "client",
@@ -124,7 +138,7 @@ Hooks.once("init", function() {
     default: true
   });
 
-  game.settings.register(MODULE_ID, 'debug', {
+  game.settings.register(isometricModuleConfig.MODULE_ID, 'debug', {
     name: game.i18n.localize('isometric-perspective.settings_debug_name'), //name: 'Enable Debug Mode',
     hint: game.i18n.localize('isometric-perspective.settings_debug_hint'), //hint: 'Enables debug prints.',
     scope: 'client',
@@ -141,11 +155,9 @@ Hooks.once("init", function() {
 
 
 
-
-
   // ------------- Registra os atalhos do módulo ------------- 
   
-  game.keybindings.register(MODULE_ID, 'increaseTilesOpacity', {
+  game.keybindings.register(isometricModuleConfig.MODULE_ID, 'increaseTilesOpacity', {
     name: game.i18n.localize('isometric-perspective.keybindings_increase_tile_opacity'), //name: 'Increase Tile Opacity',
     hint: game.i18n.localize('isometric-perspective.keybindings_increase_tile_opacity_hint'), //hint: 'Increases the opacity of always visible tiles.',
     editable: [
@@ -159,7 +171,7 @@ Hooks.once("init", function() {
     precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL
   });
 
-  game.keybindings.register(MODULE_ID, 'decreaseTilesOpacity', {
+  game.keybindings.register(isometricModuleConfig.MODULE_ID, 'decreaseTilesOpacity', {
     name: game.i18n.localize('isometric-perspective.keybindings_decrease_tile_opacity'), //name: 'Decrease Tile Opacity',
     hint: game.i18n.localize('isometric-perspective.keybindings_decrease_tile_opacity_hint'), //hint: 'Decreases the opacity of always visible tiles.',
     editable: [
@@ -173,16 +185,11 @@ Hooks.once("init", function() {
     precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL
   });
 
-  
-
-
-
 
   // ------------- Executa os hooks essenciais do módulo -------------
-  registerSceneConfig();
-  registerTokenConfig();
+  // registerTokenConfig();
   registerTileConfig();
-  registerHUDConfig();
+  // registerHUDConfig();
 
   // ------------- Executa os hooks de funcionalidades adicionais do módulo -------------
   registerDynamicTileConfig();
@@ -190,58 +197,68 @@ Hooks.once("init", function() {
   registerOcclusionConfig();
 
   
-  
-  
-  
-  
   // Define global debug print variable
-  if (game.settings.get(MODULE_ID, "debug"))
-    DEBUG_PRINT = true;
-  else DEBUG_PRINT = false;
+  if (game.settings.get(isometricModuleConfig.MODULE_ID, "debug"))
+    isometricModuleConfig.DEBUG_PRINT = true;
+  else isometricModuleConfig.DEBUG_PRINT = false;
 
-  if (game.settings.get(MODULE_ID, "worldIsometricFlag"))
-    WORLD_ISO_FLAG = true;
-  else WORLD_ISO_FLAG = false;
+  if (game.settings.get(isometricModuleConfig.MODULE_ID, "worldIsometricFlag"))
+    isometricModuleConfig.WORLD_ISO_FLAG = true;
+  else isometricModuleConfig.WORLD_ISO_FLAG = false;
 
-  FOUNDRY_VERSION = parseInt(game.version.split(".")[0]); // Extrai a versão principal
+  isometricModuleConfig.CONST = parseInt(game.version.split(".")[0]); // Extrai a versão principal
 
-  
 });
 
 
-
-
-
 // Welcome Message Setup
-export class WelcomeScreen extends Application {
-  static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      template: "modules/isometric-perspective/templates/welcome.html",
+export class WelcomeScreen extends HandlebarsApplicationMixin(ApplicationV2) {
+
+  static DEFAULT_OPTIONS = {
+    classes: ["welcome-screen"],
+    position:{
       width: 600,
       height: 620,
-      classes: ["welcome-screen"],
+    },
+    window:{
       resizable: false,
-      title: "Isometric Perspective Module"
-    });
+      title: "isometric-perspective.title"
+    }
+  }
+
+  static PARTS = {
+    div: {
+      template: "modules/isometric-perspective/templates/welcome.hbs",
+    }
   }
 }
 
 // Verifica se deve mostrar a tela de boas-vindas
-Hooks.once('ready', async function() {
-  if (game.settings.get(MODULE_ID, "showWelcome")) {
+// Checks whether to show the welcome screen
+
+Hooks.once('ready', ()=> {
+  if (game.settings.get(isometricModuleConfig.MODULE_ID, "showWelcome")) {
     const welcome = new WelcomeScreen();
     welcome.render(true);
   }
 });
 
+// add the isometric tab in the scene config
+Hooks.on('ready', configureIsometricTab);
+//handle the isometric canvas
+Hooks.on("updateScene", handleUpdateScene);
+Hooks.on("canvasReady", handleCanvasReady);
+Hooks.on("canvasResize", handleCanvasResize);
 
+//handle tokens updates
+Hooks.on("ready", handleRenderTokenConfig);
+Hooks.on("createToken", handleCreateToken);
+Hooks.on("updateToken", handleUpdateToken);
+Hooks.on("refreshToken", handleRefreshToken);
+Hooks.on("deleteToken", handleDeleteToken);
 
-
-
-
-
-
-
+Hooks.on("renderTokenHUD", handleRenderTokenHUD);
+Hooks.on("renderTileHUD", handleRenderTileHUD);
 
 
 

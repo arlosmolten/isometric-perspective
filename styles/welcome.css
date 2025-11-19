@@ -1,0 +1,134 @@
+.welcome-content {
+    width: 100%;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    /* color: #333; */
+}
+
+.welcome-text {
+    line-height: 1.4;
+}
+
+h3 {
+    /* color: #333; */
+    text-align: center;
+    margin: 0 0 15px 0;
+    font-size: 24px;
+}
+
+.features-table {
+    width: 100%;
+    margin: 20px 0;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+}
+
+.icon-cell {
+    width: 40px;
+    vertical-align: top;
+    padding-top: 3px;
+}
+
+.icon-cell i {
+    /* color: #666; */
+    font-size: 20px;
+    width: 20px;
+    text-align: center;
+}
+
+.title-cell {
+    padding-bottom: 5px;
+}
+
+.feature-content td {
+    padding-bottom: 15px;
+}
+
+.feature-content td:first-child {
+    width: 40px;
+}
+
+.support-text {
+    margin: 25px 0;
+    padding: 15px;
+    /* background-color: #eee; */
+    border-left: 4px solid #666;
+    font-size: 12px;
+}
+
+.wiki-text {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.wiki-text a {
+    /* color: #666; */
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.wiki-text a:hover {
+    /* color: #444; */
+}
+
+.wiki-text i {
+    margin-right: 5px;
+}
+
+.welcome-links {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.welcome-links a {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 15px;
+    /* background: #666; */
+    /* color: white; */
+    text-decoration: none;
+    border-radius: 3px;
+    transition: background 0.3s;
+    font-size: 14px;
+}
+
+.welcome-links a:hover {
+    background: #444;
+}
+
+.welcome-links i {
+    margin-right: 8px;
+}
+
+.features-table {
+    border-collapse: collapse; /* Remove os espaçamentos entre células */
+    width: 100%;
+}
+
+.features-table td {
+    padding: 2px; /* Define o padding mínimo */
+}
+
+/* for the token tab
+    /* .offset-point .form-fields {
+        display: flex;
+        gap: 0.5em;
+    }
+    .offset-point .axis {
+        flex: 0 0 60px;
+        line-height: var(--form-field-height);
+        text-align: center;
+        color: var(--color-text-dark-secondary);
+    }
+    .offset-point input {
+        flex: 1;
+    }
+    .scale-slider {
+        flex: 4;
+    }
+    .range-value {
+        flex: 1;
+        text-align: center;
+        line-height: var(--form-field-height);
+    } */

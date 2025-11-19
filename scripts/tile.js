@@ -1,4 +1,4 @@
-import { MODULE_ID, DEBUG_PRINT } from './main.js';
+import { isometricModuleConfig } from './consts.js';
 import { applyIsometricTransformation } from './transform.js';
 
 export function registerTileConfig() {
@@ -10,26 +10,26 @@ export function registerTileConfig() {
 }
 
 async function handleRenderTileConfig(app, html, data) {
-  const linkedWallIds = app.object.getFlag(MODULE_ID, 'linkedWallIds') || [];
+  const linkedWallIds = app.object.getFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds') || [];
   const wallIdsString = Array.isArray(linkedWallIds) ? linkedWallIds.join(', ') : linkedWallIds;
 
   // Carrega o template HTML para a nova aba
   const tabHtml = await renderTemplate("modules/isometric-perspective/templates/tile-config.html", {
-    isoDisabled: app.object.getFlag(MODULE_ID, 'isoTileDisabled') ?? 1,
-    scale: app.object.getFlag(MODULE_ID, 'scale') ?? 1,
-    isFlipped: app.object.getFlag(MODULE_ID, 'tokenFlipped') ?? false,
-    offsetX: app.object.getFlag(MODULE_ID, 'offsetX') ?? 0,
-    offsetY: app.object.getFlag(MODULE_ID, 'offsetY') ?? 0,
+    isoDisabled: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'isoTileDisabled') ?? 1,
+    scale: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'scale') ?? 1,
+    isFlipped: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'tokenFlipped') ?? false,
+    offsetX: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'offsetX') ?? 0,
+    offsetY: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY') ?? 0,
     linkedWallIds: wallIdsString,
-    isOccluding: app.object.getFlag(MODULE_ID, 'OccludingTile') ?? false
+    isOccluding: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'OccludingTile') ?? false
   });
 
   // Adiciona a nova aba ao menu
-  const tabs = html.find('.tabs:not(.secondary-tabs)');
+  const tabs = html.querySelector('.tabs:not(.secondary-tabs)');
   tabs.append(`<a class="item" data-tab="isometric"><i class="fas fa-cube"></i> ${game.i18n.localize('isometric-perspective.tab_isometric_name')}</a>`);
 
   // Adiciona o conteúdo da aba após a última aba existente
-  const lastTab = html.find('.tab').last();
+  const lastTab = html.querySelector('.tab').last();
   lastTab.after(tabHtml);
 
   // Update the offset fine adjustment button
@@ -48,41 +48,41 @@ async function handleRenderTileConfig(app, html, data) {
   */
 
   // Inicializa os valores dos controles
-  const isoTileCheckbox = html.find('input[name="flags.isometric-perspective.isoTileDisabled"]');
-  const flipCheckbox = html.find('input[name="flags.isometric-perspective.tokenFlipped"]');
-  const linkedWallInput = html.find('input[name="flags.isometric-perspective.linkedWallIds"]');
-  const occludingCheckbox = html.find('input[name="flags.isometric-perspective.OccludingTile"]');
+  const isoTileCheckbox = html.querySelector('input[name="flags.isometric-perspective.isoTileDisabled"]');
+  const flipCheckbox = html.querySelector('input[name="flags.isometric-perspective.tokenFlipped"]');
+  const linkedWallInput = html.querySelector('input[name="flags.isometric-perspective.linkedWallIds"]');
+  const occludingCheckbox = html.querySelector('input[name="flags.isometric-perspective.OccludingTile"]');
   
-  isoTileCheckbox.prop("checked", app.object.getFlag(MODULE_ID, "isoTileDisabled"));
-  flipCheckbox.prop("checked", app.object.getFlag(MODULE_ID, "tokenFlipped"));
+  isoTileCheckbox.prop("checked", app.object.getFlag(isometricModuleConfig.MODULE_ID, "isoTileDisabled"));
+  flipCheckbox.prop("checked", app.object.getFlag(isometricModuleConfig.MODULE_ID, "tokenFlipped"));
   linkedWallInput.val(wallIdsString);
-  occludingCheckbox.prop("checked", app.object.getFlag(MODULE_ID, "OccludingTile"));
+  occludingCheckbox.prop("checked", app.object.getFlag(isometricModuleConfig.MODULE_ID, "OccludingTile"));
   
   // Adiciona listener para atualizar o valor exibido do slider
-  html.find('.scale-slider').on('input', function() {
-    html.find('.range-value').text(this.value);
+  html.querySelector('.scale-slider').on('input', function() {
+    html.querySelector('.range-value').text(this.value);
   });
 
   
   // Handler para o formulário de submit
-  html.find('form').on('submit', async (event) => {
+  html.querySelector('form').on('submit', async (event) => {
     // Se o valor do checkbox é true, atualiza as flags com os novos valores
-    if (html.find('input[name="flags.isometric-perspective.isoTileDisabled"]').prop("checked")) {
-      await app.object.setFlag(MODULE_ID, "isoTileDisabled", true);
+    if (html.querySelector('input[name="flags.isometric-perspective.isoTileDisabled"]').prop("checked")) {
+      await app.object.setFlag(isometricModuleConfig.MODULE_ID, "isoTileDisabled", true);
     } else {
-      await app.object.unsetFlag(MODULE_ID, "isoTileDisabled");
+      await app.object.unsetFlag(isometricModuleConfig.MODULE_ID, "isoTileDisabled");
     }
 
-    if (html.find('input[name="flags.isometric-perspective.tokenFlipped"]').prop("checked")) {
-      await app.object.setFlag(MODULE_ID, "tokenFlipped", true);
+    if (html.querySelector('input[name="flags.isometric-perspective.tokenFlipped"]').prop("checked")) {
+      await app.object.setFlag(isometricModuleConfig.MODULE_ID, "tokenFlipped", true);
     } else {
-      await app.object.unsetFlag(MODULE_ID, "tokenFlipped");
+      await app.object.unsetFlag(isometricModuleConfig.MODULE_ID, "tokenFlipped");
     }
 
-    if (html.find('input[name="flags.isometric-perspective.OccludingTile"]').prop("checked")) {
-      await app.object.setFlag(MODULE_ID, "OccludingTile", true);
+    if (html.querySelector('input[name="flags.isometric-perspective.OccludingTile"]').prop("checked")) {
+      await app.object.setFlag(isometricModuleConfig.MODULE_ID, "OccludingTile", true);
     } else {
-      await app.object.unsetFlag(MODULE_ID, "OccludingTile");
+      await app.object.unsetFlag(isometricModuleConfig.MODULE_ID, "OccludingTile");
     }
 
     // dynamictile.js linked wall logic
@@ -90,28 +90,28 @@ async function handleRenderTileConfig(app, html, data) {
     if (wallIdsValue) {
       // Convertemos a string em array antes de salvar
       const wallIdsArray = wallIdsValue.split(',').map(id => id.trim()).filter(id => id);
-      await app.object.setFlag(MODULE_ID, 'linkedWallIds', wallIdsArray);
+      await app.object.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', wallIdsArray);
     } else {
-      await app.object.setFlag(MODULE_ID, 'linkedWallIds', []);
+      await app.object.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', []);
     }
   });
 
   
   // dynamictile.js event listeners for the buttons
-  html.find('button.select-wall').click(() => {
+  html.querySelector('button.select-wall').click(() => {
     // Minimiza a janela e muda a camada selecionada para a WallLayer
     Object.values(ui.windows).filter(w => w instanceof TileConfig).forEach(j => j.minimize());
     canvas.walls.activate();
 
     Hooks.once('controlWall', async (wall) => {
       const selectedWallId = wall.id.toString();
-      const currentWallIds = app.object.getFlag(MODULE_ID, 'linkedWallIds') || [];
+      const currentWallIds = app.object.getFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds') || [];
       
       // Adiciona o novo ID apenas se ele ainda não estiver na lista
       if (!currentWallIds.includes(selectedWallId)) {
         const newWallIds = [...currentWallIds, selectedWallId];
-        await app.object.setFlag(MODULE_ID, 'linkedWallIds', newWallIds);
-        html.find('input[name="flags.isometric-perspective.linkedWallIds"]').val(newWallIds.join(', '));
+        await app.object.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', newWallIds);
+        html.querySelector('input[name="flags.isometric-perspective.linkedWallIds"]').val(newWallIds.join(', '));
       }
 
       // Retorna a janela a posição original e ativa a camada TileLayer
@@ -127,9 +127,9 @@ async function handleRenderTileConfig(app, html, data) {
     });
   });
 
-  html.find('button.clear-wall').click(async () => {
-    await app.object.setFlag(MODULE_ID, 'linkedWallIds', []);
-    html.find('input[name="flags.isometric-perspective.linkedWallIds"]').val('');
+  html.querySelector('button.clear-wall').click(async () => {
+    await app.object.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', []);
+    html.querySelector('input[name="flags.isometric-perspective.linkedWallIds"]').val('');
 
     // Keep the tab selected
     requestAnimationFrame(() => {
@@ -149,7 +149,7 @@ function handleCreateTile(tileDocument) {
   if (!tile) return;
   
   const scene = tile.scene;
-  const isSceneIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
+  const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   requestAnimationFrame(() => applyIsometricTransformation(tile, isSceneIsometric));
 }
 
@@ -159,7 +159,7 @@ function handleUpdateTile(tileDocument, updateData, options, userId) {
   if (!tile) return;
   
   const scene = tile.scene;
-  const isSceneIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
+  const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   
   if (updateData.x !== undefined ||
       updateData.y !== undefined ||
@@ -173,13 +173,13 @@ function handleUpdateTile(tileDocument, updateData, options, userId) {
 // Hooks.on("refreshTile")
 function handleRefreshTile(tile) {
   const scene = tile.scene;
-  const isSceneIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
+  const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   applyIsometricTransformation(tile, isSceneIsometric);
 }
 
 
 function updateAdjustOffsetButton(html) {
-  const offsetPointContainer = html.find('.offset-point')[0];
+  const offsetPointContainer = html.querySelector('.offset-point')[0];
 
   // Finds the fine adjustment button on the original HTML
   const adjustButton = offsetPointContainer.querySelector('button.fine-adjust');
@@ -199,8 +199,8 @@ function updateAdjustOffsetButton(html) {
   let originalValueX = 0;
   let originalValueY = 0;
 
-  let offsetXInput = html.find('input[name="flags.isometric-perspective.offsetX"]')[0];
-  let offsetYInput = html.find('input[name="flags.isometric-perspective.offsetY"]')[0];
+  let offsetXInput = html.querySelector('input[name="flags.isometric-perspective.offsetX"]')[0];
+  let offsetYInput = html.querySelector('input[name="flags.isometric-perspective.offsetY"]')[0];
 
   // Function to apply adjustment
   const applyAdjustment = (e) => {

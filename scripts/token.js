@@ -1,99 +1,49 @@
-import { MODULE_ID, DEBUG_PRINT, WORLD_ISO_FLAG } from './main.js';
+import { isometricModuleConfig } from './consts.js';
 import { applyIsometricTransformation, updateTokenVisuals } from './transform.js';
 import { cartesianToIso, isoToCartesian } from './utils.js';
 import { ISOMETRIC_CONST } from './consts.js';
 
-export function registerTokenConfig() {
-  Hooks.on("renderTokenConfig", handleRenderTokenConfig);
+export async function handleRenderTokenConfig(app, html, data) {
 
-  Hooks.on("createToken", handleCreateToken);
-  Hooks.on("updateToken", handleUpdateToken);
-  Hooks.on("refreshToken", handleRefreshToken);
-  Hooks.on("deleteToken", handleDeleteToken);
-}
+  const label = game.i18n.localize("isometric-perspective.tab_isometric_name");
+  const tabGroup = "sheet";
+  const tabId = "isometric";
+  const icon = "fas fa-cube"
+  const isoTemplatePath = 'modules/isometric-perspective/templates/token-config.hbs'
 
-
-async function handleRenderTokenConfig(app, html, data) {
-  // Load the HTML template
-  const tabHtml = await renderTemplate("modules/isometric-perspective/templates/token-config.html", {
-    isoDisabled: app.object.getFlag(MODULE_ID, 'isoTokenDisabled') ?? 1,
-    offsetX: app.object.getFlag(MODULE_ID, 'offsetX') ?? 0,
-    offsetY: app.object.getFlag(MODULE_ID, 'offsetY') ?? 0,
-    isoAnchorY: app.object.getFlag(MODULE_ID, 'isoAnchorY') ?? 0,
-    isoAnchorX: app.object.getFlag(MODULE_ID, 'isoAnchorX') ?? 0,
-    isoAnchorToggleCheckbox: app.object.getFlag(MODULE_ID, 'isoAnchorToggle') ?? 0,
-    scale: app.object.getFlag(MODULE_ID, 'scale') ?? 1
-  });
+  // Scene config data
+  const FoundryTokenConfig = foundry.applications.sheets.TokenConfig;
+  const DefaultTokenConfig = Object.values(CONFIG.Token.sheetClasses.base).find((d) => d.default)?.cls;
+  const TokenConfig = DefaultTokenConfig?.prototype instanceof FoundryTokenConfig ? DefaultTokenConfig : FoundryTokenConfig;
   
-  // Add a new tab to the menu
-  const tabs = html.find('.tabs:not(.secondary-tabs)');
-  tabs.append(`<a class="item" data-tab="isometric"><i class="fas fa-cube"></i> ${game.i18n.localize('isometric-perspective.tab_isometric_name')}</a>`);
+  // Adding the isometric tab data to the scene config parts
+  TokenConfig.TABS.sheet.tabs.push({ id: tabId, group: tabGroup, label , icon: icon }); 
   
-  // Adds the tab contents after the last existing tab
-  const lastTab = html.find('.tab').last();
-  lastTab.after(tabHtml);
+  // Adding the part template
+  TokenConfig.PARTS.isometric = {template: isoTemplatePath};
 
-  // Update the offset fine adjustment button
-  updateAdjustOffsetButton(html);
-  updateAdjustAnchorButton(html);
+  const footerPart = TokenConfig.PARTS.footer;
+  delete TokenConfig.PARTS.footer;
+  TokenConfig.PARTS.footer = footerPart;
 
-  // Initializes control values
-  const isoTokenCheckbox = html.find('input[name="flags.isometric-perspective.isoTokenDisabled"]');
-  isoTokenCheckbox.prop("checked", app.object.getFlag(MODULE_ID, "isoTokenDisabled"));
-  const isoScaleDisabled = html.find('input[name="flags.isometric-perspective.isoScaleDisabled"]');
-  isoScaleDisabled.prop("checked", app.object.getFlag(MODULE_ID, "isoScaleDisabled"));
+  // Override part context to include the isometric-perspective config data
+  const defaultRenderPartContext = TokenConfig.prototype._preparePartContext;
+  TokenConfig.prototype._preparePartContext = async function(partId, context, options) {
+    if (partId === "isometric") {
+      const flags = this.document.flags[isometricModuleConfig.MODULE_ID] ?? null;
 
-  // Add listener to update the shown value from Slider
-  html.find('.scale-slider').on('input', function() {
-    html.find('.range-value').text(this.value);
-  });
-
-  // Handler for the submit form
-  html.find('form').on('submit', async (event) => {
-    // If the value of checkbox is true, updates the flags with the new values
-    if (isoTokenCheckbox.prop("checked")) {
-      await app.object.setFlag(MODULE_ID, "isoTokenDisabled", true);
-    } else {
-      await app.object.unsetFlag(MODULE_ID, "isoTokenDisabled");
+      return {
+        ...(flags ?? {}),
+        document: this.document,
+        tab: context.tabs[partId],
+      }
     }
-
-    if (isoScaleDisabled.prop("checked")) {
-      await app.object.setFlag(MODULE_ID, "isoScaleDisabled", true);
-    } else {
-      await app.object.unsetFlag(MODULE_ID, "isoScaleDisabled");
-    }
-  });
-
-  // Fix tab init
-  if (!app._tabs || app._tabs.length === 0) {
-    app._tabs = [new Tabs({
-      navSelector: ".tabs",
-      contentSelector: ".sheet-body",
-      initial: "appearance",
-      callback: () => {}
-    })];
-    app._tabs[0].bind(html[0]);
-  }
-
-
-
-
-
-
+    return defaultRenderPartContext.call(this, partId, context, options);
+  }  
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  // Initializes control values
-  const isoAnchorToggleCheckbox = html.find('input[name="isoAnchorToggle"]');
-  isoAnchorToggleCheckbox.prop("unchecked", app.object.getFlag(MODULE_ID, "isoAnchorToggle") ?? false);
+  // Initializes control values // might delete later but keeping in case absolutely needed later.
+  // const isoAnchorToggleCheckbox = html.querySelector('input[name="isoAnchorToggle"]');
+  // isoAnchorToggleCheckbox.prop("unchecked", app.object.getFlag(isometricModuleConfig.MODULE_ID, "isoAnchorToggle") ?? false);
 
   // Function to draw alignment lines
   function drawAlignmentLines(isoAnchor) {
@@ -147,8 +97,6 @@ async function handleRenderTokenConfig(app, html, data) {
     };
   };
 
-  
-
   // Function to remove the lines
   function cleanup() {
     const existingLines = canvas.stage.children.filter(child => child.name === 'tokenAlignmentLine');
@@ -157,165 +105,130 @@ async function handleRenderTokenConfig(app, html, data) {
 
   
   // Initialize the lines with the current values
-  let isoAnchorX = app.object.getFlag(MODULE_ID, 'isoAnchorX') ?? 0;
-  let isoAnchorY = app.object.getFlag(MODULE_ID, 'isoAnchorY') ?? 0;
-  let offsetX = app.object.getFlag(MODULE_ID, 'offsetX') ?? 0;
-  let offsetY = app.object.getFlag(MODULE_ID, 'offsetY') ?? 0;
+  // let isoAnchorX = app.object.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorX') ?? 0;
+  // let isoAnchorY = app.object.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorY') ?? 0;
+  // let offsetX = app.object.getFlag(isometricModuleConfig.MODULE_ID, 'offsetX') ?? 0;
+  // let offsetY = app.object.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY') ?? 0;
   
   // Add the button to reset the token settings
-  const toggleButton = document.createElement("button");
-  toggleButton.classList.add("toggle-alignment-lines");
-  toggleButton.textContent = game.i18n.localize('isometric-perspective.token_resetAlignmentButton_name'); //Reset Token Alignment Configuration
-  toggleButton.title = game.i18n.localize('isometric-perspective.token_resetAlignmentButton_mouseover'); //Click to toggle the alignment lines
-  html.find(".anchor-point").append(toggleButton);
+  // const toggleButton = document.createElement("button");
+  // toggleButton.classList.add("toggle-alignment-lines");
+  // toggleButton.textContent = game.i18n.localize('isometric-perspective.token_resetAlignmentButton_name'); //Reset Token Alignment Configuration
+  // toggleButton.title = game.i18n.localize('isometric-perspective.token_resetAlignmentButton_mouseover'); //Click to toggle the alignment lines
+  // html.querySelector(".anchor-point").append(toggleButton);
 
   // Variables to control state
-  let graphics;
-  let showAlignmentLines = true;
+  // let graphics;
+  // let showAlignmentLines = true;
   
   // Add the click event to the button
-  toggleButton.addEventListener("click", async (event) => {
-    event.preventDefault(); // Evita que o clique feche a janela
+  // toggleButton.addEventListener("click", async (event) => {
+  //   event.preventDefault(); // Evita que o clique feche a janela
 
-    // Reset all alignment settings
-    html.find('input[name="texture.anchorX"]').val(0.5);
-    html.find('input[name="texture.anchorY"]').val(0.5);
-    html.find('input[name="flags.isometric-perspective.isoAnchorX"]').val(0.5);
-    html.find('input[name="flags.isometric-perspective.isoAnchorY"]').val(0.5);
-    html.find('input[name="flags.isometric-perspective.offsetX"]').val(0);
-    html.find('input[name="flags.isometric-perspective.offsetY"]').val(0);
-    html.find('input[name="flags.isometric-perspective.scale"]').val(1);
+  //   // Reset all alignment settings
+  //   html.querySelector('input[name="texture.anchorX"]').val(0.5);
+  //   html.querySelector('input[name="texture.anchorY"]').val(0.5);
+  //   html.querySelector('input[name="flags.isometric-perspective.isoAnchorX"]').val(0.5);
+  //   html.querySelector('input[name="flags.isometric-perspective.isoAnchorY"]').val(0.5);
+  //   html.querySelector('input[name="flags.isometric-perspective.offsetX"]').val(0);
+  //   html.querySelector('input[name="flags.isometric-perspective.offsetY"]').val(0);
+  //   html.querySelector('input[name="flags.isometric-perspective.scale"]').val(1);
 
-    graphics = drawAlignmentLines(updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY));
-  });
+  //   graphics = drawAlignmentLines(updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY));
+  // });
   
 
   // Add a listener to the "Save?" Checkbox, If it is marked, draw the lines
-  isoAnchorToggleCheckbox.on('change', async () => {
-    const isChecked = isoAnchorToggleCheckbox.prop("checked");
-    if (isChecked) graphics = drawAlignmentLines(updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY));
+  // isoAnchorToggleCheckbox.on('change', async () => {
+  //   const isChecked = isoAnchorToggleCheckbox.prop("checked");
+  //   if (isChecked) graphics = drawAlignmentLines(updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY));
     
-    // Invert the state of the selector
-    showAlignmentLines = !showAlignmentLines;
-  });
+  //   // Invert the state of the selector
+  //   showAlignmentLines = !showAlignmentLines;
+  // });
   
   // Update the lines when changing the inputs
-  html.find('input[name="flags.isometric-perspective.isoAnchorX"], input[name="flags.isometric-perspective.isoAnchorY"], input[name="flags.isometric-perspective.offsetX"], input[name="flags.isometric-perspective.offsetY"]').on('change', () => {
-    // Take updated values ​​directly from inputs
-    let currentIsoAnchorX = html.find('input[name="flags.isometric-perspective.isoAnchorX"]').val();
-    let currentIsoAnchorY = html.find('input[name="flags.isometric-perspective.isoAnchorY"]').val();
-    let currentOffsetX = html.find('input[name="flags.isometric-perspective.offsetX"]').val();
-    let currentOffsetY = html.find('input[name="flags.isometric-perspective.offsetY"]').val();
+  // html.querySelector('input[name="flags.isometric-perspective.isoAnchorX"], input[name="flags.isometric-perspective.isoAnchorY"], input[name="flags.isometric-perspective.offsetX"], input[name="flags.isometric-perspective.offsetY"]').on('change', () => {
+  //   // Take updated values ​​directly from inputs
+  //   let currentIsoAnchorX = html.querySelector('input[name="flags.isometric-perspective.isoAnchorX"]').val();
+  //   let currentIsoAnchorY = html.querySelector('input[name="flags.isometric-perspective.isoAnchorY"]').val();
+  //   let currentOffsetX = html.querySelector('input[name="flags.isometric-perspective.offsetX"]').val();
+  //   let currentOffsetY = html.querySelector('input[name="flags.isometric-perspective.offsetY"]').val();
     
-    // Recalculate the position and creates the lines again
-    const newAnchor = updateIsoAnchor(currentIsoAnchorX, currentIsoAnchorY, currentOffsetX, currentOffsetY);
-    graphics = drawAlignmentLines(newAnchor); // Adicionar novas
-  });
-
-  
-  
-  
-
+  //   // Recalculate the position and creates the lines again
+  //   const newAnchor = updateIsoAnchor(currentIsoAnchorX, currentIsoAnchorY, currentOffsetX, currentOffsetY);
+  //   graphics = drawAlignmentLines(newAnchor); // Adicionar novas
+  // });
 
   // Removes all lines when clicking on update token
-  html.find('button[type="submit"]').on('click', () => {
-    if (!isoAnchorToggleCheckbox.prop("checked")) {
-      cleanup();
-    } else {
-      // Take updated values ​​directly from inputs
-      let currentIsoAnchorX = html.find('input[name="flags.isometric-perspective.isoAnchorX"]').val();
-      let currentIsoAnchorY = html.find('input[name="flags.isometric-perspective.isoAnchorY"]').val();
+  // html.querySelector('button[type="submit"]').on('click', () => {
+  //   if (!isoAnchorToggleCheckbox.prop("checked")) {
+  //     cleanup();
+  //   } else {
+  //     // Take updated values ​​directly from inputs
+  //     let currentIsoAnchorX = html.querySelector('input[name="flags.isometric-perspective.isoAnchorX"]').val();
+  //     let currentIsoAnchorY = html.querySelector('input[name="flags.isometric-perspective.isoAnchorY"]').val();
       
-      // Update the anchor basic values ​​in the token configuration
-      html.find('input[name="texture.anchorX"]').val(currentIsoAnchorY);
-      html.find('input[name="texture.anchorY"]').val(1-currentIsoAnchorX);
-    }
-  });
+  //     // Update the anchor basic values ​​in the token configuration
+  //     html.querySelector('input[name="texture.anchorX"]').val(currentIsoAnchorY);
+  //     html.querySelector('input[name="texture.anchorY"]').val(1-currentIsoAnchorX);
+  //   }
+  // });
 
   // Changes the Close method to delete the lines, IF avoids changing the method more than once
-  if (!app._isCloseModified) {
-    const originalClose = app.close;
-    app.close = async function (options) {
-      cleanup();
-      await originalClose.apply(this, [options]);
-    };
+  // if (!app._isCloseModified) {
+  //   const originalClose = app.close;
+  //   app.close = async function (options) {
+  //     cleanup();
+  //     await originalClose.apply(this, [options]);
+  //   };
 
-    // Mark that the close method has already been
-    app._isCloseModified = true;
-  }
+  //   // Mark that the close method has already been
+  //   app._isCloseModified = true;
+  // }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // Hooks.on("createToken")
-function handleCreateToken(tokenDocument) {
+export function handleCreateToken(tokenDocument) {
   const token = canvas.tokens.get(tokenDocument.id);
   if (!token) return;
   
-  const isSceneIsometric = token.scene.getFlag(MODULE_ID, "isometricEnabled");
+  const isSceneIsometric = token.scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   applyIsometricTransformation(token, isSceneIsometric);
 }
 
 
 // Hooks.on("updateToken")
-function handleUpdateToken(tokenDocument, updateData, options, userId) {
+export function handleUpdateToken(tokenDocument, updateData, options, userId) {
   const token = canvas.tokens.get(tokenDocument.id);
   if (!token) return;
   
-  const isSceneIsometric = token.scene.getFlag(MODULE_ID, "isometricEnabled");
+  const isSceneIsometric = token.scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   applyIsometricTransformation(token, isSceneIsometric);
   
-  /*if (updateData.flags?.[MODULE_ID] ||
+  /*if (updateData.flags?.[isometricModuleConfig.MODULE_ID] ||
       updateData.x !== undefined ||
       updateData.y !== undefined ) {
         applyIsometricTransformation(token, isSceneIsometric);
   }*/
 
-  if (DEBUG_PRINT) console.log("Hooks.on token.js updateToken");
+  if (isometricModuleConfig.DEBUG_PRINT) console.log("Hooks.on token.js updateToken");
 }
 
 
 // Hooks.on("refreshToken")
-function handleRefreshToken(token) {
-  const isSceneIsometric = token.scene.getFlag(MODULE_ID, "isometricEnabled");
+export function handleRefreshToken(token) {
+  const isSceneIsometric = token.scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   applyIsometricTransformation(token, isSceneIsometric);
   
-  if (DEBUG_PRINT) console.log("Hooks.on token.js refreshToken");
+  if (isometricModuleConfig.DEBUG_PRINT) console.log("Hooks.on token.js refreshToken");
 }
 
 
 // Hooks.on("deleteToken")
-function handleDeleteToken(token) {
+export function handleDeleteToken(token) {
   updateTokenVisuals(token);
 }
-
-
-
-
-
-
-
-
-
-
-
 
 // Generic function to create adjustable buttons with drag functionality
 function createAdjustableButton(options) {
@@ -401,13 +314,13 @@ function createAdjustableButton(options) {
 
 // Handler for offset adjustment button
 function updateAdjustOffsetButton(html) {
-  const container = html.find('.offset-point')[0];
+  const container = html.querySelector('.offset-point')[0];
   createAdjustableButton({
     container,
     buttonSelector: 'button.fine-adjust',
     inputs: [
-      html.find('input[name="flags.isometric-perspective.offsetX"]')[0],
-      html.find('input[name="flags.isometric-perspective.offsetY"]')[0]
+      html.querySelector('input[name="flags.isometric-perspective.offsetX"]')[0],
+      html.querySelector('input[name="flags.isometric-perspective.offsetY"]')[0]
     ],
     adjustmentScale: 0.2,    // Larger scale for offset adjustments
     roundingPrecision: 0     // Whole numbers for offset values
@@ -416,35 +329,19 @@ function updateAdjustOffsetButton(html) {
 
 // Handler for anchor adjustment button
 function updateAdjustAnchorButton(html) {
-  const container = html.find('.anchor-point')[0];
+  const container = html.querySelector('.anchor-point')[0];
   createAdjustableButton({
     container,
     buttonSelector: 'button.fine-adjust-anchor',
     inputs: [
-      html.find('input[name="flags.isometric-perspective.isoAnchorX"]')[0],
-      html.find('input[name="flags.isometric-perspective.isoAnchorY"]')[0]
+      html.querySelector('input[name="flags.isometric-perspective.isoAnchorX"]')[0],
+      html.querySelector('input[name="flags.isometric-perspective.isoAnchorY"]')[0]
     ],
     adjustmentScale: 0.005,  // Smaller scale for precise anchor adjustments
     valueConstraints: { min: 0, max: 1 },  // Anchor values must be between 0 and 1
     roundingPrecision: 2     // Two decimal places for anchor values
   });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 /*

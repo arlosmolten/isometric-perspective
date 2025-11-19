@@ -1,4 +1,6 @@
 {
+    "isometric-perspective.title": "Módulo de Perspectiva Isométrica",
+
     "isometric-perspective._comment": "Configurações do Jogo: Configurar Configurações",
     "isometric-perspective.settings_main_name": "Habilitar Perspectiva Isométrica",
     "isometric-perspective.settings_main_hint": "Ativa ou desativa a perspectiva isométrica no canvas.",
@@ -72,5 +74,18 @@
     "isometric-perspective.tile_link_wall_hint": "Clique no botão para selecionar uma parede. Ela será usada para determinar a visibilidade do tile com um token selecionado.",
 
     "isometric-perspective._comment": "Avisos e Mensagens de Erro",
-    "isometric-perspective.error_test": "Mensagem de erro de teste"
+    "isometric-perspective.error_test": "Mensagem de erro de teste",
+
+    "isometric-perspective.welcome.title": "Bem-vindo à Perspectiva Isométrica!",
+    "isometric-perspective.welcome.subtitle": "Este módulo transforma seus mapas e tokens em uma perspectiva isométrica no Foundry VTT, oferecendo uma experiência de jogo única e envolvente.",
+    "isometric-perspective.welcome.feature_table_projections.header": "Múltiplas Perspectivas e Projeções de Tela",
+    "isometric-perspective.welcome.feature_table_projections.content": "Use mapas isométricos nativos ou mapas de cima para baixo em perspectiva isométrica com qualquer projeção como isométrica verdadeira, dimétrica e até mesmo personalizada.",
+    "isometric-perspective.welcome.feature_table_tokens.header": "Ajustes e recursos de fichas e peças",
+    "isometric-perspective.welcome.feature_table_tokens.content": "Ajuste a posição e a escala, organize facilmente os blocos na tela, habilite indicações visuais para tokens de elevação e classifique os tokens na tela automaticamente.",
+    "isometric-perspective.welcome.feature_table_dynamic_tiles.header": "Bloco Dinâmico",
+    "isometric-perspective.welcome.feature_table_dynamic_tiles.content": "Crie ambientes isométricos imersivos, ocultando-os automaticamente com base nas posições dos tokens, com o recurso de blocos dinâmicos.",
+    "isometric-perspective.welcome.support_text_visit": "Para obter informações detalhadas sobre todos os recursos, guias de instalação e tutoriais em vídeo, visite nosso ",
+    "isometric-perspective.welcome.support_text_wiki": "Wiki",
+    "isometric-perspective.welcome.support_text_on_github": "no GitHub. Você pode desabilitar esta tela nas configurações do módulo.",
+    "isometric-perspective.welcome.support_text_help": "Se precisar de ajuda com o módulo, junte-se à nossa comunidade no Discord. Se achar este módulo útil, considere apoiar seu desenvolvimento através do Ko-fi."
 }

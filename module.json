@@ -6,6 +6,9 @@
   "esmodules": [
     "scripts/main.js"
   ],
+  "styles": [
+    "styles/welcome.css"
+  ],
   "authors": [
     {
       "name": "ArlosMolten",
