@@ -1,0 +1,65 @@
+<!-- Isometric Token Configuration.html -->
+<section class="tab scrollable {{tab.cssClass}}"data-tab="isometric" data-group="sheet">
+
+    <div class="form-group inline slim">
+        <div class="form-fields">
+            <label for="{{rootId}}-isometric-perspective-enable-token-isometrics">{{localize 'isometric-perspective.token_enableIsometric_name'}}</label>
+            <input id="{{rootId}}-isometric-perspective-enable-token-isometrics" type="checkbox" name="flags.isometric-perspective.isoTokenDisabled" {{checked document.flags.isometric-perspective.isoTokenDisabled}}>
+        </div>
+        <p class="notes">{{localize 'isometric-perspective.token_enableIsometric_hint'}}</p>
+    </div>
+
+    <hr>
+
+    {{!-- <div class="form-group inline slim offset-point">
+        <label>{{localize 'isometric-perspective.token_artOffset_name'}}</label>
+        <div class="form-fields">
+            <label class="axisX">X</label>
+            <input type="number" name="flags.isometric-perspective.offsetY" 
+                    value="{{offsetY}}"
+                    step="1" />
+            <button class="fine-adjust" title="Hold and drag to fine-tune X and Y">✥</button>
+            <input type="number" name="flags.isometric-perspective.offsetX"
+                    value="{{offsetX}}"
+                    step="1" />
+            <label class="axisY">Y</label>
+        </div>
+        <p class="notes">{{localize 'isometric-perspective.token_artOffset_hint'}}</p>
+    </div>
+
+    <div class="form-group inline slim anchor-point">
+        <label>{{localize 'isometric-perspective.token_isoAnchor_name'}}</label>
+        <div class="form-fields">
+            <label class="anchorToggle">{{localize 'isometric-perspective.token_isoAnchor_save'}}</label>
+            <input type="checkbox" name="isoAnchorToggle" {{#if isoAnchorToggle}}unchecked{{/if}}>
+            <label class="axisX">X</label>
+            <input type="number" name="flags.isometric-perspective.isoAnchorY" 
+                    value="{{isoAnchorY}}"
+                    step="0.01" />
+            <button class="fine-adjust-anchor" title="Hold and drag to fine-tune X and Y">✥</button>
+            <input type="number" name="flags.isometric-perspective.isoAnchorX"
+                    value="{{isoAnchorX}}"
+                    step="0.01" />
+            <label class="axisY">Y</label>
+        </div>
+        <p class="notes">{{localize 'isometric-perspective.token_isoAnchor_hint'}}</p>
+    </div> --}}
+
+    <div class="form-group inline slim">
+        <label>{{localize 'isometric-perspective.token_scale_name'}}</label>
+        <div class="form-fields">
+            <range-picker id="{{rootId}}-flags.isometric-perspective.scale" name="flags.isometric-perspective.scale" value="{{document.flags.isometric-perspective.scale}}" min="0.1" max="3" step="0.1"></range-picker>
+        </div>
+        <p class="notes">{{localize 'isometric-perspective.token_scale_hint'}}</p>
+    </div>
+
+    <div class="form-group inline slim">
+        <label>{{localize 'isometric-perspective.token_disableScale_name'}}</label>
+        <div class="form-fields">
+            <input type="checkbox" name="flags.isometric-perspective.isoScaleDisabled" {{checked document.flags.isometric-perspective.isoScaleDisabled}}>
+        </div>
+        <p class="notes">{{localize 'isometric-perspective.token_disableScale_hint'}}</p>
+    </div>
+
+
+</section>

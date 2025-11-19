@@ -67,8 +67,8 @@ export function registerOcclusionConfig() {
 
 
 // Occlusion layer container
-let occlusionContainer;
-let occlusionTokensLayer;
+// let occlusionContainer;
+// let occlusionTokensLayer;
  
 function updateOcclusionLayer() {
 	if (!canvas.ready || !occlusionContainer) return;
