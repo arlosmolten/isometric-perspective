@@ -7,7 +7,8 @@
     "scripts/main.js"
   ],
   "styles": [
-    "styles/welcome.css"
+    "styles/welcome.css",
+    "styles/isometric-tab.css"
   ],
   "authors": [
     {

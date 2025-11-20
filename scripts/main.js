@@ -31,7 +31,7 @@ import { registerOcclusionConfig } from './occlusion.js';
 //import { registerOcclusionConfig } from './occlusion3.js';                       // has token-token occlusion (not fully working)
 
 import { 
-  configureIsometricTab,
+  addIsometricTab,
   addSelectListener,
   handleUpdateScene,
   handleCanvasReady,
@@ -245,9 +245,9 @@ Hooks.once('ready', ()=> {
 });
 
 // add the isometric tab in the scene config
-Hooks.on('ready', configureIsometricTab);
+Hooks.on('ready', addIsometricTab);
 
-Hooks.on('renderSceneConfig', addSelectListener)
+Hooks.on('renderSceneConfig', addSelectListener);
 //handle the isometric canvas
 Hooks.on("updateScene", handleUpdateScene);
 Hooks.on("canvasReady", handleCanvasReady);
