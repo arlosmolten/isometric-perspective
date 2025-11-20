@@ -2,7 +2,7 @@ import { isometricModuleConfig } from './consts.js';
 import { applyIsometricPerspective, applyBackgroundTransformation } from './transform.js';
 import { updateIsometricConstants, parseCustomProjection, updateCustomProjection, PROJECTION_TYPES, DEFAULT_PROJECTION, CUSTOM_PROJECTION } from './consts.js';
 
-export function configureIsometricTab(app, html, context, options){
+export function configureIsometricTab(){
   
   const label = game.i18n.localize("isometric-perspective.tab_isometric_name");
   const tabGroup = "sheet";
@@ -30,10 +30,10 @@ export function configureIsometricTab(app, html, context, options){
 
   // Override part context to include the isometric-perspective config data
   const defaultRenderPartContext = SceneConfig.prototype._preparePartContext;
+
   SceneConfig.prototype._preparePartContext = async function(partId, context, options) {
     if (partId === "isometric") {
       const flags = this.document.flags[isometricModuleConfig.MODULE_ID] ?? null;
-
       return {
         ...(flags ?? {}),
         projectionTypes: projectionTypes,
@@ -44,7 +44,15 @@ export function configureIsometricTab(app, html, context, options){
     }
     return defaultRenderPartContext.call(this, partId, context, options);
   }
- 
+}
+
+export function addSelectListener (app, html, context, options){
+  const projectionSelect = html.querySelector('select[name="flags.isometric-perspective.projectionType"]')
+  projectionSelect.addEventListener('change', onSelectProjection);
+}
+
+export function onSelectProjection (event){
+  console.log("TEST!", event);
 }
 
 export function handleUpdateScene(scene, changes) {

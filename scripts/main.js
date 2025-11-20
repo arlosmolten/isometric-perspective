@@ -32,6 +32,7 @@ import { registerOcclusionConfig } from './occlusion.js';
 
 import { 
   configureIsometricTab,
+  addSelectListener,
   handleUpdateScene,
   handleCanvasReady,
   handleCanvasResize, 
@@ -245,6 +246,8 @@ Hooks.once('ready', ()=> {
 
 // add the isometric tab in the scene config
 Hooks.on('ready', configureIsometricTab);
+
+Hooks.on('renderSceneConfig', addSelectListener)
 //handle the isometric canvas
 Hooks.on("updateScene", handleUpdateScene);
 Hooks.on("canvasReady", handleCanvasReady);
