@@ -11,13 +11,14 @@
 
     <hr>
 
-    {{!-- <div class="form-group inline slim offset-point">
+    <div class="form-group offset-point">
         <label>{{localize 'isometric-perspective.token_artOffset_name'}}</label>
         <div class="form-fields">
             <label class="axisX">X</label>
             <input type="number" name="flags.isometric-perspective.offsetY" 
                     value="{{offsetY}}"
-                    step="1" />
+                    step="1"
+                    />
             <button class="fine-adjust" title="Hold and drag to fine-tune X and Y">✥</button>
             <input type="number" name="flags.isometric-perspective.offsetX"
                     value="{{offsetX}}"
@@ -27,7 +28,7 @@
         <p class="notes">{{localize 'isometric-perspective.token_artOffset_hint'}}</p>
     </div>
 
-    <div class="form-group inline slim anchor-point">
+    {{!-- <div class="form-group inline slim anchor-point">
         <label>{{localize 'isometric-perspective.token_isoAnchor_name'}}</label>
         <div class="form-fields">
             <label class="anchorToggle">{{localize 'isometric-perspective.token_isoAnchor_save'}}</label>

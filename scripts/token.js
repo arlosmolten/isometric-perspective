@@ -27,19 +27,19 @@ export async function handleRenderTokenConfig(app, html, data) {
   TokenConfig.PARTS.footer = footerPart;
 
   // Override part context to include the isometric-perspective config data
-  const defaultRenderPartContext = TokenConfig.prototype._preparePartContext;
-  TokenConfig.prototype._preparePartContext = async function(partId, context, options) {
-    if (partId === "isometric") {
-      const flags = this.document.flags[isometricModuleConfig.MODULE_ID] ?? null;
+  // const defaultRenderPartContext = TokenConfig.prototype._preparePartContext;
+  // TokenConfig.prototype._preparePartContext = async function(partId, context, options) {
+  //   if (partId === "isometric") {
+  //     const flags = this.document.flags[isometricModuleConfig.MODULE_ID] ?? null;
 
-      return {
-        ...(flags ?? {}),
-        document: this.document,
-        tab: context.tabs[partId],
-      }
-    }
-    return defaultRenderPartContext.call(this, partId, context, options);
-  }  
+  //     return {
+  //       ...(flags ?? {}),
+  //       document: this.document,
+  //       tab: context.tabs[partId],
+  //     }
+  //   }
+  //   return defaultRenderPartContext.call(this, partId, context, options);
+  // }  
   
   // Initializes control values // might delete later but keeping in case absolutely needed later.
   // const isoAnchorToggleCheckbox = html.querySelector('input[name="isoAnchorToggle"]');
@@ -186,6 +186,16 @@ export async function handleRenderTokenConfig(app, html, data) {
   //   // Mark that the close method has already been
   //   app._isCloseModified = true;
   // }
+}
+
+export function addPrecisionTokenArtListener(app, html, context, options){
+  const tokenArtOffsetInputY = html.querySelector('input[name="flags.isometric-perspective.offsetY"]');
+  const tokenArtOffsetInputX = html.querySelector('input[name="flags.isometric-perspective.offsetX"]');
+  const tokenArtOffsetFineAdjust = html.querySelector('.fine-adjust');
+
+  // console.log("BUTTONS", tokenArtOffsetInputY , tokenArtOffsetInputX , tokenArtOffsetFineAdjust );
+  // const customProjectionInput = html.querySelector('input[name="flags.isometric-perspective.customProjection"]');
+  // const customProjectionContainer = html.querySelector('.custom-projection-container');
 }
 
 // Hooks.on("createToken")
