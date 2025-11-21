@@ -22,3 +22,10 @@ export function calculateIsometricVerticalDistance(width, height) {
   // entre os vértices é a altura do losango formado
   return Math.sqrt(2) * Math.min(width, height);
 }
+
+// a simple utility function that can pop the last part of a "." separated string and retrieve the last part of it
+// used to get "offsetX" from "flags.isometric-perspective.offsetX"
+export function getFlagName(str) {
+  const parts = str.split('.');
+  return parts.pop();
+}

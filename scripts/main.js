@@ -2,7 +2,7 @@ import { isometricModuleConfig } from './consts.js';
 
 import { 
   handleRenderTokenConfig,
-  addPrecisionTokenArtListener,
+  // addPrecisionTokenArtListener,
   handleCreateToken,
   handleUpdateToken,
   handleRefreshToken,
@@ -233,7 +233,8 @@ Hooks.on("canvasResize", handleCanvasResize);
 
 //token config
 Hooks.on("ready", handleRenderTokenConfig);
-Hooks.on('renderTokenConfig', addPrecisionTokenArtListener);
+// disabled until a better implementation is decided
+// Hooks.on('renderTokenConfig', addPrecisionTokenArtListener);
 //token management
 Hooks.on("createToken", handleCreateToken);
 Hooks.on("updateToken", handleUpdateToken);
