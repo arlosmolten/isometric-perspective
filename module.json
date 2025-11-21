@@ -7,7 +7,10 @@
     "scripts/main.js"
   ],
   "styles": [
-    "styles/welcome.css"
+    "styles/welcome.css",
+    "styles/token-tab.css",
+    "styles/tile-tab.css",
+    "styles/isometric-tab.css"
   ],
   "authors": [
     {

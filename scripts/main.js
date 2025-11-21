@@ -2,13 +2,19 @@ import { isometricModuleConfig } from './consts.js';
 
 import { 
   handleRenderTokenConfig,
+  // addPrecisionTokenArtListener,
   handleCreateToken,
   handleUpdateToken,
   handleRefreshToken,
   handleDeleteToken
  } from './token.js';
  
-import { registerTileConfig } from './tile.js';
+import { 
+  handleRenderTileConfig,
+  handleCreateTile,
+  handleUpdateTile,
+  handleRefreshTile
+ } from './tile.js';
 
 import { 
   handleRenderTokenHUD,
@@ -24,6 +30,7 @@ import { ISOMETRIC_CONST } from './consts.js';
 import { isoToCartesian, cartesianToIso } from './utils.js';
 
 import { registerOcclusionConfig } from './occlusion.js';
+import { addWelcomeScreen } from './welcome.js';
 
 //import { registerOcclusionConfig } from './silhouetetoken.js';
 //import { registerOcclusionConfig } from './occlusion2 v15 (cpu gpu choose).js';  // choose between cpu (working, heavy on performance) and gpu (not fully working)
@@ -31,7 +38,7 @@ import { registerOcclusionConfig } from './occlusion.js';
 //import { registerOcclusionConfig } from './occlusion3.js';                       // has token-token occlusion (not fully working)
 
 import { 
-  configureIsometricTab,
+  addIsometricTab,
   addSelectListener,
   handleUpdateScene,
   handleCanvasReady,
@@ -187,11 +194,6 @@ Hooks.once("init", function() {
   });
 
 
-  // ------------- Executa os hooks essenciais do módulo -------------
-  // registerTokenConfig();
-  registerTileConfig();
-  // registerHUDConfig();
-
   // ------------- Executa os hooks de funcionalidades adicionais do módulo -------------
   registerDynamicTileConfig();
   registerSortingConfig();
@@ -212,56 +214,44 @@ Hooks.once("init", function() {
 });
 
 
-// Welcome Message Setup
-export class WelcomeScreen extends HandlebarsApplicationMixin(ApplicationV2) {
 
-  static DEFAULT_OPTIONS = {
-    classes: ["welcome-screen"],
-    position:{
-      width: 600,
-      height: 620,
-    },
-    window:{
-      resizable: false,
-      title: "isometric-perspective.title"
-    }
-  }
-
-  static PARTS = {
-    div: {
-      template: "modules/isometric-perspective/templates/welcome.hbs",
-    }
-  }
-}
 
 // Verifica se deve mostrar a tela de boas-vindas
 // Checks whether to show the welcome screen
 
-Hooks.once('ready', ()=> {
-  if (game.settings.get(isometricModuleConfig.MODULE_ID, "showWelcome")) {
-    const welcome = new WelcomeScreen();
-    welcome.render(true);
-  }
-});
+//HOOKS REGISTRATION 
 
-// add the isometric tab in the scene config
-Hooks.on('ready', configureIsometricTab);
-
-Hooks.on('renderSceneConfig', addSelectListener)
-//handle the isometric canvas
+// WelcomeScreen
+Hooks.once('ready', addWelcomeScreen);
+//scene configuration
+Hooks.on('ready', addIsometricTab);
+//scene management
+Hooks.on('renderSceneConfig', addSelectListener);
 Hooks.on("updateScene", handleUpdateScene);
 Hooks.on("canvasReady", handleCanvasReady);
 Hooks.on("canvasResize", handleCanvasResize);
 
-//handle tokens updates
+//token config
 Hooks.on("ready", handleRenderTokenConfig);
+// disabled until a better implementation is decided
+// Hooks.on('renderTokenConfig', addPrecisionTokenArtListener);
+//token management
 Hooks.on("createToken", handleCreateToken);
 Hooks.on("updateToken", handleUpdateToken);
 Hooks.on("refreshToken", handleRefreshToken);
 Hooks.on("deleteToken", handleDeleteToken);
 
+// hud management
 Hooks.on("renderTokenHUD", handleRenderTokenHUD);
 Hooks.on("renderTileHUD", handleRenderTileHUD);
+
+//tile config
+Hooks.on("ready", handleRenderTileConfig);
+// Hooks.on("renderTileConfig", handleRenderTileConfig);
+//tile management
+Hooks.on("createTile", handleCreateTile);
+Hooks.on("updateTile", handleUpdateTile);
+Hooks.on("refreshTile", handleRefreshTile);
 
 
 

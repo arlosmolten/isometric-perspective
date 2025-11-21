@@ -2,7 +2,7 @@ import { isometricModuleConfig } from './consts.js';
 import { applyIsometricPerspective, applyBackgroundTransformation } from './transform.js';
 import { updateIsometricConstants, parseCustomProjection, updateCustomProjection, PROJECTION_TYPES, DEFAULT_PROJECTION, CUSTOM_PROJECTION } from './consts.js';
 
-export function configureIsometricTab(){
+export function addIsometricTab(){
   
   const label = game.i18n.localize("isometric-perspective.tab_isometric_name");
   const tabGroup = "sheet";
@@ -46,14 +46,24 @@ export function configureIsometricTab(){
   }
 }
 
+// disable the custom projection field when custom projection isnt selected.
 export function addSelectListener (app, html, context, options){
-  const projectionSelect = html.querySelector('select[name="flags.isometric-perspective.projectionType"]')
-  projectionSelect.addEventListener('change', onSelectProjection);
+  const projectionSelect = html.querySelector('select[name="flags.isometric-perspective.projectionType"]');
+  const customProjectionInput = html.querySelector('input[name="flags.isometric-perspective.customProjection"]');
+  const customProjectionContainer = html.querySelector('.custom-projection-container');
+  
+  projectionSelect.addEventListener('change', (event) => {
+    if (event.target.value === "Custom Projection"){
+      customProjectionInput.disabled = false;
+      customProjectionContainer.classList.remove('hidden');
+    } else {
+      customProjectionInput.disabled = true;
+      customProjectionContainer.classList.add('hidden');
+    }
+  });
+
 }
 
-export function onSelectProjection (event){
-  console.log("TEST!", event);
-}
 
 export function handleUpdateScene(scene, changes) {
 

@@ -109,26 +109,3 @@ h3 {
 .features-table td {
     padding: 2px; /* Define o padding mínimo */
 }
-
-/* for the token tab
-    /* .offset-point .form-fields {
-        display: flex;
-        gap: 0.5em;
-    }
-    .offset-point .axis {
-        flex: 0 0 60px;
-        line-height: var(--form-field-height);
-        text-align: center;
-        color: var(--color-text-dark-secondary);
-    }
-    .offset-point input {
-        flex: 1;
-    }
-    .scale-slider {
-        flex: 4;
-    }
-    .range-value {
-        flex: 1;
-        text-align: center;
-        line-height: var(--form-field-height);
-    } */

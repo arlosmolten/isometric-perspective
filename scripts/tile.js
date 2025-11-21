@@ -1,18 +1,50 @@
 import { isometricModuleConfig } from './consts.js';
 import { applyIsometricTransformation } from './transform.js';
 
-export function registerTileConfig() {
-  Hooks.on("renderTileConfig", handleRenderTileConfig);
+export async function handleRenderTileConfig(app, html, data) {
 
-  Hooks.on("createTile", handleCreateTile);
-  Hooks.on("updateTile", handleUpdateTile);
-  Hooks.on("refreshTile", handleRefreshTile);
-}
+  // const linkedWallIds = app.object.getFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds') || [];
+  // const wallIdsString = Array.isArray(linkedWallIds) ? linkedWallIds.join(', ') : linkedWallIds;
 
-async function handleRenderTileConfig(app, html, data) {
-  const linkedWallIds = app.object.getFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds') || [];
-  const wallIdsString = Array.isArray(linkedWallIds) ? linkedWallIds.join(', ') : linkedWallIds;
+  const label = game.i18n.localize("isometric-perspective.tab_isometric_name");
+  const tabGroup = "sheet";
+  const tabId = "isometric";
+  const icon = "fas fa-cube"
+  const isoTemplatePath = 'modules/isometric-perspective/templates/tile-config.hbs'
 
+  // Scene config data
+  const FoundryTileConfig = foundry.applications.sheets.TileConfig;
+  const DefaultTileConfig = Object.values(CONFIG.Tile.sheetClasses.base).find((d) => d.default)?.cls;
+  const TileConfig = DefaultTileConfig?.prototype instanceof FoundryTileConfig ? DefaultTileConfig : FoundryTileConfig;
+  
+  // Adding the isometric tab data to the scene config parts
+  TileConfig.TABS.sheet.tabs.push({ id: tabId, group: tabGroup, label , icon: icon }); 
+  
+  // Adding the part template
+  TileConfig.PARTS.isometric = {template: isoTemplatePath};
+
+  const footerPart = TileConfig.PARTS.footer;
+  delete TileConfig.PARTS.footer;
+  TileConfig.PARTS.footer = footerPart;
+
+  // Override part context to include the isometric-perspective config data
+  /*const defaultRenderPartContext = TileConfig.prototype._preparePartContext;
+  TileConfig.prototype._preparePartContext = async function(partId, context, options) {
+    if (partId === "isometric") {
+      const flags = this.document.flags[isometricModuleConfig.MODULE_ID] ?? null;
+
+      return {
+        ...(flags ?? {}),
+        document: this.document,
+        tab: context.tabs[partId],
+      }
+    }
+    return defaultRenderPartContext.call(this, partId, context, options);
+  }*/
+
+
+
+/*
   // Carrega o template HTML para a nova aba
   const tabHtml = await renderTemplate("modules/isometric-perspective/templates/tile-config.html", {
     isoDisabled: app.object.getFlag(isometricModuleConfig.MODULE_ID, 'isoTileDisabled') ?? 1,
@@ -46,7 +78,7 @@ async function handleRenderTileConfig(app, html, data) {
     }
   }
   */
-
+/*
   // Inicializa os valores dos controles
   const isoTileCheckbox = html.querySelector('input[name="flags.isometric-perspective.isoTileDisabled"]');
   const flipCheckbox = html.querySelector('input[name="flags.isometric-perspective.tokenFlipped"]');
@@ -137,14 +169,14 @@ async function handleRenderTileConfig(app, html, data) {
       if (tabs) tabs.activate("isometric");
     });
   });
-
+*/
 }
 
 
 
 
 // Hooks.on("createTile")
-function handleCreateTile(tileDocument) {
+export function handleCreateTile(tileDocument) {
   const tile = canvas.tiles.get(tileDocument.id);
   if (!tile) return;
   
@@ -154,7 +186,7 @@ function handleCreateTile(tileDocument) {
 }
 
 // Hooks.on("updateTile")
-function handleUpdateTile(tileDocument, updateData, options, userId) {
+export function handleUpdateTile(tileDocument, updateData, options, userId) {
   const tile = canvas.tiles.get(tileDocument.id);
   if (!tile) return;
   
@@ -171,7 +203,7 @@ function handleUpdateTile(tileDocument, updateData, options, userId) {
 }
 
 // Hooks.on("refreshTile")
-function handleRefreshTile(tile) {
+export function handleRefreshTile(tile) {
   const scene = tile.scene;
   const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   applyIsometricTransformation(tile, isSceneIsometric);
