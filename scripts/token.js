@@ -12,7 +12,7 @@ export async function handleRenderTokenConfig(app, html, data) {
   const icon = "fas fa-cube"
   const isoTemplatePath = 'modules/isometric-perspective/templates/token-config.hbs'
 
-  // Scene config data
+  // Token config data
   const FoundryTokenConfig = foundry.applications.sheets.TokenConfig;
   const DefaultTokenConfig = Object.values(CONFIG.Token.sheetClasses.base).find((d) => d.default)?.cls;
   const TokenConfig = DefaultTokenConfig?.prototype instanceof FoundryTokenConfig ? DefaultTokenConfig : FoundryTokenConfig;

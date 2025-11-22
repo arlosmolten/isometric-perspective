@@ -11,6 +11,7 @@ import {
  
 import { 
   handleRenderTileConfig,
+  addLinkedWallsListeners,
   handleCreateTile,
   handleUpdateTile,
   handleRefreshTile
@@ -247,6 +248,7 @@ Hooks.on("renderTileHUD", handleRenderTileHUD);
 
 //tile config
 Hooks.on("ready", handleRenderTileConfig);
+Hooks.on("renderTileConfig", addLinkedWallsListeners);
 // Hooks.on("renderTileConfig", handleRenderTileConfig);
 //tile management
 Hooks.on("createTile", handleCreateTile);
