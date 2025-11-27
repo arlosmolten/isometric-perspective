@@ -12,35 +12,64 @@ export async function handleRenderTokenConfig(app, html, data) {
   const icon = "fas fa-cube"
   const isoTemplatePath = 'modules/isometric-perspective/templates/token-config.hbs'
 
-  // Token config data
+  // Helper function to patch a TokenConfig class
+  function patchTokenConfigClass(ConfigClass) {
+    if (!ConfigClass) return;
+    
+    // Check if already patched
+    if (ConfigClass.TABS?.sheet?.tabs?.some(t => t.id === tabId)) return;
+    
+    // Adding the isometric tab data to the config parts
+    if (ConfigClass.TABS?.sheet?.tabs) {
+      ConfigClass.TABS.sheet.tabs.push({ id: tabId, group: tabGroup, label, icon: icon });
+    }
+    
+    // Adding the part template
+    if (ConfigClass.PARTS) {
+      ConfigClass.PARTS.isometric = {template: isoTemplatePath};
+
+      // Re-order footer to be last
+      if (ConfigClass.PARTS.footer) {
+        const footerPart = ConfigClass.PARTS.footer;
+        delete ConfigClass.PARTS.footer;
+        ConfigClass.PARTS.footer = footerPart;
+      }
+    }
+
+    // Override part context to include the isometric-perspective config data
+    const defaultRenderPartContext = ConfigClass.prototype._preparePartContext;
+    ConfigClass.prototype._preparePartContext = async function(partId, context, options) {
+      if (partId === "isometric") {
+        // Handle both 'document' and 'token' properties for compatibility
+        const doc = this.document || this.token;
+        if (!doc) {
+          console.warn("Isometric Perspective: Unable to access token document");
+          return { tab: context.tabs?.[partId] };
+        }
+        
+        const flags = doc.flags?.[isometricModuleConfig.MODULE_ID] ?? {};
+
+        return {
+          ...flags,
+          document: doc,
+          tab: context.tabs?.[partId],
+        }
+      }
+      return defaultRenderPartContext?.call(this, partId, context, options) || {};
+    }
+  }
+
+  // Patch TokenConfig (for live tokens)
   const FoundryTokenConfig = foundry.applications.sheets.TokenConfig;
   const DefaultTokenConfig = Object.values(CONFIG.Token.sheetClasses.base).find((d) => d.default)?.cls;
   const TokenConfig = DefaultTokenConfig?.prototype instanceof FoundryTokenConfig ? DefaultTokenConfig : FoundryTokenConfig;
-  
-  // Adding the isometric tab data to the scene config parts
-  TokenConfig.TABS.sheet.tabs.push({ id: tabId, group: tabGroup, label , icon: icon }); 
-  
-  // Adding the part template
-  TokenConfig.PARTS.isometric = {template: isoTemplatePath};
+  patchTokenConfigClass(TokenConfig);
 
-  const footerPart = TokenConfig.PARTS.footer;
-  delete TokenConfig.PARTS.footer;
-  TokenConfig.PARTS.footer = footerPart;
-
-  // Override part context to include the isometric-perspective config data
-  const defaultRenderPartContext = TokenConfig.prototype._preparePartContext;
-  TokenConfig.prototype._preparePartContext = async function(partId, context, options) {
-    if (partId === "isometric") {
-      const flags = this.document.flags[isometricModuleConfig.MODULE_ID] ?? null;
-
-      return {
-        ...(flags ?? {}),
-        document: this.document,
-        tab: context.tabs[partId],
-      }
-    }
-    return defaultRenderPartContext.call(this, partId, context, options);
-  }  
+  // Patch PrototypeTokenConfig (for prototype tokens in actor sheets)
+  const PrototypeTokenConfig = foundry.applications.sheets.PrototypeTokenConfig;
+  if (PrototypeTokenConfig && PrototypeTokenConfig !== TokenConfig) {
+    patchTokenConfigClass(PrototypeTokenConfig);
+  }
     
 }
 
