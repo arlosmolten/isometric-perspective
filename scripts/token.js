@@ -127,7 +127,19 @@ export function addPrecisionTokenArtListener(app, html, context, options){
     dragStartY: 0,
     originalX: 0,
     originalY: 0,
-    artOffsetDragging: false,
+    isDragging: false,
+    adjustmentX: 1,
+    adjustmentY: 0.5
+  }
+
+  const anchorOffsetConfig = {
+    inputX : html.querySelector('input[name="flags.isometric-perspective.isoAnchorX"]'),
+    inputY : html.querySelector('input[name="flags.isometric-perspective.isoAnchorY"]'),
+    dragStartX: 0,
+    dragStartY: 0,
+    originalX: 0,
+    originalY: 0,
+    isDragging: false,
     adjustmentX: 1,
     adjustmentY: 0.5
   }
@@ -142,31 +154,46 @@ export function addPrecisionTokenArtListener(app, html, context, options){
     event.preventDefault();
   })
 
+  fineAnchorOffsetAdjustButton.addEventListener('click', (event) => {
+    event.preventDefault();
+  })
+
   // start tracking mouse movements on mousedown on the fine adjust button
   fineArtOffsetAdjustButton.addEventListener('mousedown', (event) => {
     event.preventDefault();
-    artOffsetConfig.artOffsetDragging = true;
+    artOffsetConfig.isDragging = true;
     artOffsetConfig.dragStartX = event.clientX;
     artOffsetConfig.dragStartY = event.clientY;
-    artOffsetConfig.originalX = getNum(artOffsetConfig.tokenArtOffsetInputX);
-    artOffsetConfig.originalY = getNum(artOffsetConfig.tokenArtOffsetInputY);
+    artOffsetConfig.originalX = getNum(artOffsetConfig.inputX);
+    artOffsetConfig.originalY = getNum(artOffsetConfig.inputY);
+  });
+  
+  // start tracking mouse movements on mousedown on the fine adjust button
+  fineAnchorOffsetAdjustButton.addEventListener('mousedown', (event) => {
+    event.preventDefault();
+    anchorOffsetConfig.isDragging = true;
+    anchorOffsetConfig.dragStartX = event.clientX;
+    anchorOffsetConfig.dragStartY = event.clientY;
+    anchorOffsetConfig.originalX = getNum(anchorOffsetConfig.inputX);
+    anchorOffsetConfig.originalY = getNum(anchorOffsetConfig.inputY);
   });
 
-  // sstart tracking mouse movements when the mouse button is released anywhere in the entire window
+  // start tracking mouse movements when the mouse button is released anywhere in the entire window
   window.addEventListener('mouseup', (event) => {
     event.preventDefault();
-    artOffsetConfig.artOffsetDragging = false;
+    artOffsetConfig.isDragging = false;
+    anchorOffsetConfig.isDragging = false;
   });
-
   
   window.addEventListener('mousemove', (event)=>{
     adjustInputWithMouseDrag(event,artOffsetConfig);
+    adjustInputWithMouseDrag(event,anchorOffsetConfig);
   })
 
-  // adjust the input values in real time when the mosue is moving
+    // adjust the input values in real time when the mosue is moving
   function adjustInputWithMouseDrag(event,config){
     event.preventDefault();
-    if(config.artOffsetDragging){
+    if(config.isDragging){
       const deltaX = event.clientX - config.dragStartX;
       const deltaY = event.clientY - config.dragStartY;
       config.inputX.value = Math.trunc((config.originalX - ( deltaY * config.adjustmentX ) * 100) / 100);
@@ -175,6 +202,7 @@ export function addPrecisionTokenArtListener(app, html, context, options){
       config.inputY.dispatchEvent(new Event('change', { bubbles: true }));
     }
   }
+
 
   /*
   let graphics;
@@ -258,6 +286,8 @@ export function addPrecisionTokenArtListener(app, html, context, options){
     graphics = drawAlignmentLines(updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY));
     */
   };
+
+
 
   /*
   // Add a listener to the "Save?" Checkbox, If it is marked, draw the lines
