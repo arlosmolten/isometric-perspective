@@ -1,7 +1,7 @@
 import { isometricModuleConfig } from './consts.js';
 import { applyIsometricTransformation } from './transform.js';
 
-export async function handleRenderTileConfig(app, html, data) {
+export async function createTileIsometricTab(app, html, data) {
 
   const label = game.i18n.localize("isometric-perspective.tab_isometric_name");
   const tabGroup = "sheet";
@@ -41,11 +41,23 @@ export async function handleRenderTileConfig(app, html, data) {
 
 }
 
-export function addLinkedWallsListeners(app, html, context, options){
+export function initTileForm(app, html, context, options){
 
   const selectWallButton = html.querySelector('.select-wall');
   const clearWallButton = html.querySelector('.clear-wall');
   const linkedWallsIdInput = html.querySelector('input[name="flags.isometric-perspective.linkedWallIds"]');
+
+  const currentOffsetX = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetX');
+  const currentOffsetY = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY');
+  const currentScale = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'scale');
+
+  const inputOffsetX = html.querySelector('input[name="flags.isometric-perspective.offsetX"]');
+  const inputOffsetY = html.querySelector('input[name="flags.isometric-perspective.offsetY"]');
+  const inputScale = html.querySelector('range-picker[name="flags.isometric-perspective.scale"]');
+
+  inputOffsetX.value = currentOffsetX ?? 0;
+  inputOffsetY.value = currentOffsetY ?? 0;
+  inputScale.value = currentScale ?? 1;
 
   selectWallButton.addEventListener('click', selectWall);
   clearWallButton.addEventListener('click', clearWall);

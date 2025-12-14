@@ -1,8 +1,8 @@
 import { isometricModuleConfig } from './consts.js';
 
 import { 
-  handleRenderTokenConfig,
-  // addPrecisionTokenArtListener,
+  createTokenIsometricTab,
+  addPrecisionTokenArtListener,
   initTokenForm,
   handleCreateToken,
   handleUpdateToken,
@@ -11,8 +11,8 @@ import {
  } from './token.js';
  
 import { 
-  handleRenderTileConfig,
-  addLinkedWallsListeners,
+  createTileIsometricTab,
+  initTileForm,
   handleCreateTile,
   handleUpdateTile,
   handleRefreshTile
@@ -40,8 +40,8 @@ import { addWelcomeScreen } from './welcome.js';
 //import { registerOcclusionConfig } from './occlusion3.js';                       // has token-token occlusion (not fully working)
 
 import { 
-  addIsometricTab,
-  addSelectListener,
+  createSceneIsometricTab,
+  initSceneForm,
   handleUpdateScene,
   handleCanvasReady,
   handleCanvasResize, 
@@ -226,17 +226,17 @@ Hooks.once("init", function() {
 // WelcomeScreen
 Hooks.once('ready', addWelcomeScreen);
 //scene configuration
-Hooks.on('ready', addIsometricTab);
+Hooks.on('ready', createSceneIsometricTab);
 //scene management
-Hooks.on('renderSceneConfig', addSelectListener);
+Hooks.on('renderSceneConfig', initSceneForm);
 Hooks.on("updateScene", handleUpdateScene);
 Hooks.on("canvasReady", handleCanvasReady);
 Hooks.on("canvasResize", handleCanvasResize);
 
 //token config
-Hooks.on("ready", handleRenderTokenConfig);
+Hooks.on("ready", createTokenIsometricTab);
 // disabled until a better implementation is decided
-// Hooks.on('renderTokenConfig', addPrecisionTokenArtListener);
+Hooks.on('renderTokenConfig', addPrecisionTokenArtListener);
 Hooks.on('renderTokenConfig', initTokenForm);
 
 //token management
@@ -250,8 +250,8 @@ Hooks.on("renderTokenHUD", handleRenderTokenHUD);
 Hooks.on("renderTileHUD", handleRenderTileHUD);
 
 //tile config
-Hooks.on("ready", handleRenderTileConfig);
-Hooks.on("renderTileConfig", addLinkedWallsListeners);
+Hooks.on("ready", createTileIsometricTab);
+Hooks.on("renderTileConfig", initTileForm);
 // Hooks.on("renderTileConfig", handleRenderTileConfig);
 //tile management
 Hooks.on("createTile", handleCreateTile);

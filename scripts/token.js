@@ -4,7 +4,7 @@ import { cartesianToIso, isoToCartesian } from './utils.js';
 import { ISOMETRIC_CONST } from './consts.js';
 import { getFlagName } from './utils.js';
 
-export async function handleRenderTokenConfig(app, html, data) {
+export async function createTokenIsometricTab(app, html, data) {
 
   const label = game.i18n.localize("isometric-perspective.tab_isometric_name");
   const tabGroup = "sheet";
@@ -51,24 +51,32 @@ export function initTokenForm (app, html, context, options) {
   const currentOffsetY = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY');
   const currentScale = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'scale');
 
-  html.querySelector('input[name="texture.anchorX"]').value = currentAnchorX ?? 0.5;
-  html.querySelector('input[name="texture.anchorY"]').value = currentAnchorY ?? 0.5;
-  html.querySelector('input[name="flags.isometric-perspective.isoAnchorX"]').value = currentAnchorX ?? 0.5;
-  html.querySelector('input[name="flags.isometric-perspective.isoAnchorY"]').value = currentAnchorY ?? 0.5;
-  html.querySelector('input[name="flags.isometric-perspective.offsetX"]').value = currentOffsetX ?? 0;
-  html.querySelector('input[name="flags.isometric-perspective.offsetY"]').value = currentOffsetY ?? 0;
-  html.querySelector('range-picker[name="flags.isometric-perspective.scale"]').value = currentScale ?? 1;
+  const inputTextureAnchorX = html.querySelector('input[name="texture.anchorX"]');
+  const inputTextureAnchorY = html.querySelector('input[name="texture.anchorY"]');
+  const inputIsoAnchorX = html.querySelector('input[name="flags.isometric-perspective.isoAnchorX"]');
+  const inputIsoAnchorY = html.querySelector('input[name="flags.isometric-perspective.isoAnchorY"]');
+  const inputOffsetX = html.querySelector('input[name="flags.isometric-perspective.offsetX"]');
+  const inputOffsetY = html.querySelector('input[name="flags.isometric-perspective.offsetY"]');
+  const inputScale = html.querySelector('range-picker[name="flags.isometric-perspective.scale"]');
+
+  inputTextureAnchorX.value = currentAnchorX ?? 0.5;
+  inputTextureAnchorY.value = currentAnchorY ?? 0.5;
+  inputIsoAnchorX.value = currentAnchorX ?? 0.5;
+  inputIsoAnchorY.value = currentAnchorY ?? 0.5;
+  inputOffsetX.value = currentOffsetX ?? 0;
+  inputOffsetY.value = currentOffsetY ?? 0;
+  inputScale.value = currentScale ?? 1;
 
   const resetAlignementButton = html.querySelector('.toggle-alignment-lines');
   resetAlignementButton.addEventListener("click", async (event) => {
     event.preventDefault();
-    html.querySelector('input[name="texture.anchorX"]').value = 0.5;
-    html.querySelector('input[name="texture.anchorY"]').value = 0.5;
-    html.querySelector('input[name="flags.isometric-perspective.isoAnchorX"]').value = 0.5;
-    html.querySelector('input[name="flags.isometric-perspective.isoAnchorY"]').value = 0.5;
-    html.querySelector('input[name="flags.isometric-perspective.offsetX"]').value = 0;
-    html.querySelector('input[name="flags.isometric-perspective.offsetY"]').value = 0;
-    html.querySelector('range-picker[name="flags.isometric-perspective.scale"]').value = 1;
+    inputTextureAnchorX.value = 0.5;
+    inputTextureAnchorY.value = 0.5;
+    inputIsoAnchorX.value = 0.5;
+    inputIsoAnchorY.value = 0.5;
+    inputOffsetX.value = 0;
+    inputOffsetY.value = 0;
+    inputScale.value = 1;
 
     // currently disabled until the precision selector is reworked , do not remove
     // graphics = drawAlignmentLines(updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY));
@@ -110,9 +118,65 @@ export function handleDeleteToken(token) {
   updateTokenVisuals(token);
 }
 
-/** CURRENTLY DISABLED UNTIL WE FIGURE OUT A BETTER IMPLEMENTATION **/
-/*export function addPrecisionTokenArtListener(app, html, context, options){
+export function addPrecisionTokenArtListener(app, html, context, options){
 
+  const artOffsetConfig = {
+    inputX : html.querySelector('input[name="flags.isometric-perspective.offsetX"]'),
+    inputY : html.querySelector('input[name="flags.isometric-perspective.offsetY"]'),
+    dragStartX: 0,
+    dragStartY: 0,
+    originalX: 0,
+    originalY: 0,
+    artOffsetDragging: false,
+    adjustmentX: 1,
+    adjustmentY: 0.5
+  }
+
+  const getNum = (input) => parseFloat(input.value) || 0;
+
+  const fineArtOffsetAdjustButton = html.querySelector('.fine-adjust');
+  const fineAnchorOffsetAdjustButton = html.querySelector('.fine-adjust-anchor');
+
+  //prevent form submission
+  fineArtOffsetAdjustButton.addEventListener('click', (event) => {
+    event.preventDefault();
+  })
+
+  // start tracking mouse movements on mousedown on the fine adjust button
+  fineArtOffsetAdjustButton.addEventListener('mousedown', (event) => {
+    event.preventDefault();
+    artOffsetConfig.artOffsetDragging = true;
+    artOffsetConfig.dragStartX = event.clientX;
+    artOffsetConfig.dragStartY = event.clientY;
+    artOffsetConfig.originalX = getNum(artOffsetConfig.tokenArtOffsetInputX);
+    artOffsetConfig.originalY = getNum(artOffsetConfig.tokenArtOffsetInputY);
+  });
+
+  // sstart tracking mouse movements when the mouse button is released anywhere in the entire window
+  window.addEventListener('mouseup', (event) => {
+    event.preventDefault();
+    artOffsetConfig.artOffsetDragging = false;
+  });
+
+  
+  window.addEventListener('mousemove', (event)=>{
+    adjustInputWithMouseDrag(event,artOffsetConfig);
+  })
+
+  // adjust the input values in real time when the mosue is moving
+  function adjustInputWithMouseDrag(event,config){
+    event.preventDefault();
+    if(config.artOffsetDragging){
+      const deltaX = event.clientX - config.dragStartX;
+      const deltaY = event.clientY - config.dragStartY;
+      config.inputX.value = Math.trunc((config.originalX - ( deltaY * config.adjustmentX ) * 100) / 100);
+      config.inputY.value = Math.trunc(Math.round(config.originalY + ( deltaX * config.adjustmentY ) * 100) / 100);
+      config.inputX.dispatchEvent(new Event('change', { bubbles: true }));
+      config.inputY.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+
+  /*
   let graphics;
   let showAlignmentLines = true;
 
@@ -123,12 +187,9 @@ export function handleDeleteToken(token) {
 
   const tokenArtOffsetInputY = html.querySelector('input[name="flags.isometric-perspective.offsetY"]');
   const tokenArtOffsetInputX = html.querySelector('input[name="flags.isometric-perspective.offsetX"]');
-
   const tokenAnchorY = html.querySelector('input[name="flags.isometric-perspective.isoAnchorY"]');
   const tokenAnchorX = html.querySelector('input[name="flags.isometric-perspective.isoAnchorX"]');
-
   const tokenScale = html.querySelector('input[name="flags.isometric-perspective.scale"]');
-
   const textureAnchorY = html.querySelector('input[name="texture.anchorY"]');
   const textureAnchorX = html.querySelector('input[name="texture.anchorX"]');
 
@@ -139,7 +200,7 @@ export function handleDeleteToken(token) {
   let isoAnchorY =  app.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorY') ?? 0;
 
   //Update the lines when changing the inputs
-  /*
+  
   tokenArtOffsetInputX.addEventListener('change',updateOffset);
   tokenArtOffsetInputY.addEventListener('change',updateOffset);
   tokenAnchorX.addEventListener('change',updateOffset);
@@ -186,8 +247,8 @@ export function handleDeleteToken(token) {
     event.preventDefault();
 
     // Reset all alignment settings
-    texturAnchorX.val(0.5);
-    texturAnchorY.val(0.5);
+    textureAnchorX.val(0.5);
+    textureAnchorY.val(0.5);
     tokenAnchorX.val(0.5);
     tokenAnchorY.val(0.5);
     tokenArtOffsetInputX.val(0);
@@ -195,8 +256,10 @@ export function handleDeleteToken(token) {
     tokenScale.val(1);
 
     graphics = drawAlignmentLines(updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY));
-  });
+    */
+  };
 
+  /*
   // Add a listener to the "Save?" Checkbox, If it is marked, draw the lines
   isoAnchorToggleCheckbox.on('change', async () => {
     const isChecked = isoAnchorToggleCheckbox.prop("checked");
@@ -206,7 +269,7 @@ export function handleDeleteToken(token) {
     showAlignmentLines = !showAlignmentLines;
   });
 
-  Removes all lines when clicking on update token
+  //Removes all lines when clicking on update token
   html.querySelector('button[type="submit"]').on('click', () => {
     if (!isoAnchorToggleCheckbox.prop("checked")) {
       cleanup();
@@ -265,7 +328,7 @@ export function handleDeleteToken(token) {
     const existingLines = canvas.stage.children.filter(child => child.name === 'tokenAlignmentLine');
     existingLines.forEach(line => line.destroy());
   };
-}*/
+}
 
 
 // Generic function to create adjustable buttons with drag functionality
@@ -380,7 +443,7 @@ export function handleDeleteToken(token) {
 //     roundingPrecision: 2     // Two decimal places for anchor values
 //   });
 // }
-
+*/
 
 /*
 // ----------------- Enhanced Token Configuration -----------------

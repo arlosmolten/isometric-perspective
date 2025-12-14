@@ -15,13 +15,13 @@
         <label>{{localize 'isometric-perspective.token_artOffset_name'}}</label>
         <div class="form-fields">
             <label class="axisX">X</label>
-            <input type="number" name="flags.isometric-perspective.offsetY" 
-                    value="{{offsetY}}"
+            <input class="ISTHISX" type="number" name="flags.isometric-perspective.offsetX" 
+                    value="{{offsetX}}"
                     step="1"
                     />
-            {{!-- <button class="fine-adjust" title="Hold and drag to fine-tune X and Y">✥</button> --}}
-            <input type="number" name="flags.isometric-perspective.offsetX"
-                    value="{{offsetX}}"
+            <button class="fine-adjust" title="Hold and drag to fine-tune X and Y">✥</button>
+            <input type="number" name="flags.isometric-perspective.offsetY"
+                    value="{{offsetY}}"
                     step="1" />
             <label class="axisY">Y</label>
         </div>
@@ -37,7 +37,7 @@
             <input type="number" name="flags.isometric-perspective.isoAnchorY" 
                     value="{{isoAnchorY}}"
                     step="0.01" />
-            {{!-- <button class="fine-adjust-anchor" title="Hold and drag to fine-tune X and Y">✥</button> --}}
+            <button class="fine-adjust-anchor" title="Hold and drag to fine-tune X and Y">✥</button>
             <input type="number" name="flags.isometric-perspective.isoAnchorX"
                     value="{{isoAnchorX}}"
                     step="0.01" />
