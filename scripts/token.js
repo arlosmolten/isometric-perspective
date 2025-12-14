@@ -144,6 +144,9 @@ export function addPrecisionTokenArtListener(app, html, context, options){
     adjustmentY: 0.5
   }
 
+  let graphics;
+  let showAlignmentLines = true;
+
   const getNum = (input) => parseFloat(input.value) || 0;
 
   const fineArtOffsetAdjustButton = html.querySelector('.fine-adjust');
