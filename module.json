@@ -2,7 +2,7 @@
   "title": "Isometric Perspective",
   "id": "isometric-perspective",
   "description": "Changes the canvas perspective from top-down to isometric.",
-  "version": "0.7.6",
+  "version": "0.8.0gu",
   "esmodules": [
     "scripts/main.js"
   ],

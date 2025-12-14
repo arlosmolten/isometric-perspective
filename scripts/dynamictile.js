@@ -152,25 +152,33 @@ export function registerDynamicTileConfig() {
   });
 
   // Additional buttons for the tile layer
-  Hooks.on("getSceneControlButtons", (controls) => {
-    const newButtons = controls.find(b => b.name === "tiles"); // "token, measure, tiles, drawings, walls, lightning"
+  /*Hooks.on("getSceneControlButtons", (controls) => {
+
+    // console.log("controls", controls)
+
+    // const newButtons = controls.find(b => b.name === "tiles"); // "token, measure, tiles, drawings, walls, lightning"
+    const dynamicTileTool = controls["tiles"].tools; // "token, measure, tiles, drawings, walls, lightning"
+
+    console.log("dynamicTileTool", dynamicTileTool.tools); 
   
-    newButtons.tools.push({
+    dynamicTileTool.opacityIncrease = {
       name: 'dynamic-tile-increase',
       title: 'Increase Dynamic Tile Opacity',
       icon: 'fa-solid fa-layer-group',
       active: true,
       onClick: () => increaseTilesOpacity(),
       button: true
-    },{
+    };
+    
+    dynamicTileTool.opacityDecrease = {
       name: 'dynamic-tile-decrease',
       title: 'Decrease Dynamic Tile Opacity',
       icon: 'fa-duotone fa-solid fa-layer-group',
       active: true,
       onClick: () => decreaseTilesOpacity(),
       button: true
-    });
-  });
+    };
+  });*/
 }
 
 

@@ -32,7 +32,6 @@ export async function handleRenderTokenConfig(app, html, data) {
   TokenConfig.prototype._preparePartContext = async function(partId, context, options) {
     if (partId === "isometric") {
       const flags = this.document.flags[isometricModuleConfig.MODULE_ID] ?? null;
-
       return {
         ...(flags ?? {}),
         document: this.document,
@@ -42,6 +41,38 @@ export async function handleRenderTokenConfig(app, html, data) {
     return defaultRenderPartContext.call(this, partId, context, options);
   }  
     
+}
+
+export function initTokenForm (app, html, context, options) {
+
+  const currentAnchorX = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorX');
+  const currentAnchorY = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorY');
+  const currentOffsetX = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetX');
+  const currentOffsetY = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY');
+  const currentScale = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'scale');
+
+  html.querySelector('input[name="texture.anchorX"]').value = currentAnchorX ?? 0.5;
+  html.querySelector('input[name="texture.anchorY"]').value = currentAnchorY ?? 0.5;
+  html.querySelector('input[name="flags.isometric-perspective.isoAnchorX"]').value = currentAnchorX ?? 0.5;
+  html.querySelector('input[name="flags.isometric-perspective.isoAnchorY"]').value = currentAnchorY ?? 0.5;
+  html.querySelector('input[name="flags.isometric-perspective.offsetX"]').value = currentOffsetX ?? 0;
+  html.querySelector('input[name="flags.isometric-perspective.offsetY"]').value = currentOffsetY ?? 0;
+  html.querySelector('range-picker[name="flags.isometric-perspective.scale"]').value = currentScale ?? 1;
+
+  const resetAlignementButton = html.querySelector('.toggle-alignment-lines');
+  resetAlignementButton.addEventListener("click", async (event) => {
+    event.preventDefault();
+    html.querySelector('input[name="texture.anchorX"]').value = 0.5;
+    html.querySelector('input[name="texture.anchorY"]').value = 0.5;
+    html.querySelector('input[name="flags.isometric-perspective.isoAnchorX"]').value = 0.5;
+    html.querySelector('input[name="flags.isometric-perspective.isoAnchorY"]').value = 0.5;
+    html.querySelector('input[name="flags.isometric-perspective.offsetX"]').value = 0;
+    html.querySelector('input[name="flags.isometric-perspective.offsetY"]').value = 0;
+    html.querySelector('range-picker[name="flags.isometric-perspective.scale"]').value = 1;
+
+    // currently disabled until the precision selector is reworked , do not remove
+    // graphics = drawAlignmentLines(updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY));
+  });
 }
 
 export function handleCreateToken(tokenDocument) {
