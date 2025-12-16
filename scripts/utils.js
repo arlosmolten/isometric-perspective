@@ -29,3 +29,42 @@ export function getFlagName(str) {
   const parts = str.split('.');
   return parts.pop();
 }
+
+// adjust the input values in real time when the mosue is moving
+export function adjustInputWithMouseDrag(event,config){
+  event.preventDefault();
+  if(config.isDragging){
+    const deltaX = event.clientX - config.dragStartX;
+    const deltaY = event.clientY - config.dragStartY;
+    // config.inputX.value = Math.trunc((config.originalX - ( deltaY * config.adjustmentX ) * 100) / 100);
+    // config.inputY.value = Math.trunc(Math.round(config.originalY + ( deltaX * config.adjustmentY ) * 100) / 100);
+    const finalValueX = roundToPrecision((config.originalX - (deltaY * config.adjustmentX) ) , getDecimalPrecision(config.adjustmentX));
+    const finalValueY = roundToPrecision((config.originalY +  (deltaX * config.adjustmentY) ) , getDecimalPrecision(config.adjustmentY));
+    console.log("AFTER PARSE: ", finalValueX, finalValueY);
+    config.inputX.value = finalValueX;
+    config.inputY.value = finalValueY;
+    config.inputX.dispatchEvent(new Event('change', { bubbles: true }));
+    config.inputY.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+}
+
+export function parseNum (input) { 
+  return parseFloat(input.value) || 0;
+} 
+
+export function roundToPrecision(num,precision){
+  if (precision <= 0) {
+        return Math.round(num);
+    }
+    const factor = Math.pow(10, precision);
+    return Math.round(num * factor) / factor;
+}
+
+function getDecimalPrecision(step) {
+    if (step === 0 || step === 1) return 0;
+    const stepStr = step.toString();
+    if (stepStr.includes('.')) {
+        return stepStr.split('.')[1].length;
+    }
+    return 0;
+}

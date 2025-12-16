@@ -1,5 +1,6 @@
 import { isometricModuleConfig } from './consts.js';
 import { applyIsometricTransformation } from './transform.js';
+import { adjustInputWithMouseDrag, parseNum } from './utils.js';
 
 export async function createTileIsometricTab(app, html, data) {
 
@@ -42,6 +43,46 @@ export async function createTileIsometricTab(app, html, data) {
 }
 
 export function initTileForm(app, html, context, options){
+
+  //Tile art offset
+  const tileOffsetConfig = {
+    inputX : html.querySelector('input[name="flags.isometric-perspective.offsetX"]'),
+    inputY : html.querySelector('input[name="flags.isometric-perspective.offsetY"]'),
+    dragStartX: 0,
+    dragStartY: 0,
+    originalX: 0,
+    originalY: 0,
+    isDragging: false,
+    adjustmentX: 1,
+    adjustmentY: 0.5
+  }
+
+  const fineArtOffsetAdjustButton = html.querySelector('.fine-adjust');
+
+  //prevent form submission
+  fineArtOffsetAdjustButton.addEventListener('click', (event) => {
+    event.preventDefault();
+  })
+  // start tracking mouse movements on mousedown on the fine adjust button
+  fineArtOffsetAdjustButton.addEventListener('mousedown', (event) => {
+    event.preventDefault();
+    tileOffsetConfig.isDragging = true;
+    tileOffsetConfig.dragStartX = event.clientX;
+    tileOffsetConfig.dragStartY = event.clientY;
+    tileOffsetConfig.originalX = parseNum(tileOffsetConfig.inputX);
+    tileOffsetConfig.originalY = parseNum(tileOffsetConfig.inputY);
+  });
+  // start tracking mouse movements when the mouse button is released anywhere in the entire window
+  window.addEventListener('mouseup', (event) => {
+    event.preventDefault();
+    tileOffsetConfig.isDragging = false;
+  });
+
+  window.addEventListener('mousemove', (event)=>{
+    adjustInputWithMouseDrag(event,tileOffsetConfig);
+  })
+
+  //Dynamic tile and wall linking
 
   const selectWallButton = html.querySelector('.select-wall');
   const clearWallButton = html.querySelector('.clear-wall');

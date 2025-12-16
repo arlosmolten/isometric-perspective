@@ -1,8 +1,12 @@
-import { isometricModuleConfig } from './consts.js';
+import { isometricModuleConfig, ISOMETRIC_CONST } from './consts.js';
 import { applyIsometricTransformation, updateTokenVisuals } from './transform.js';
-import { cartesianToIso, isoToCartesian } from './utils.js';
-import { ISOMETRIC_CONST } from './consts.js';
-import { getFlagName } from './utils.js';
+import { 
+  cartesianToIso, 
+  adjustInputWithMouseDrag,
+  parseNum,
+  isoToCartesian , 
+  getFlagName 
+} from './utils.js';
 
 export async function createTokenIsometricTab(app, html, data) {
 
@@ -77,8 +81,6 @@ export function initTokenForm (app, html, context, options) {
     inputOffsetX.value = 0;
     inputOffsetY.value = 0;
     inputScale.value = 1;
-
-    // graphics = drawAlignmentLines(updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY));
   });
 }
 
@@ -128,7 +130,7 @@ export function addPrecisionTokenArtListener(app, html, context, options){
     originalY: 0,
     isDragging: false,
     adjustmentX: 1,
-    adjustmentY: 0.5
+    adjustmentY: 1
   }
 
   const anchorOffsetConfig = {
@@ -140,17 +142,21 @@ export function addPrecisionTokenArtListener(app, html, context, options){
     originalY: 0,
     isDragging: false,
     showAlignmentLines: false,
-    adjustmentX: 1,
-    adjustmentY: 1
+    adjustmentX: 0.01,
+    adjustmentY: 0.01
   }
 
   let alignmentLines; // used to be graphics but also the function create its own graphics object which is confusing
-  const document = app.options.document;
-
-  const getNum = (input) => parseFloat(input.value) || 0;
+  let isAdjustingAnchor = false;
 
   const fineArtOffsetAdjustButton = html.querySelector('.fine-adjust');
   const fineAnchorOffsetAdjustButton = html.querySelector('.fine-adjust-anchor');
+  const isoAnchorToggleCheckbox = html.querySelector('.anchor-toggle-checkbox');
+
+  const offsetX = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetX') ?? 0;
+  const offsetY = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY') ?? 0;
+  const isoAnchorY = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorY') ?? 0;
+  const isoAnchorX = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorX') ?? 0;
 
   //prevent form submission
   fineArtOffsetAdjustButton.addEventListener('click', (event) => {
@@ -167,8 +173,8 @@ export function addPrecisionTokenArtListener(app, html, context, options){
     artOffsetConfig.isDragging = true;
     artOffsetConfig.dragStartX = event.clientX;
     artOffsetConfig.dragStartY = event.clientY;
-    artOffsetConfig.originalX = getNum(artOffsetConfig.inputX);
-    artOffsetConfig.originalY = getNum(artOffsetConfig.inputY);
+    artOffsetConfig.originalX = parseNum(artOffsetConfig.inputX);
+    artOffsetConfig.originalY = parseNum(artOffsetConfig.inputY);
   });
   
   // start tracking mouse movements on mousedown on the fine adjust button
@@ -177,8 +183,9 @@ export function addPrecisionTokenArtListener(app, html, context, options){
     anchorOffsetConfig.isDragging = true;
     anchorOffsetConfig.dragStartX = event.clientX;
     anchorOffsetConfig.dragStartY = event.clientY;
-    anchorOffsetConfig.originalX = getNum(anchorOffsetConfig.inputX);
-    anchorOffsetConfig.originalY = getNum(anchorOffsetConfig.inputY);
+    anchorOffsetConfig.originalX = parseNum(anchorOffsetConfig.inputX);
+    anchorOffsetConfig.originalY = parseNum(anchorOffsetConfig.inputY);
+    alignmentLines = drawAlignmentLines(updateIsoAnchor(anchorOffsetConfig, anchorOffsetConfig, anchorOffsetConfig, anchorOffsetConfig));
   });
 
   // start tracking mouse movements when the mouse button is released anywhere in the entire window
@@ -190,40 +197,37 @@ export function addPrecisionTokenArtListener(app, html, context, options){
   
   window.addEventListener('mousemove', (event)=>{
     adjustInputWithMouseDrag(event,artOffsetConfig);
-    adjustInputWithMouseDrag(event,anchorOffsetConfig);
+    if(isAdjustingAnchor){
+      adjustInputWithMouseDrag(event,anchorOffsetConfig);
+    }
   })
 
-    // adjust the input values in real time when the mosue is moving
-  function adjustInputWithMouseDrag(event,config){
-    event.preventDefault();
-    if(config.isDragging){
-      const deltaX = event.clientX - config.dragStartX;
-      const deltaY = event.clientY - config.dragStartY;
-      config.inputX.value = Math.trunc((config.originalX - ( deltaY * config.adjustmentX ) * 100) / 100);
-      config.inputY.value = Math.trunc(Math.round(config.originalY + ( deltaX * config.adjustmentY ) * 100) / 100);
-      config.inputX.dispatchEvent(new Event('change', { bubbles: true }));
-      config.inputY.dispatchEvent(new Event('change', { bubbles: true }));
+  isoAnchorToggleCheckbox.addEventListener('change', (event)=> {
+    isAdjustingAnchor = !isAdjustingAnchor;
+
+    if(isAdjustingAnchor){
+      alignmentLines = drawAlignmentLines(updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY))
+    } else {
+      cleanup();
+    }
+    
+  })
+
+  //Update the lines when changing the inputs // bug here, its not following the art offset
+  artOffsetConfig.inputX.addEventListener('change',updateOffset);
+  artOffsetConfig.inputY.addEventListener('change',updateOffset);
+  anchorOffsetConfig.inputX.addEventListener('change',updateOffset);
+  anchorOffsetConfig.inputY.addEventListener('change',updateOffset);
+
+  async function updateOffset(){
+    if(isAdjustingAnchor){
+      const currentOffsetX = artOffsetConfig.inputX.value;
+      const currentOffsetY = artOffsetConfig.inputY.value;
+      const currentIsoAnchorX  = anchorOffsetConfig.inputX.value;
+      const currentIsoAnchorY = anchorOffsetConfig.inputY.value;
+      alignmentLines = drawAlignmentLines(updateIsoAnchor(currentIsoAnchorX, currentIsoAnchorY, currentOffsetX, currentOffsetY));
     }
   }
-  
-  // let showAlignmentLines = true; // later change for : anchorOffsetConfig.showAlignmentLines
-
-  // Initialize the lines with the current values
-  // let isoAnchorX =  app.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorX') ?? 0;
-  // let isoAnchorY =  app.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorY') ?? 0;
-
-  //Update the lines when changing the inputs
-  // tokenArtOffsetInputX.addEventListener('change',updateOffset);
-  // tokenArtOffsetInputY.addEventListener('change',updateOffset);
-  // tokenAnchorX.addEventListener('change',updateOffset);
-  // tokenAnchorY.addEventListener('change',updateOffset);
-
-  // async function updateOffset(event){
-  //   const flagName = getFlagName(event.target.name);
-  //   const flagValue = event.target.value;
-  //   const changedFlag = await app.document.setFlag(isometricModuleConfig.MODULE_ID, flagName, flagValue);
-  //   console.log("changedFlag",changedFlag);
-  // }
 
   // Function to draw alignment lines
   function drawAlignmentLines(isoAnchor) {
@@ -252,36 +256,6 @@ export function addPrecisionTokenArtListener(app, html, context, options){
     return graphics;
   };
 
-  // toggleButton.addEventListener("click", async (event) => {
-  //   event.preventDefault();
-  //   graphics = drawAlignmentLines(updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY));
-  // });
-
-  
-  // Add a listener to the "Save?" Checkbox, If it is marked, draw the lines
-  // isoAnchorToggleCheckbox.on('change', async () => {
-  //   const isChecked = isoAnchorToggleCheckbox.prop("checked");
-  //   if (isChecked) graphics = drawAlignmentLines(updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY));
-    
-  //   // Invert the state of the selector
-  //   showAlignmentLines = !showAlignmentLines;
-  // });
-
-  //Removes all lines when clicking on update token
-  // html.querySelector('button[type="submit"]').on('click', () => {
-  //   if (!isoAnchorToggleCheckbox.prop("checked")) {
-  //     cleanup();
-  //   } else {
-  //     // Take updated values ​​directly from inputs
-  //     let currentIsoAnchorX = html.querySelector('input[name="flags.isometric-perspective.isoAnchorX"]').val();
-  //     let currentIsoAnchorY = html.querySelector('input[name="flags.isometric-perspective.isoAnchorY"]').val();
-      
-  //     // Update the anchor basic values ​​in the token configuration
-  //     html.querySelector('input[name="texture.anchorX"]').val(currentIsoAnchorY);
-  //     html.querySelector('input[name="texture.anchorY"]').val(1-currentIsoAnchorX);
-  //   }
-  // });
-
   //Changes the Close method to delete the lines, IF avoids changing the method more than once
   if (!app._isCloseModified) {
     const originalClose = app.close;
@@ -294,32 +268,30 @@ export function addPrecisionTokenArtListener(app, html, context, options){
     app._isCloseModified = true;
   }
 
-
-
   // Function to calculate the alignment point
-  // function updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY) {
-  //   let tokenMesh = app.token.object.mesh;
-  //   if (!tokenMesh) return { x: 0, y: 0 };
+  function updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY) {
+    let tokenMesh = app.token.object.mesh;
+    if (!tokenMesh) return { x: 0, y: 0 };
     
-  //   // Defines the values ​​and transforms strings into numbers
-  //   let textureValues = cartesianToIso(
-  //     tokenMesh.height,
-  //     tokenMesh.width
-  //   );
-  //   let isoAnchors = cartesianToIso(
-  //     parseFloat(isoAnchorX) * tokenMesh.height,
-  //     parseFloat(isoAnchorY) * tokenMesh.width
-  //   );
-  //   let isoOffsets = cartesianToIso(
-  //     parseFloat(offsetX), 
-  //     parseFloat(offsetY)
-  //   );
+    // Defines the values ​​and transforms strings into numbers
+    let textureValues = cartesianToIso(
+      tokenMesh.height,
+      tokenMesh.width
+    );
+    let isoAnchors = cartesianToIso(
+      parseFloat(isoAnchorX) * tokenMesh.height,
+      parseFloat(isoAnchorY) * tokenMesh.width
+    );
+    let isoOffsets = cartesianToIso(
+      parseFloat(offsetX), 
+      parseFloat(offsetY)
+    );
 
-  //   return {
-  //     x: (tokenMesh.x - textureValues.x/2) + isoOffsets.x + isoAnchors.x,
-  //     y: (tokenMesh.y - textureValues.y/2) + isoOffsets.y + isoAnchors.y
-  //   };
-  // };
+    return {
+      x: (tokenMesh.x - textureValues.x/2) + isoOffsets.x + isoAnchors.x,
+      y: (tokenMesh.y - textureValues.y/2) + isoOffsets.y + isoAnchors.y
+    };
+  };
 
   // Function to remove the lines
   function cleanup() {
@@ -328,120 +300,20 @@ export function addPrecisionTokenArtListener(app, html, context, options){
   };
 }
 
-/*
-// Generic function to create adjustable buttons with drag functionality
-// function createAdjustableButton(options) {
-//   // Destructure configuration options with default values
-//   const {
-//     container,                // Parent container element
-//     buttonSelector,           // CSS selector for the button
-//     inputs,                   // Array of input elements to update
-//     adjustmentScale = 0.2,    // How much the value changes per pixel moved
-//     valueConstraints = null,  // Optional min/max constraints for values
-//     roundingPrecision = 0     // Number of decimal places to round to
-//   } = options;
-
-//   // Find and configure the adjustment button
-//   const adjustButton = container.querySelector(buttonSelector);
-  
-//   // Apply consistent button styling
-//   Object.assign(adjustButton.style, {
-//     width: '30px',
-//     cursor: 'pointer',
-//     padding: '1px 5px',
-//     border: '1px solid #888',
-//     borderRadius: '3px'
-//   });
-//   adjustButton.title = game.i18n.localize('isometric-perspective.token_artOffset_mouseover'); //Hold and drag to fine-tune X and Y
-
-//   // State variables for tracking drag operations
-//   let isAdjusting = false;
-//   let startX = 0;
-//   let startY = 0;
-//   let originalValues = [0, 0];
-
-//   // Function to handle mouse movement and value adjustments
-//   const applyAdjustment = (e) => {
-//     if (!isAdjusting) return;
-
-//     // Calculate mouse movement deltas
-//     const deltaY = e.clientX - startX;
-//     const deltaX = startY - e.clientY;
+//Removes all lines when clicking on update token
+// html.querySelector('button[type="submit"]').on('click', () => {
+//   if (!isoAnchorToggleCheckbox.prop("checked")) {
+//     cleanup();
+//   } else {
+//     // Take updated values ​​directly from inputs
+//     let currentIsoAnchorX = html.querySelector('input[name="flags.isometric-perspective.isoAnchorX"]').val();
+//     let currentIsoAnchorY = html.querySelector('input[name="flags.isometric-perspective.isoAnchorY"]').val();
     
-//     // Calculate value adjustments based on mouse movement
-//     const adjustments = [
-//       deltaX * adjustmentScale,
-//       deltaY * adjustmentScale
-//     ];
-
-//     // Update each input with new values
-//     inputs.forEach((input, index) => {
-//       let newValue = originalValues[index] + adjustments[index];
-      
-//       // Apply min/max constraints if provided
-//       if (valueConstraints) {
-//         newValue = Math.max(valueConstraints.min, Math.min(valueConstraints.max, newValue));
-//       }
-      
-//       // Round to specified precision
-//       newValue = Math.round(newValue * Math.pow(10, roundingPrecision)) / Math.pow(10, roundingPrecision);
-      
-//       // Update input value and trigger change event
-//       input.value = newValue.toFixed(roundingPrecision);
-//       input.dispatchEvent(new Event('change', { bubbles: true }));
-//     });
-//   };
-
-//   // Set up mouse event listeners for drag functionality
-//   adjustButton.addEventListener('mousedown', (e) => {
-//     isAdjusting = true;
-//     startX = e.clientX;
-//     startY = e.clientY;
-//     // Store initial input values
-//     originalValues = inputs.map(input => parseFloat(input.value));
-    
-//     // Add global mouse event listeners
-//     document.addEventListener('mousemove', applyAdjustment);
-//     document.addEventListener('mouseup', () => {
-//       isAdjusting = false;
-//       document.removeEventListener('mousemove', applyAdjustment);
-//     });
-    
-//     e.preventDefault();
-//   });
-// }
-
-// Handler for offset adjustment button
-// function updateAdjustOffsetButton(html) {
-//   const container = html.querySelector('.offset-point')[0];
-//   createAdjustableButton({
-//     container,
-//     buttonSelector: 'button.fine-adjust',
-//     inputs: [
-//       html.querySelector('input[name="flags.isometric-perspective.offsetX"]')[0],
-//       html.querySelector('input[name="flags.isometric-perspective.offsetY"]')[0]
-//     ],
-//     adjustmentScale: 0.2,    // Larger scale for offset adjustments
-//     roundingPrecision: 0     // Whole numbers for offset values
-//   });
-// }
-
-// Handler for anchor adjustment button
-// function updateAdjustAnchorButton(html) {
-//   const container = html.querySelector('.anchor-point')[0];
-//   createAdjustableButton({
-//     container,
-//     buttonSelector: 'button.fine-adjust-anchor',
-//     inputs: [
-//       html.querySelector('input[name="flags.isometric-perspective.isoAnchorX"]')[0],
-//       html.querySelector('input[name="flags.isometric-perspective.isoAnchorY"]')[0]
-//     ],
-//     adjustmentScale: 0.005,  // Smaller scale for precise anchor adjustments
-//     valueConstraints: { min: 0, max: 1 },  // Anchor values must be between 0 and 1
-//     roundingPrecision: 2     // Two decimal places for anchor values
-//   });
-// }
-*/
+//     // Update the anchor basic values ​​in the token configuration
+//     html.querySelector('input[name="texture.anchorX"]').val(currentIsoAnchorY);
+//     html.querySelector('input[name="texture.anchorY"]').val(1-currentIsoAnchorX);
+//   }
+// });
 
 /*
 // ----------------- Enhanced Token Configuration -----------------

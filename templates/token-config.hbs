@@ -32,7 +32,7 @@
         <label>{{localize 'isometric-perspective.token_isoAnchor_name'}}</label>
         <div class="form-fields">
             <label class="anchorToggle">{{localize 'isometric-perspective.token_isoAnchor_save'}}</label>
-            <input type="checkbox" name="isoAnchorToggle" {{checked document.flags.isometric-perspective.isoAnchorToggle}}>
+            <input type="checkbox" class="anchor-toggle-checkbox" name="isoAnchorToggle" {{checked document.flags.isometric-perspective.isoAnchorToggle}}>
             <label class="axisX">X</label>
             <input type="number" name="flags.isometric-perspective.isoAnchorY" 
                     value="{{isoAnchorY}}"
@@ -65,6 +65,5 @@
         </div>
         <p class="notes">{{localize 'isometric-perspective.token_disableScale_hint'}}</p>
     </div>
-
 
 </section>

@@ -20,3 +20,11 @@
     text-align: center;
     line-height: var(--form-field-height);
 }
+
+.fine-adjust{
+    width: '30px';
+    cursor: 'pointer';
+    padding: '1px 5px';
+    border: '1px solid #888';
+    border-radius: '3px';
+}

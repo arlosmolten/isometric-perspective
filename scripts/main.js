@@ -159,12 +159,6 @@ Hooks.once("init", function() {
     //onChange: settings => window.location.reload()
   });
 
-
-
-
-
-
-
   // ------------- Registra os atalhos do módulo ------------- 
   
   game.keybindings.register(isometricModuleConfig.MODULE_ID, 'increaseTilesOpacity', {
@@ -216,8 +210,6 @@ Hooks.once("init", function() {
 });
 
 
-
-
 // Verifica se deve mostrar a tela de boas-vindas
 // Checks whether to show the welcome screen
 
@@ -260,25 +252,12 @@ Hooks.on("refreshTile", handleRefreshTile);
 
 
 
-
 /**
  * @param {----- TESTING AREA / ÁREA DE TESTES -----}
 */
 // Wait for movement animation end
 // const anim = CanvasAnimation.getAnimation(token.animationName);
 // if(anim?.promise) await anim.promise;
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*
 // Hook registrations
@@ -296,9 +275,6 @@ Hooks.once('ready', () => {
     initializeOcclusionLayer();
   }
 });
-
-
-
 
 
 // Global configuration for occlusion layer
@@ -376,29 +352,6 @@ function createOcclusionSprite(token, intersectingTiles) {
 
   return sprite;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // Advanced pixel intersection detection shader
