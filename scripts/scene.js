@@ -2,13 +2,13 @@ import { isometricModuleConfig } from './consts.js';
 import { applyIsometricPerspective, applyBackgroundTransformation } from './transform.js';
 import { updateIsometricConstants, parseCustomProjection, updateCustomProjection, PROJECTION_TYPES, DEFAULT_PROJECTION, CUSTOM_PROJECTION } from './consts.js';
 
-export function addIsometricTab(){
+export function createSceneIsometricTab(){
   
   const label = game.i18n.localize("isometric-perspective.tab_isometric_name");
   const tabGroup = "sheet";
   const tabId = "isometric";
   const icon = "fas fa-cube"
-  const isoTemplatePath = 'modules/isometric-perspective/templates/isometric-tab.hbs'
+  const isoTemplatePath = 'modules/isometric-perspective/templates/scene-config.hbs'
 
   // Scene config data
   const FoundrySceneConfig = foundry.applications.sheets.SceneConfig;
@@ -47,7 +47,12 @@ export function addIsometricTab(){
 }
 
 // disable the custom projection field when custom projection isnt selected.
-export function addSelectListener (app, html, context, options){
+export function initSceneForm (app, html, context, options){
+
+  const currentScale = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'isometricScale');
+  const inputScale = html.querySelector('range-picker[name="flags.isometric-perspective.isometricScale"]');
+  inputScale.value = currentScale ?? 1;
+
   const projectionSelect = html.querySelector('select[name="flags.isometric-perspective.projectionType"]');
   const customProjectionInput = html.querySelector('input[name="flags.isometric-perspective.customProjection"]');
   const customProjectionContainer = html.querySelector('.custom-projection-container');
@@ -63,7 +68,6 @@ export function addSelectListener (app, html, context, options){
   });
 
 }
-
 
 export function handleUpdateScene(scene, changes) {
 
