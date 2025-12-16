@@ -36,11 +36,8 @@ export function adjustInputWithMouseDrag(event,config){
   if(config.isDragging){
     const deltaX = event.clientX - config.dragStartX;
     const deltaY = event.clientY - config.dragStartY;
-    // config.inputX.value = Math.trunc((config.originalX - ( deltaY * config.adjustmentX ) * 100) / 100);
-    // config.inputY.value = Math.trunc(Math.round(config.originalY + ( deltaX * config.adjustmentY ) * 100) / 100);
     const finalValueX = roundToPrecision((config.originalX - (deltaY * config.adjustmentX) ) , getDecimalPrecision(config.adjustmentX));
     const finalValueY = roundToPrecision((config.originalY +  (deltaX * config.adjustmentY) ) , getDecimalPrecision(config.adjustmentY));
-    console.log("AFTER PARSE: ", finalValueX, finalValueY);
     config.inputX.value = finalValueX;
     config.inputY.value = finalValueY;
     config.inputX.dispatchEvent(new Event('change', { bubbles: true }));
