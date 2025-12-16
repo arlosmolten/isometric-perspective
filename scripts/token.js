@@ -55,16 +55,14 @@ export function initTokenForm (app, html, context, options) {
   const currentOffsetY = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY');
   const currentScale = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'scale');
 
-  const inputTextureAnchorX = html.querySelector('input[name="texture.anchorX"]');
-  const inputTextureAnchorY = html.querySelector('input[name="texture.anchorY"]');
+  // const inputTextureAnchorX = html.querySelector('input[name="texture.anchorX"]');
+  // const inputTextureAnchorY = html.querySelector('input[name="texture.anchorY"]');
   const inputIsoAnchorX = html.querySelector('input[name="flags.isometric-perspective.isoAnchorX"]');
   const inputIsoAnchorY = html.querySelector('input[name="flags.isometric-perspective.isoAnchorY"]');
   const inputOffsetX = html.querySelector('input[name="flags.isometric-perspective.offsetX"]');
   const inputOffsetY = html.querySelector('input[name="flags.isometric-perspective.offsetY"]');
   const inputScale = html.querySelector('range-picker[name="flags.isometric-perspective.scale"]');
 
-  inputTextureAnchorX.value = currentAnchorX ?? 0.5;
-  inputTextureAnchorY.value = currentAnchorY ?? 0.5;
   inputIsoAnchorX.value = currentAnchorX ?? 0.5;
   inputIsoAnchorY.value = currentAnchorY ?? 0.5;
   inputOffsetX.value = currentOffsetX ?? 0;
@@ -74,8 +72,6 @@ export function initTokenForm (app, html, context, options) {
   const resetAlignementButton = html.querySelector('.toggle-alignment-lines');
   resetAlignementButton.addEventListener("click", async (event) => {
     event.preventDefault();
-    inputTextureAnchorX.value = 0.5;
-    inputTextureAnchorY.value = 0.5;
     inputIsoAnchorX.value = 0.5;
     inputIsoAnchorY.value = 0.5;
     inputOffsetX.value = 0;
@@ -155,8 +151,8 @@ export function addPrecisionTokenArtListener(app, html, context, options){
 
   const offsetX = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetX') ?? 0;
   const offsetY = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY') ?? 0;
-  const isoAnchorY = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorY') ?? 0;
   const isoAnchorX = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorX') ?? 0;
+  const isoAnchorY = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorY') ?? 0;
 
   //prevent form submission on click
   fineArtOffsetAdjustButton.addEventListener('click', (event) => {
@@ -185,7 +181,8 @@ export function addPrecisionTokenArtListener(app, html, context, options){
     anchorOffsetConfig.dragStartY = event.clientY;
     anchorOffsetConfig.originalX = parseNum(anchorOffsetConfig.inputX);
     anchorOffsetConfig.originalY = parseNum(anchorOffsetConfig.inputY);
-    alignmentLines = drawAlignmentLines(updateIsoAnchor(anchorOffsetConfig, anchorOffsetConfig, anchorOffsetConfig, anchorOffsetConfig));
+    
+    alignmentLines = drawAlignmentLines(updateIsoAnchor(anchorOffsetConfig.inputX.value, anchorOffsetConfig.inputY.value, artOffsetConfig.inputX.value, artOffsetConfig.inputY.value));
   });
 
   // stop tracking mouse movements when the mouse button is released anywhere in the entire window
@@ -227,9 +224,6 @@ export function addPrecisionTokenArtListener(app, html, context, options){
       const currentIsoAnchorY = anchorOffsetConfig.inputY.value;
 
       alignmentLines = drawAlignmentLines(updateIsoAnchor(currentIsoAnchorX, currentIsoAnchorY, currentOffsetX, currentOffsetY));
-
-      // const inputTextureAnchorX = html.querySelector('input[name="texture.anchorX"]');
-      // const inputTextureAnchorY = html.querySelector('input[name="texture.anchorY"]');
         
         if (anchorOffsetConfig.inputX && anchorOffsetConfig.inputY) {
             anchorOffsetConfig.inputX.value = currentIsoAnchorX;
@@ -293,14 +287,14 @@ export function addPrecisionTokenArtListener(app, html, context, options){
     //Convert that combined pixel value into isometric
     const finalIsoCoords = cartesianToIso(totalPixelX, totalPixelY);
 
-    //Position alignmentLines relative to the token's center
+    //Position alignment lines relative to the token's center
     return {
       x: token.document.x + (token.document.width * gridSize / 2) + finalIsoCoords.x,
       y: token.document.y + (token.document.height * gridSize / 2) + finalIsoCoords.y
     };
   }
 
-  // Function to remove the lines
+  // remove the alignment lines
   function cleanup() {
     const existingLines = canvas.stage.children.filter(child => child.name === 'tokenAlignmentLine');
     existingLines.forEach(line => line.destroy());
