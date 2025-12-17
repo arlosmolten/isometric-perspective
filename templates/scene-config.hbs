@@ -2,7 +2,6 @@
   {{!-- Tab content here --}}
   <div class="isometric-config-tab-content">
     <section>
-        <h6 class="notes">{{localize 'isometric-perspective.scene_transform_hint'}}</h6>
         <!-- Enable Isometric -->
         <div class="form-group">
             <label for="{{rootId}}-isometric-perspective-enable-isometrics">{{localize 'isometric-perspective.scene_enableIsometric'}}</label>
@@ -14,6 +13,7 @@
             <label for="{{rootId}}-isometric-perspective-isometrics-background-transfrom" >{{localize 'isometric-perspective.scene_transform_name'}}</label>
             <input id="{{rootId}}-isometric-perspective-isometrics-background-transfrom" type="checkbox" name="flags.isometric-perspective.isometricBackground" {{checked document.flags.isometric-perspective.isometricBackground}}/>
         </div>
+        <p class="notes">{{localize 'isometric-perspective.scene_transform_hint'}}</p>
 
         <hr>
 

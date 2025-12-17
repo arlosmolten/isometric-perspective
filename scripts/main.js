@@ -1,8 +1,9 @@
 import { isometricModuleConfig } from './consts.js';
 
 import { 
-  handleRenderTokenConfig,
-  // addPrecisionTokenArtListener,
+  createTokenIsometricTab,
+  addPrecisionTokenArtListener,
+  initTokenForm,
   handleCreateToken,
   handleUpdateToken,
   handleRefreshToken,
@@ -10,8 +11,8 @@ import {
  } from './token.js';
  
 import { 
-  handleRenderTileConfig,
-  addLinkedWallsListeners,
+  createTileIsometricTab,
+  initTileForm,
   handleCreateTile,
   handleUpdateTile,
   handleRefreshTile
@@ -39,8 +40,8 @@ import { addWelcomeScreen } from './welcome.js';
 //import { registerOcclusionConfig } from './occlusion3.js';                       // has token-token occlusion (not fully working)
 
 import { 
-  addIsometricTab,
-  addSelectListener,
+  createSceneIsometricTab,
+  initSceneForm,
   handleUpdateScene,
   handleCanvasReady,
   handleCanvasResize, 
@@ -158,12 +159,6 @@ Hooks.once("init", function() {
     //onChange: settings => window.location.reload()
   });
 
-
-
-
-
-
-
   // ------------- Registra os atalhos do módulo ------------- 
   
   game.keybindings.register(isometricModuleConfig.MODULE_ID, 'increaseTilesOpacity', {
@@ -215,8 +210,6 @@ Hooks.once("init", function() {
 });
 
 
-
-
 // Verifica se deve mostrar a tela de boas-vindas
 // Checks whether to show the welcome screen
 
@@ -225,17 +218,19 @@ Hooks.once("init", function() {
 // WelcomeScreen
 Hooks.once('ready', addWelcomeScreen);
 //scene configuration
-Hooks.on('ready', addIsometricTab);
+Hooks.on('ready', createSceneIsometricTab);
 //scene management
-Hooks.on('renderSceneConfig', addSelectListener);
+Hooks.on('renderSceneConfig', initSceneForm);
 Hooks.on("updateScene", handleUpdateScene);
 Hooks.on("canvasReady", handleCanvasReady);
 Hooks.on("canvasResize", handleCanvasResize);
 
 //token config
-Hooks.on("ready", handleRenderTokenConfig);
+Hooks.on("ready", createTokenIsometricTab);
 // disabled until a better implementation is decided
-// Hooks.on('renderTokenConfig', addPrecisionTokenArtListener);
+Hooks.on('renderTokenConfig', addPrecisionTokenArtListener);
+Hooks.on('renderTokenConfig', initTokenForm);
+
 //token management
 Hooks.on("createToken", handleCreateToken);
 Hooks.on("updateToken", handleUpdateToken);
@@ -247,14 +242,13 @@ Hooks.on("renderTokenHUD", handleRenderTokenHUD);
 Hooks.on("renderTileHUD", handleRenderTileHUD);
 
 //tile config
-Hooks.on("ready", handleRenderTileConfig);
-Hooks.on("renderTileConfig", addLinkedWallsListeners);
+Hooks.on("ready", createTileIsometricTab);
+Hooks.on("renderTileConfig", initTileForm);
 // Hooks.on("renderTileConfig", handleRenderTileConfig);
 //tile management
 Hooks.on("createTile", handleCreateTile);
 Hooks.on("updateTile", handleUpdateTile);
 Hooks.on("refreshTile", handleRefreshTile);
-
 
 
 
@@ -264,18 +258,6 @@ Hooks.on("refreshTile", handleRefreshTile);
 // Wait for movement animation end
 // const anim = CanvasAnimation.getAnimation(token.animationName);
 // if(anim?.promise) await anim.promise;
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*
 // Hook registrations
@@ -293,9 +275,6 @@ Hooks.once('ready', () => {
     initializeOcclusionLayer();
   }
 });
-
-
-
 
 
 // Global configuration for occlusion layer
@@ -373,29 +352,6 @@ function createOcclusionSprite(token, intersectingTiles) {
 
   return sprite;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // Advanced pixel intersection detection shader
