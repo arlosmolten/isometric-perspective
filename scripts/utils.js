@@ -65,3 +65,59 @@ function getDecimalPrecision(step) {
     }
     return 0;
 }
+
+export function patchConfig(documentSheet, config, args) {
+  if (!documentSheet) return;
+  
+  // Check if already patched
+  if (documentSheet.TABS?.sheet?.tabs?.some(tab => tab.id === config.tabId)) return;
+  
+  // Adding the isometric tab data to the config parts
+  if (documentSheet.TABS?.sheet?.tabs) {
+    documentSheet.TABS.sheet.tabs.push({ id: config.tabId, group: config.tabGroup, label:config.label, icon: config.icon });
+  }
+  
+  // Adding the part template
+  if (documentSheet.PARTS) {
+    documentSheet.PARTS.isometric = {template: config.templatePath};
+
+    // Re-order footer to be last
+    if (documentSheet.PARTS.footer) {
+      const footerPart = documentSheet.PARTS.footer;
+      delete documentSheet.PARTS.footer;
+      documentSheet.PARTS.footer = footerPart;
+    }
+  }
+
+  // Override part context to include the isometric-perspective config data
+  const defaultRenderPartContext = documentSheet.prototype._preparePartContext;
+  documentSheet.prototype._preparePartContext = async function(partId, context, options) {
+    if (partId === "isometric") {
+      // Handle both 'document' and 'token' properties for compatibility
+      const doc = this.document || this.token;
+      if (!doc) {
+        console.warn("Isometric Perspective: Unable to access token document");
+        return { tab: context.tabs?.[partId] };
+      }
+      
+      const flags = doc.flags?.[config.moduleConfig.MODULE_ID] ?? {};
+
+      console.log("ARGS", 
+        {
+        ...flags,
+        ...args,
+        document: doc,
+        tab: context.tabs?.[partId],
+      }
+      ) 
+
+      return {
+        ...flags,
+        ...args,
+        document: doc,
+        tab: context.tabs?.[partId],
+      }
+    }
+    return defaultRenderPartContext?.call(this, partId, context, options) || {};
+  }
+}

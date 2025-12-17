@@ -4,75 +4,32 @@ import {
   cartesianToIso, 
   adjustInputWithMouseDrag,
   parseNum,
+  patchConfig,
   isoToCartesian , 
   getFlagName 
 } from './utils.js';
 
 export async function createTokenIsometricTab(app, html, data) {
 
-  const label = game.i18n.localize("isometric-perspective.tab_isometric_name");
-  const tabGroup = "sheet";
-  const tabId = "isometric";
-  const icon = "fas fa-cube"
-  const isoTemplatePath = 'modules/isometric-perspective/templates/token-config.hbs'
-
-  // Helper function to patch a TokenConfig class
-  function patchTokenConfigClass(ConfigClass) {
-    if (!ConfigClass) return;
-    
-    // Check if already patched
-    if (ConfigClass.TABS?.sheet?.tabs?.some(t => t.id === tabId)) return;
-    
-    // Adding the isometric tab data to the config parts
-    if (ConfigClass.TABS?.sheet?.tabs) {
-      ConfigClass.TABS.sheet.tabs.push({ id: tabId, group: tabGroup, label, icon: icon });
-    }
-    
-    // Adding the part template
-    if (ConfigClass.PARTS) {
-      ConfigClass.PARTS.isometric = {template: isoTemplatePath};
-
-      // Re-order footer to be last
-      if (ConfigClass.PARTS.footer) {
-        const footerPart = ConfigClass.PARTS.footer;
-        delete ConfigClass.PARTS.footer;
-        ConfigClass.PARTS.footer = footerPart;
-      }
-    }
-
-    // Override part context to include the isometric-perspective config data
-    const defaultRenderPartContext = ConfigClass.prototype._preparePartContext;
-    ConfigClass.prototype._preparePartContext = async function(partId, context, options) {
-      if (partId === "isometric") {
-        // Handle both 'document' and 'token' properties for compatibility
-        const doc = this.document || this.token;
-        if (!doc) {
-          console.warn("Isometric Perspective: Unable to access token document");
-          return { tab: context.tabs?.[partId] };
-        }
-        
-        const flags = doc.flags?.[isometricModuleConfig.MODULE_ID] ?? {};
-
-        return {
-          ...flags,
-          document: doc,
-          tab: context.tabs?.[partId],
-        }
-      }
-      return defaultRenderPartContext?.call(this, partId, context, options) || {};
-    }
+  const tokenTabConfig = {
+    moduleConfig: isometricModuleConfig,
+    label: game.i18n.localize("isometric-perspective.tab_isometric_name"),
+    tabGroup : "sheet",
+    tabId : "isometric",
+    icon: "fas fa-cube",
+    templatePath: 'modules/isometric-perspective/templates/token-config.hbs'
   }
 
   // Patch TokenConfig (for live tokens)
   const FoundryTokenConfig = foundry.applications.sheets.TokenConfig;
   const DefaultTokenConfig = Object.values(CONFIG.Token.sheetClasses.base).find((d) => d.default)?.cls;
   const TokenConfig = DefaultTokenConfig?.prototype instanceof FoundryTokenConfig ? DefaultTokenConfig : FoundryTokenConfig;
-  patchTokenConfigClass(TokenConfig);
+  patchConfig(TokenConfig,tokenTabConfig);
 
   // Patch PrototypeTokenConfig (for prototype tokens in actor sheets)
   const PrototypeTokenConfig = foundry.applications.sheets.PrototypeTokenConfig;
   if (PrototypeTokenConfig && PrototypeTokenConfig !== TokenConfig) {
-    patchTokenConfigClass(PrototypeTokenConfig);
+    patchConfig(PrototypeTokenConfig,tokenTabConfig);
   }
     
 }
