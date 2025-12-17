@@ -1,14 +1,17 @@
-import { isometricModuleConfig } from './consts.js';
 import { applyIsometricPerspective, applyBackgroundTransformation } from './transform.js';
-import { updateIsometricConstants, parseCustomProjection, updateCustomProjection, PROJECTION_TYPES, DEFAULT_PROJECTION, CUSTOM_PROJECTION } from './consts.js';
+import { isometricModuleConfig, updateIsometricConstants, parseCustomProjection, updateCustomProjection, PROJECTION_TYPES, DEFAULT_PROJECTION, CUSTOM_PROJECTION } from './consts.js';
+import { patchConfig} from './utils.js';
 
 export function createSceneIsometricTab(){
   
-  const label = game.i18n.localize("isometric-perspective.tab_isometric_name");
-  const tabGroup = "sheet";
-  const tabId = "isometric";
-  const icon = "fas fa-cube"
-  const isoTemplatePath = 'modules/isometric-perspective/templates/scene-config.hbs'
+  const sceneTabConfig = {
+    moduleConfig: isometricModuleConfig,
+    label: game.i18n.localize("isometric-perspective.tab_isometric_name"),
+    tabGroup : "sheet",
+    tabId : "isometric",
+    icon: "fas fa-cube",
+    templatePath: 'modules/isometric-perspective/templates/scene-config.hbs'
+  }
 
   // Scene config data
   const FoundrySceneConfig = foundry.applications.sheets.SceneConfig;
@@ -18,32 +21,13 @@ export function createSceneIsometricTab(){
   const projectionTypes =  [...Object.keys(PROJECTION_TYPES)];
   const currentProjection = SceneConfig.object?.getFlag(isometricModuleConfig.MODULE_ID, 'projectionType') ?? DEFAULT_PROJECTION;
   
-  // Adding the isometric tab data to the scene config parts
-  SceneConfig.TABS.sheet.tabs.push({ id: tabId, group: tabGroup, label , icon: icon }); 
-  
-  // Adding the part template
-  SceneConfig.PARTS.isometric = {template: isoTemplatePath};
-
-  const footerPart = SceneConfig.PARTS.footer;
-  delete SceneConfig.PARTS.footer;
-  SceneConfig.PARTS.footer = footerPart;
-
-  // Override part context to include the isometric-perspective config data
-  const defaultRenderPartContext = SceneConfig.prototype._preparePartContext;
-
-  SceneConfig.prototype._preparePartContext = async function(partId, context, options) {
-    if (partId === "isometric") {
-      const flags = this.document.flags[isometricModuleConfig.MODULE_ID] ?? null;
-      return {
-        ...(flags ?? {}),
-        projectionTypes: projectionTypes,
-        currentProjection:currentProjection,
-        document: this.document,
-        tab: context.tabs[partId],
-      }
-    }
-    return defaultRenderPartContext.call(this, partId, context, options);
+  const extraSceneConfig = {
+    projectionTypes: projectionTypes,
+    document: currentProjection
   }
+
+  patchConfig(SceneConfig,sceneTabConfig, extraSceneConfig);
+
 }
 
 // disable the custom projection field when custom projection isnt selected.

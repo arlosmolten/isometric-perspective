@@ -4,46 +4,33 @@ import {
   cartesianToIso, 
   adjustInputWithMouseDrag,
   parseNum,
+  patchConfig,
   isoToCartesian , 
   getFlagName 
 } from './utils.js';
 
 export async function createTokenIsometricTab(app, html, data) {
 
-  const label = game.i18n.localize("isometric-perspective.tab_isometric_name");
-  const tabGroup = "sheet";
-  const tabId = "isometric";
-  const icon = "fas fa-cube"
-  const isoTemplatePath = 'modules/isometric-perspective/templates/token-config.hbs'
+  const tokenTabConfig = {
+    moduleConfig: isometricModuleConfig,
+    label: game.i18n.localize("isometric-perspective.tab_isometric_name"),
+    tabGroup : "sheet",
+    tabId : "isometric",
+    icon: "fas fa-cube",
+    templatePath: 'modules/isometric-perspective/templates/token-config.hbs'
+  }
 
-  // Token config data
+  // Patch TokenConfig (for live tokens)
   const FoundryTokenConfig = foundry.applications.sheets.TokenConfig;
   const DefaultTokenConfig = Object.values(CONFIG.Token.sheetClasses.base).find((d) => d.default)?.cls;
   const TokenConfig = DefaultTokenConfig?.prototype instanceof FoundryTokenConfig ? DefaultTokenConfig : FoundryTokenConfig;
-  
-  // Adding the isometric tab data to the scene config parts
-  TokenConfig.TABS.sheet.tabs.push({ id: tabId, group: tabGroup, label , icon: icon }); 
-  
-  // Adding the part template
-  TokenConfig.PARTS.isometric = {template: isoTemplatePath};
+  patchConfig(TokenConfig,tokenTabConfig);
 
-  const footerPart = TokenConfig.PARTS.footer;
-  delete TokenConfig.PARTS.footer;
-  TokenConfig.PARTS.footer = footerPart;
-
-  // Override part context to include the isometric-perspective config data
-  const defaultRenderPartContext = TokenConfig.prototype._preparePartContext;
-  TokenConfig.prototype._preparePartContext = async function(partId, context, options) {
-    if (partId === "isometric") {
-      const flags = this.document.flags[isometricModuleConfig.MODULE_ID] ?? null;
-      return {
-        ...(flags ?? {}),
-        document: this.document,
-        tab: context.tabs[partId],
-      }
-    }
-    return defaultRenderPartContext.call(this, partId, context, options);
-  }  
+  // Patch PrototypeTokenConfig (for prototype tokens in actor sheets)
+  const PrototypeTokenConfig = foundry.applications.sheets.PrototypeTokenConfig;
+  if (PrototypeTokenConfig && PrototypeTokenConfig !== TokenConfig) {
+    patchConfig(PrototypeTokenConfig,tokenTabConfig);
+  }
     
 }
 

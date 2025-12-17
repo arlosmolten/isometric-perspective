@@ -1,45 +1,24 @@
 import { isometricModuleConfig } from './consts.js';
 import { applyIsometricTransformation } from './transform.js';
-import { adjustInputWithMouseDrag, parseNum } from './utils.js';
+import { adjustInputWithMouseDrag, parseNum, patchConfig} from './utils.js';
 
 export async function createTileIsometricTab(app, html, data) {
 
-  const label = game.i18n.localize("isometric-perspective.tab_isometric_name");
-  const tabGroup = "sheet";
-  const tabId = "isometric";
-  const icon = "fas fa-cube"
-  const isoTemplatePath = 'modules/isometric-perspective/templates/tile-config.hbs'
+  const tileTabConfig = {
+    moduleConfig: isometricModuleConfig,
+    label: game.i18n.localize("isometric-perspective.tab_isometric_name"),
+    tabGroup : "sheet",
+    tabId : "isometric",
+    icon: "fas fa-cube",
+    templatePath: 'modules/isometric-perspective/templates/tile-config.hbs'
+  }
 
   // Tile config data
   const FoundryTileConfig = foundry.applications.sheets.TileConfig;
   const DefaultTileConfig = Object.values(CONFIG.Tile.sheetClasses.base).find((d) => d.default)?.cls;
   const TileConfig = DefaultTileConfig?.prototype instanceof FoundryTileConfig ? DefaultTileConfig : FoundryTileConfig;
+  patchConfig(TileConfig,tileTabConfig);
   
-  // Adding the isometric tab data to the scene config parts
-  TileConfig.TABS.sheet.tabs.push({ id: tabId, group: tabGroup, label , icon: icon }); 
-  
-  // Adding the part template
-  TileConfig.PARTS.isometric = {template: isoTemplatePath};
-
-  const footerPart = TileConfig.PARTS.footer;
-  delete TileConfig.PARTS.footer;
-  TileConfig.PARTS.footer = footerPart;
-
-  // Override part context to include the isometric-perspective config data
-  const defaultRenderPartContext = TileConfig.prototype._preparePartContext;
-  TileConfig.prototype._preparePartContext = async function(partId, context, options) {
-    if (partId === "isometric") {
-      const flags = this.document.flags[isometricModuleConfig.MODULE_ID] ?? null;
-
-      return {
-        ...(flags ?? {}),
-        document: this.document,
-        tab: context.tabs[partId],
-      }
-    }
-    return defaultRenderPartContext.call(this, partId, context, options);
-  }
-
 }
 
 export function initTileForm(app, html, context, options){
