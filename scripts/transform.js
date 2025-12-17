@@ -106,57 +106,64 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
   if (object instanceof canvasToken) {
     let sx = 1; // standard x
     let sy = 1; // standard y
-    let objTxtRatio_W = object.texture.width / canvas.scene.grid.size;
-    let objTxtRatio_H = object.texture.height / canvas.scene.grid.size;
-    
-    switch ( object.document.texture.fit ) {
-      case "fill":
-        sx = 1;
-        sy = 1;
-        break;
-      case "contain":
-        if (Math.max(objTxtRatio_W, objTxtRatio_H) ==  objTxtRatio_W){
-          sx = 1
-          sy = (objTxtRatio_H) / (objTxtRatio_W)
-        }
-        else{
-          sx = (objTxtRatio_W) / (objTxtRatio_H)
-          sy = 1
-        }
-        break;
-      case "cover":
-        if (Math.min(objTxtRatio_W, objTxtRatio_H) == objTxtRatio_W){
-          sx = 1
-          sy = (objTxtRatio_H) / (objTxtRatio_W)
-        }
-        else{
-          sx = (objTxtRatio_W) / (objTxtRatio_H)
-          sy = 1
-        }
-        break;
-      case "width":
-        sx = 1
-        sy = (objTxtRatio_H) / (objTxtRatio_W)
-        break;
-      case "height":
-        sx = (objTxtRatio_W) / (objTxtRatio_H)
-        sy = 1
-        break;
-      default:
-        // V11 Compatibility change
-        if (isometricModuleConfig.FOUNDRY_VERSION === 11) {
-          sx = (objTxtRatio_W) / (objTxtRatio_H);
+    //We should only use the token art ratio if the ring is disabled
+    //Otherwise it scales the dynamic ring subject based on the token art dimensions
+    if (!object.document.ring?.enabled) {
+      let objTxtRatio_W = object.texture.width / canvas.scene.grid.size;
+      let objTxtRatio_H = object.texture.height / canvas.scene.grid.size;
+      
+      switch ( object.document.texture.fit ) {
+        case "fill":
+          sx = 1;
           sy = 1;
           break;
-        }
-        //throw new Error(`Invalid fill type passed to ${this.constructor.name}#resize (fit=${fit}).`);
-        console.warn("Invalid fill type passed to: ", object);
-        sx = 1;
-        sy = 1;
+        case "contain":
+          if (Math.max(objTxtRatio_W, objTxtRatio_H) ==  objTxtRatio_W){
+            sx = 1
+            sy = (objTxtRatio_H) / (objTxtRatio_W)
+          }
+          else{
+            sx = (objTxtRatio_W) / (objTxtRatio_H)
+            sy = 1
+          }
+          break;
+        case "cover":
+          if (Math.min(objTxtRatio_W, objTxtRatio_H) == objTxtRatio_W){
+            sx = 1
+            sy = (objTxtRatio_H) / (objTxtRatio_W)
+          }
+          else{
+            sx = (objTxtRatio_W) / (objTxtRatio_H)
+            sy = 1
+          }
+          break;
+        case "width":
+          sx = 1
+          sy = (objTxtRatio_H) / (objTxtRatio_W)
+          break;
+        case "height":
+          sx = (objTxtRatio_W) / (objTxtRatio_H)
+          sy = 1
+          break;
+        default:
+          // V11 Compatibility change
+          if (isometricModuleConfig.FOUNDRY_VERSION === 11) {
+            sx = (objTxtRatio_W) / (objTxtRatio_H);
+            sy = 1;
+            break;
+          }
+          //throw new Error(`Invalid fill type passed to ${this.constructor.name}#resize (fit=${fit}).`);
+          console.warn("Invalid fill type passed to: ", object);
+          sx = 1;
+          sy = 1;
+      }
+      object.mesh.width  = Math.abs(sx * scaleX * gridSize * isoScale * Math.sqrt(2))
+      object.mesh.height = Math.abs(sy * scaleY * gridSize * isoScale * Math.sqrt(2) * ISOMETRIC_CONST.ratio)
+    } else {
+      //Make the token square if using dynamic ring.
+      object.mesh.width = Math.abs(sx * scaleX * gridSize * isoScale * Math.sqrt(2))
+      object.mesh.height = Math.abs(sy * scaleX * gridSize * isoScale * Math.sqrt(2) * ISOMETRIC_CONST.ratio)
     }
-    object.mesh.width  = Math.abs(sx * scaleX * gridSize * isoScale * Math.sqrt(2))
-    object.mesh.height = Math.abs(sy * scaleY * gridSize * isoScale * Math.sqrt(2) * ISOMETRIC_CONST.ratio)
-    
     // Elevation math
     offsetX += elevation * (1/gridDistance) * 100 * Math.sqrt(2) * (1/scaleX);
     offsetX *= gridSize / 100;   // grid ratio in comparison with default 100
