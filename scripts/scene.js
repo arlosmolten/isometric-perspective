@@ -132,8 +132,12 @@ export async function handleCanvasReady(canvas) {
         if (!canvas.ready) return;
         
         // Trigger a dummy pan to force Foundry's internal camera-to-interface synchronization.
-        // This is known to correct the #hud container's position and scale.
-        canvas.pan(canvas.stage.position);
+        // We use the current pivot and scale to ensure the camera does not actually move.
+        canvas.pan({
+            x: canvas.stage.pivot.x,
+            y: canvas.stage.pivot.y,
+            scale: canvas.stage.scale.x
+        });
         
         if (isometricModuleConfig.DEBUG_PRINT) console.log("Forced HUD synchronization completed.");
     }, 250);
