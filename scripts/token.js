@@ -150,48 +150,68 @@ export function addPrecisionTokenArtListener(app, html, context, options){
     event.preventDefault();
   })
 
-  // start tracking mouse movements on mousedown on the fine adjust button
-  fineArtOffsetAdjustButton.addEventListener('mousedown', (event) => {
+  // Refactored Drag Listeners to be more robust
+  const onMouseDownArt = (event) => {
     event.preventDefault();
     artOffsetConfig.isDragging = true;
     artOffsetConfig.dragStartX = event.clientX;
     artOffsetConfig.dragStartY = event.clientY;
     artOffsetConfig.originalX = parseNum(artOffsetConfig.inputX);
     artOffsetConfig.originalY = parseNum(artOffsetConfig.inputY);
-  });
+  };
   
-  // start tracking mouse movements on mousedown on the fine adjust button
-  fineAnchorOffsetAdjustButton.addEventListener('mousedown', (event) => {
+  const onMouseDownAnchor = (event) => {
     event.preventDefault();
+    const tokenMesh = app.token.object.mesh;
+    if (!tokenMesh) return;
+
     anchorOffsetConfig.isDragging = true;
     anchorOffsetConfig.dragStartX = event.clientX;
     anchorOffsetConfig.dragStartY = event.clientY;
     anchorOffsetConfig.originalX = parseNum(anchorOffsetConfig.inputX);
     anchorOffsetConfig.originalY = parseNum(anchorOffsetConfig.inputY);
     
+    // Inversion adjustment logic
+    anchorOffsetConfig.adjustmentX = 0.01 * Math.sign(tokenMesh.scale.y);
+    anchorOffsetConfig.adjustmentY = 0.01 * Math.sign(tokenMesh.scale.x); 
+
+    console.log("Isometric Perspective | Anchor Drag Start", {
+        scale: {x: tokenMesh.scale.x, y: tokenMesh.scale.y},
+        adj: {x: anchorOffsetConfig.adjustmentX, y: anchorOffsetConfig.adjustmentY}
+    });
+    
     alignmentLines = drawAlignmentLines(updateIsoAnchor(anchorOffsetConfig.inputX.value, anchorOffsetConfig.inputY.value, artOffsetConfig.inputX.value, artOffsetConfig.inputY.value));
-  });
+  };
 
-  // stop tracking mouse movements when the mouse button is released anywhere in the entire window
-  window.addEventListener('mouseup', (event) => {
-    event.preventDefault();
-    artOffsetConfig.isDragging = false;
-    anchorOffsetConfig.isDragging = false;
-    updateOffset();
-  });
-
-  window.addEventListener('mousemove', (event) => {
+  const onMouseMove = (event) => {
     if (artOffsetConfig.isDragging || anchorOffsetConfig.isDragging) {
         adjustInputWithMouseDrag(event, artOffsetConfig.isDragging ? artOffsetConfig : anchorOffsetConfig);
-        updateOffset(); // Force the lines and the compensation to update
+        updateOffset();
     }
-  });
-  
+  };
+
+  const onMouseUp = (event) => {
+    if (artOffsetConfig.isDragging || anchorOffsetConfig.isDragging) {
+      artOffsetConfig.isDragging = false;
+      anchorOffsetConfig.isDragging = false;
+      updateOffset();
+      
+      // Forces re-dispatch of change for final commit if needed
+      if (anchorOffsetConfig.inputX) anchorOffsetConfig.inputX.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  };
+
+  // Clean up and register
+  fineArtOffsetAdjustButton.addEventListener('mousedown', onMouseDownArt);
+  fineAnchorOffsetAdjustButton.addEventListener('mousedown', onMouseDownAnchor);
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
+
   isoAnchorToggleCheckbox.addEventListener('change', (event)=> {
     updateOffset();
   })
 
-  //Update the lines when changing the inputs // bug here, its not following the art offset
+  // Update the lines when changing the inputs
   artOffsetConfig.inputX.addEventListener('change',updateOffset);
   artOffsetConfig.inputY.addEventListener('change',updateOffset);
   anchorOffsetConfig.inputX.addEventListener('change',updateOffset);
@@ -205,11 +225,6 @@ export function addPrecisionTokenArtListener(app, html, context, options){
       const currentIsoAnchorY = anchorOffsetConfig.inputY.value;
 
       alignmentLines = drawAlignmentLines(updateIsoAnchor(currentIsoAnchorX, currentIsoAnchorY, currentOffsetX, currentOffsetY));
-        
-        if (anchorOffsetConfig.inputX && anchorOffsetConfig.inputY) {
-            anchorOffsetConfig.inputX.value = currentIsoAnchorX;
-            anchorOffsetConfig.inputY.value = currentIsoAnchorY;
-        }
     } else {
       cleanup();
     }
@@ -302,6 +317,15 @@ export function addPrecisionTokenArtListener(app, html, context, options){
       dIsoAnchorX * tokenMesh.texture.height * tokenMesh.scale.y,
       dIsoAnchorY * tokenMesh.texture.width * tokenMesh.scale.x
     );
+    
+    if (isometricModuleConfig.DEBUG_PRINT) {
+        console.log("Isometric Perspective | updateIsoAnchor", {
+            isoAnchor: {x: isoAnchorX, y: isoAnchorY},
+            currentReal: {x: currentRealIsoAnchorX, y: currentRealIsoAnchorY},
+            delta: {x: dIsoAnchorX, y: dIsoAnchorY},
+            screenDelta: screenDeltaAnchors
+        });
+    }
 
     // Offset deltas are direct
     const screenDeltaOffsets = cartesianToIso(
@@ -310,8 +334,6 @@ export function addPrecisionTokenArtListener(app, html, context, options){
     );
 
     // 5. Apply to current Mesh Position
-    // Since Mesh Position is always the Grid Center (plus offsets), adding the delta 
-    // moves the crosshair relative to the CURRENT anchor point which is AT the Mesh Position.
     return {
       x: tokenMesh.x + screenDeltaAnchors.x + screenDeltaOffsets.x,
       y: tokenMesh.y + screenDeltaAnchors.y + screenDeltaOffsets.y
