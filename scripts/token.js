@@ -150,7 +150,6 @@ export function addPrecisionTokenArtListener(app, html, context, options){
     event.preventDefault();
   })
 
-  // Refactored Drag Listeners to be more robust
   const onMouseDownArt = (event) => {
     event.preventDefault();
     artOffsetConfig.isDragging = true;
@@ -174,13 +173,8 @@ export function addPrecisionTokenArtListener(app, html, context, options){
     // Inversion adjustment logic
     anchorOffsetConfig.adjustmentX = 0.01 * Math.sign(tokenMesh.scale.y);
     anchorOffsetConfig.adjustmentY = 0.01 * Math.sign(tokenMesh.scale.x); 
-
-    console.log("Isometric Perspective | Anchor Drag Start", {
-        scale: {x: tokenMesh.scale.x, y: tokenMesh.scale.y},
-        adj: {x: anchorOffsetConfig.adjustmentX, y: anchorOffsetConfig.adjustmentY}
-    });
     
-    alignmentLines = drawAlignmentLines(updateIsoAnchor(anchorOffsetConfig.inputX.value, anchorOffsetConfig.inputY.value, artOffsetConfig.inputX.value, artOffsetConfig.inputY.value));
+    alignmentLines = drawAlignmentLines(updateIsoAnchor(anchorOffsetConfig.inputX.value, anchorOffsetConfig.inputY.value));
   };
 
   const onMouseMove = (event) => {
@@ -219,12 +213,10 @@ export function addPrecisionTokenArtListener(app, html, context, options){
 
   async function updateOffset(){ 
     if(isoAnchorToggleCheckbox.checked || artOffsetConfig.isDragging || anchorOffsetConfig.isDragging){
-      const currentOffsetX = artOffsetConfig.inputX.value;
-      const currentOffsetY = artOffsetConfig.inputY.value;
       const currentIsoAnchorX  = anchorOffsetConfig.inputX.value;
       const currentIsoAnchorY = anchorOffsetConfig.inputY.value;
-
-      alignmentLines = drawAlignmentLines(updateIsoAnchor(currentIsoAnchorX, currentIsoAnchorY, currentOffsetX, currentOffsetY));
+      
+      alignmentLines = drawAlignmentLines(updateIsoAnchor(currentIsoAnchorX, currentIsoAnchorY));
     } else {
       cleanup();
     }
@@ -288,7 +280,7 @@ export function addPrecisionTokenArtListener(app, html, context, options){
     app._isCloseModified = true;
   }
 
-  function updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY) {
+  function updateIsoAnchor(isoAnchorX, isoAnchorY) {
     let tokenMesh = app.token.object.mesh;
     if (!tokenMesh) return { x: 0, y: 0 };
 
@@ -299,44 +291,22 @@ export function addPrecisionTokenArtListener(app, html, context, options){
     const currentRealIsoAnchorX = 1 - tokenMesh.anchor.y;
     const currentRealIsoAnchorY = tokenMesh.anchor.x;
 
-    // 2. Determine Current Real Offsets (already applied to mesh.position)
-    const currentRealOffsetX = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetX') ?? 0;
-    const currentRealOffsetY = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY') ?? 0;
-
-    // 3. Calculate Deltas (Target - Real)
+    // 2. Calculate Deltas (Target - Real)
     // Note inputs are strings, parse them
     const dIsoAnchorX = parseFloat(isoAnchorX) - currentRealIsoAnchorX;
     const dIsoAnchorY = parseFloat(isoAnchorY) - currentRealIsoAnchorY;
     
-    const dOffsetX = parseFloat(offsetX) - currentRealOffsetX;
-    const dOffsetY = parseFloat(offsetY) - currentRealOffsetY;
-
-    // 4. Convert Deltas to Screen Coordinates
+    // 3. Convert Deltas to Screen Coordinates
     // Anchor deltas are multiplied by texture size AND Scale to match visual space
     const screenDeltaAnchors = cartesianToIso(
       dIsoAnchorX * tokenMesh.texture.height * tokenMesh.scale.y,
       dIsoAnchorY * tokenMesh.texture.width * tokenMesh.scale.x
     );
     
-    if (isometricModuleConfig.DEBUG_PRINT) {
-        console.log("Isometric Perspective | updateIsoAnchor", {
-            isoAnchor: {x: isoAnchorX, y: isoAnchorY},
-            currentReal: {x: currentRealIsoAnchorX, y: currentRealIsoAnchorY},
-            delta: {x: dIsoAnchorX, y: dIsoAnchorY},
-            screenDelta: screenDeltaAnchors
-        });
-    }
-
-    // Offset deltas are direct
-    const screenDeltaOffsets = cartesianToIso(
-        dOffsetX,
-        dOffsetY
-    );
-
-    // 5. Apply to current Mesh Position
+    // 4. Apply to current Mesh Position
     return {
-      x: tokenMesh.x + screenDeltaAnchors.x + screenDeltaOffsets.x,
-      y: tokenMesh.y + screenDeltaAnchors.y + screenDeltaOffsets.y
+      x: tokenMesh.x + screenDeltaAnchors.x,
+      y: tokenMesh.y + screenDeltaAnchors.y
     };
   }
 
