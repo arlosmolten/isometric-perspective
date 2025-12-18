@@ -26,69 +26,63 @@ export function handleRenderTileHUD(hud, html, data) {
 }
 
 
-// Function to calculate the isometric position, it is like an isoToCartesian
+
+
+// Function to calculate the isometric position relative to the grid
+// Best for Tokens which should stay anchored to their grid location despite art offsets.
 export function calculateIsometricPosition(x, y) {
-  // Get rotation values
-  const rotation = ISOMETRIC_CONST.HudAngle; //ISOMETRIC_CONST.rotation;  // in rad
-
-  // Apply rotation to the distorted coordinates
-  const isoX =        (x + y) * Math.cos(rotation); // Aplique rotação ao eixo X
-  const isoY = (-1) * (x - y) * Math.sin(rotation); // Aplique rotação ao eixo Y
-
+  const rotation = ISOMETRIC_CONST.HudAngle;
+  const isoX =        (x + y) * Math.cos(rotation);
+  const isoY = (-1) * (x - y) * Math.sin(rotation);
   return { x: isoX, y: isoY };
 }
 
+// Final HUD adjustment logic using a hybrid approach
 export function adjustHUDPosition(hud, html) {
-  let object = hud.object;
-  let { x, y } = object.position;
+  const object = hud.object;
+  if (!object) return;
 
-  /*
-  const currentProjection = canvas.scene.getFlag(isometricModuleConfig.MODULE_ID, 'projectionType') ?? DEFAULT_PROJECTION;
-  const projection = PROJECTION_TYPES[currentProjection];
-  let isotranslate;
-  switch (projection) {
-    case "True Isometric":
-      isotranslate = 'translate(33%, -50%)';
-      break;
-    case "Dimetric":
-      isotranslate = 'translate(0%, 0%)';
-      break;
-    case "Projection 3:2":
-      isotranslate = 'translate(0%, 0%)';
-      break;
-    case "Diablo 1":
-      isotranslate = 'translate(33%, -50%)';
-      break;
-    case "Planescape Torment Style":
-      isotranslate = 'translate(33%, -50%)';
-      break;
-  }
-  console.log('projection', projection);
-  */
+  const documentName = object.document.documentName;
 
-  const canvasTile = foundry.canvas.placeables.Tile;
-  const canvasToken = foundry.canvas.placeables.Token;
+  if (documentName === "Token") {
+    // Restore the proven trig-based calculation for tokens
+    const targetPos = calculateIsometricPosition(object.document.x, object.document.y);
 
-  if (object instanceof canvasToken) {
-    const topCenter = calculateIsometricPosition(x, y);
-    
-    Object.assign(html.style,{
-      left: `${topCenter.x}px`,
-      top:  `${topCenter.y}px`,
-      transform: 'translate(33%, -50%)'
+    Object.assign(html.style, {
+      left: `${targetPos.x}px`,
+      top:  `${targetPos.y}px`,
+      transform: 'translate(33%, -50%)' 
     });
+
+    if (isometricModuleConfig.DEBUG_PRINT) {
+      console.log("Token HUD (Trig):", targetPos);
+    }
   }
   
-  else if (object instanceof canvasTile) {
-    const topCenter = calculateIsometricPosition(x, y);
-    //const offsetY = height * Math.sin(Math.PI / 6);
+  else if (documentName === "Tile") {
+    const mesh = object.mesh;
+    if (!mesh) return;
 
-    // Adjusts the HUD's position
-    Object.assign(html.style,{
-      left: `${topCenter.x}px`,
-      top: `${topCenter.y}px`,
-      transform: 'translate(0%, 0%)' // Centers horizontally and positions above the token
+    // Keep the scale-aware mesh-based projection for tiles as it was confirmed working
+    const meshGlobal = mesh.toGlobal({x: 0, y: 0});
+    const parent = html.parentElement || document.body;
+    const parentRect = parent.getBoundingClientRect();
+    const zoom = canvas.stage.scale.x;
+
+    const targetPos = {
+      x: (meshGlobal.x - parentRect.left) / zoom,
+      y: (meshGlobal.y - parentRect.top) / zoom
+    };
+
+    Object.assign(html.style, {
+      left: `${targetPos.x}px`,
+      top: `${targetPos.y}px`,
+      transform: 'translate(-50%, -50%)' 
     });
+
+    if (isometricModuleConfig.DEBUG_PRINT) {
+      console.log("Tile HUD (Mesh):", targetPos);
+    }
   }
 }
 
