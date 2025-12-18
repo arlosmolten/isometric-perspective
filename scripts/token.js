@@ -177,6 +177,7 @@ export function addPrecisionTokenArtListener(app, html, context, options){
     event.preventDefault();
     artOffsetConfig.isDragging = false;
     anchorOffsetConfig.isDragging = false;
+    updateOffset();
   });
 
   window.addEventListener('mousemove', (event) => {
@@ -187,14 +188,7 @@ export function addPrecisionTokenArtListener(app, html, context, options){
   });
   
   isoAnchorToggleCheckbox.addEventListener('change', (event)=> {
-    isAdjustingAnchor = !isAdjustingAnchor;
-
-    if(isAdjustingAnchor){
-      alignmentLines = drawAlignmentLines(updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY))
-    } else {
-      cleanup();
-    }
-    
+    updateOffset();
   })
 
   //Update the lines when changing the inputs // bug here, its not following the art offset
@@ -203,8 +197,8 @@ export function addPrecisionTokenArtListener(app, html, context, options){
   anchorOffsetConfig.inputX.addEventListener('change',updateOffset);
   anchorOffsetConfig.inputY.addEventListener('change',updateOffset);
 
-  async function updateOffset(){  // STILL WIP
-    if(isAdjustingAnchor){
+  async function updateOffset(){ 
+    if(isoAnchorToggleCheckbox.checked || artOffsetConfig.isDragging || anchorOffsetConfig.isDragging){
       const currentOffsetX = artOffsetConfig.inputX.value;
       const currentOffsetY = artOffsetConfig.inputY.value;
       const currentIsoAnchorX  = anchorOffsetConfig.inputX.value;
@@ -216,6 +210,8 @@ export function addPrecisionTokenArtListener(app, html, context, options){
             anchorOffsetConfig.inputX.value = currentIsoAnchorX;
             anchorOffsetConfig.inputY.value = currentIsoAnchorY;
         }
+    } else {
+      cleanup();
     }
   }
 
@@ -246,6 +242,25 @@ export function addPrecisionTokenArtListener(app, html, context, options){
     return graphics;
   };
 
+  // Removes all lines when clicking on update token
+  html.querySelector('button[type="submit"]').addEventListener('click', () => {
+    if (!isoAnchorToggleCheckbox.checked) {
+      cleanup();
+    } else {
+      // Take updated values directly from inputs
+      let currentIsoAnchorX = anchorOffsetConfig.inputX.value;
+      let currentIsoAnchorY = anchorOffsetConfig.inputY.value;
+      
+      // Update the anchor basic values in the token configuration
+      // Note: V12 logic used weird rotation mapping: texture.anchorX = isoY, texture.anchorY = 1-isoX
+      const textureAnchorX = html.querySelector('input[name="texture.anchorX"]');
+      const textureAnchorY = html.querySelector('input[name="texture.anchorY"]');
+      
+      if (textureAnchorX) textureAnchorX.value = currentIsoAnchorY;
+      if (textureAnchorY) textureAnchorY.value = (1 - currentIsoAnchorX);
+    }
+  });
+
   //Changes the Close method to delete the lines, IF avoids changing the method more than once
   if (!app._isCloseModified) {
     const originalClose = app.close;
@@ -259,25 +274,47 @@ export function addPrecisionTokenArtListener(app, html, context, options){
   }
 
   function updateIsoAnchor(isoAnchorX, isoAnchorY, offsetX, offsetY) {
-    const token = app.token.object;
-    const gridSize = canvas.scene.grid.size;
-    const scale = token.document.getFlag(isometricModuleConfig.MODULE_ID, 'scale') ?? 1;
+    let tokenMesh = app.token.object.mesh;
+    if (!tokenMesh) return { x: 0, y: 0 };
 
-    //Convert the anchor (0.0 to 1.0) into a pixel value relative to the center.
-    const anchorPixelX = (parseFloat(isoAnchorX) - 0.5) * gridSize * scale;
-    const anchorPixelY = (parseFloat(isoAnchorY) - 0.5) * gridSize * scale;
+    // 1. Determine the "Current Real" Iso Coordinates based on the actual mesh anchor
+    // Invert the logic used in the submit handler: 
+    // texture.anchorX = isoY  =>  isoY = texture.anchorX
+    // texture.anchorY = 1-isoX => isoX = 1 - texture.anchorY
+    const currentRealIsoAnchorX = 1 - tokenMesh.anchor.y;
+    const currentRealIsoAnchorY = tokenMesh.anchor.x;
 
-    // Add the offset to the anchor pixels
-    const totalPixelX = parseFloat(offsetX) + anchorPixelX;
-    const totalPixelY = parseFloat(offsetY) + anchorPixelY;
+    // 2. Determine Current Real Offsets (already applied to mesh.position)
+    const currentRealOffsetX = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetX') ?? 0;
+    const currentRealOffsetY = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY') ?? 0;
 
-    //Convert that combined pixel value into isometric
-    const finalIsoCoords = cartesianToIso(totalPixelX, totalPixelY);
+    // 3. Calculate Deltas (Target - Real)
+    // Note inputs are strings, parse them
+    const dIsoAnchorX = parseFloat(isoAnchorX) - currentRealIsoAnchorX;
+    const dIsoAnchorY = parseFloat(isoAnchorY) - currentRealIsoAnchorY;
+    
+    const dOffsetX = parseFloat(offsetX) - currentRealOffsetX;
+    const dOffsetY = parseFloat(offsetY) - currentRealOffsetY;
 
-    //Position alignment lines relative to the token's center
+    // 4. Convert Deltas to Screen Coordinates
+    // Anchor deltas are multiplied by texture size AND Scale to match visual space
+    const screenDeltaAnchors = cartesianToIso(
+      dIsoAnchorX * tokenMesh.texture.height * tokenMesh.scale.y,
+      dIsoAnchorY * tokenMesh.texture.width * tokenMesh.scale.x
+    );
+
+    // Offset deltas are direct
+    const screenDeltaOffsets = cartesianToIso(
+        dOffsetX,
+        dOffsetY
+    );
+
+    // 5. Apply to current Mesh Position
+    // Since Mesh Position is always the Grid Center (plus offsets), adding the delta 
+    // moves the crosshair relative to the CURRENT anchor point which is AT the Mesh Position.
     return {
-      x: token.document.x + (token.document.width * gridSize / 2) + finalIsoCoords.x,
-      y: token.document.y + (token.document.height * gridSize / 2) + finalIsoCoords.y
+      x: tokenMesh.x + screenDeltaAnchors.x + screenDeltaOffsets.x,
+      y: tokenMesh.y + screenDeltaAnchors.y + screenDeltaOffsets.y
     };
   }
 
