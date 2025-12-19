@@ -5,13 +5,20 @@ import { cartesianToIso } from './utils.js';
  * Patch the TokenRuler to correctly position labels in isometric scenes.
  */
 export function patchRuler() {
-  const patch = (Cls, label) => {
-    if (!Cls?.prototype?._getWaypointLabelContext) return;
-    
-    const original = Cls.prototype._getWaypointLabelContext;
+  const ParentRuler = CONFIG.Token.rulerClass;
+  if (!ParentRuler) return;
+  
+  // Check if we've already extended it to avoid infinite recursion or multiple layers
+  if (ParentRuler.prototype.hasOwnProperty("_isIsometricRuler")) return;
 
-    Cls.prototype._getWaypointLabelContext = function (waypoint, state) {
-      const ctx = original.call(this, waypoint, state);
+  /**
+   * Subclass the currently active TokenRuler to add isometric label positioning.
+   */
+  class TokenRulerIsometric extends ParentRuler {
+    get _isIsometricRuler() { return true; }
+
+    _getWaypointLabelContext(waypoint, state) {
+      const ctx = super._getWaypointLabelContext(waypoint, state);
       if (!ctx?.position || !canvas.scene) return ctx;
 
       const isIsometric = canvas.scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
@@ -68,17 +75,9 @@ export function patchRuler() {
       ctx.cssClass = Array.from(classes).join(" ");
 
       return ctx;
-    };
-    if (isometricModuleConfig.DEBUG_PRINT) console.log(`Isometric Perspective | Patched ${label}`);
-  };
-
-  // Patch standard TokenRuler
-  patch(foundry.canvas.placeables.tokens.TokenRuler, "TokenRuler");
-  
-  // Patch system specific TokenRuler if it exists (e.g. dnd5e)
-  //Other compatibility patches can go here too.
-  if (game.system.id === "dnd5e") {
-    const Cls5e = game.dnd5e?.canvas?.TokenRuler5e;
-    if (Cls5e) patch(Cls5e, "TokenRuler5e");
+    }
   }
+
+  CONFIG.Token.rulerClass = TokenRulerIsometric;
+  if (isometricModuleConfig.DEBUG_PRINT) console.log("Isometric Perspective | Extended TokenRuler via subclassing.");
 }

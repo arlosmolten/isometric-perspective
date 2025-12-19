@@ -208,8 +208,6 @@ Hooks.once("init", function() {
   else isometricModuleConfig.WORLD_ISO_FLAG = false;
 
   isometricModuleConfig.CONST = parseInt(game.version.split(".")[0]); // Extrai a versão principal
-
-  patchRuler();
 });
 
 
@@ -220,6 +218,7 @@ Hooks.once("init", function() {
 
 // WelcomeScreen
 Hooks.once('ready', addWelcomeScreen);
+Hooks.once('ready', patchRuler);
 //scene configuration
 Hooks.on('ready', createSceneIsometricTab);
 //scene management
