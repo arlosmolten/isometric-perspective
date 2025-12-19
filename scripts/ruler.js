@@ -4,7 +4,7 @@ import { cartesianToIso } from './utils.js';
 /**
  * Patch the TokenRuler to correctly position labels in isometric scenes.
  */
-export function patchRuler() {
+export function registerRuler() {
   const ParentRuler = CONFIG.Token.rulerClass;
   if (!ParentRuler) return;
   

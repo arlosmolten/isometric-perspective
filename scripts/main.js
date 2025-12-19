@@ -47,7 +47,7 @@ import {
   handleCanvasResize, 
 } from './scene.js'
 
-import { patchRuler } from './ruler.js';
+import { registerRuler } from './ruler.js';
 
 // application v2 update
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
@@ -208,6 +208,7 @@ Hooks.once("init", function() {
   else isometricModuleConfig.WORLD_ISO_FLAG = false;
 
   isometricModuleConfig.CONST = parseInt(game.version.split(".")[0]); // Extrai a versão principal
+  registerRuler();
 });
 
 
@@ -218,7 +219,6 @@ Hooks.once("init", function() {
 
 // WelcomeScreen
 Hooks.once('ready', addWelcomeScreen);
-Hooks.once('ready', patchRuler);
 //scene configuration
 Hooks.on('ready', createSceneIsometricTab);
 //scene management
