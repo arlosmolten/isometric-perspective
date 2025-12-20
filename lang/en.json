@@ -1,7 +1,7 @@
 {
     "isometric-perspective.title": "Isometric Perspective Module",
 
-    "isometric-perspective._comment": "Game Settings: Configure Settings",
+    "isometric-perspective._comment_settings": "Game Settings: Configure Settings",
     "isometric-perspective.settings_main_name": "Enable Isometric Perspective",
     "isometric-perspective.settings_main_hint": "Toggle whether the isometric perspective is applied to the canvas.",
     "isometric-perspective.settings_height_name": "Enable Height Adjustment",
@@ -19,16 +19,16 @@
     "isometric-perspective.settings_debug_name": "Enable Debug Mode",
     "isometric-perspective.settings_debug_hint": "Enables debug prints and drawings.",
 
-    "isometric-perspective._comment": "Game Settings: Configure Controls",
+    "isometric-perspective._comment_controls": "Game Settings: Configure Controls",
     "isometric-perspective.keybindings_increase_tile_opacity": "Increase Tile Opacity",
     "isometric-perspective.keybindings_increase_tile_opacity_hint": "Increases the opacity of always visible tiles linked with walls.",
     "isometric-perspective.keybindings_decrease_tile_opacity": "Decrease Tile Opacity",
     "isometric-perspective.keybindings_decrease_tile_opacity_hint": "Decreases the opacity of always visible tiles linked with walls.",
 
-    "isometric-perspective._comment": "Configuration Tab Name",
+    "isometric-perspective._comment_tab": "Configuration Tab Name",
     "isometric-perspective.tab_isometric_name": "Isometric",
 
-    "isometric-perspective._comment": "Scene Configuration",
+    "isometric-perspective._comment_scene": "Scene Configuration",
     "isometric-perspective.scene_enableIsometric": "Enable Isometric for this Scene",
     "isometric-perspective.scene_transform_name": "Transform Background Image",
     "isometric-perspective.scene_transform_hint": "Apply isometric transformation to the background image.",
@@ -40,7 +40,7 @@
     "isometric-perspective.custom_projection_name": "Custom Isometric Values",
     "isometric-perspective.custom_projection_hint": "Enter the values of a custom isometric projection obtained from the app website.",
 
-    "isometric-perspective._comment": "Token Configuration",
+    "isometric-perspective._comment_token": "Token Configuration",
     "isometric-perspective.token_enableIsometric_name": "Disable Isometric Token",
     "isometric-perspective.token_enableIsometric_hint": "Disable isometric transformation on this token.",
     "isometric-perspective.token_artOffset_name": "Art Offset",
@@ -56,7 +56,7 @@
     "isometric-perspective.token_disableScale_name": "Disable Isometric Auto-Scale",
     "isometric-perspective.token_disableScale_hint": "If checked, this token will not auto-resize his art when its dimensions change.",
 
-    "isometric-perspective._comment": "Tile Configuration",
+    "isometric-perspective._comment_tile": "Tile Configuration",
     "isometric-perspective.tile_enableIsometric_name": "Disable Isometric Tile",
     "isometric-perspective.tile_enableIsometric_hint": "Disable isometric transformation on this tile.",
     "isometric-perspective.tile_artOffset_name": "Art Offset",
@@ -72,8 +72,10 @@
     "isometric-perspective.tile_link_wall_select_wall": "Select Wall",
     "isometric-perspective.tile_link_wall_clear_wall": "Clear Wall",
     "isometric-perspective.tile_link_wall_hint": "Click the button to select a wall. This wall will be used to determine the tile's visibility with a selected token.",
+    "isometric-perspective.tile_decoupleScale_name": "Independent Art Scale",
+    "isometric-perspective.tile_decoupleScale_hint": "If checked, the tile art will ignore the footprint dimensions and maintain its natural scale or the one set below.",
     
-    "isometric-perspective._comment": "Warnings and Error Messages",
+    "isometric-perspective._comment_warnings": "Warnings and Error Messages",
     "isometric-perspective.error_test": "Test error message",
 
     "isometric-perspective.welcome.title": "Welcome to Isometric Perspective!",

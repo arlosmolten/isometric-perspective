@@ -97,7 +97,7 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
   
   // if module settings flag is not set, don't move art token
   let ElevationAdjustment = game.settings.get(isometricModuleConfig.MODULE_ID, "enableHeightAdjustment");
-  if (!ElevationAdjustment) elevation = 0;    
+  if (!ElevationAdjustment) elevation = 0;
   
   
   
@@ -198,10 +198,15 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
     //const sceneScale = canvas.scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricScale") ?? 1;
     
     // Apply the scale by maintaining the proportion of the original art
-    object.mesh.scale.set(
-      (scaleX / originalWidth) * isoScale,
-      (scaleY / originalHeight) * isoScale * ISOMETRIC_CONST.ratio
-    );
+    let finalMeshScaleX, finalMeshScaleY;
+    if (object.document.getFlag(isometricModuleConfig.MODULE_ID, "isoDecoupleArtScale")) {
+      finalMeshScaleX = isoScale;
+      finalMeshScaleY = isoScale * ISOMETRIC_CONST.ratio;
+    } else {
+      finalMeshScaleX = (scaleX / originalWidth) * isoScale;
+      finalMeshScaleY = (scaleY / originalHeight) * isoScale * ISOMETRIC_CONST.ratio;
+    }
+    object.mesh.scale.set(finalMeshScaleX, finalMeshScaleY);
     
     // Flip token horizontally, if the flag is active
     let scaleFlip = object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tokenFlipped') ?? 0;
