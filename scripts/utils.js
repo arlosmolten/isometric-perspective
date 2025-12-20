@@ -121,3 +121,29 @@ export function patchConfig(documentSheet, config, args) {
     return defaultRenderPartContext?.call(this, partId, context, options) || {};
   }
 }
+
+/**
+ * Calculates the sort value for a token based on its isometric depth.
+ * The formula (Width - X) + Y creates a gradient from North (back) to South (front).
+ * @param {Token|TokenDocument} token - The token or token document to calculate for.
+ * @returns {number} The calculated sort value.
+ */
+export function calculateTokenSortValue(token) {
+  const scene = canvas.scene;
+  if (!scene) return 0;
+
+  const { width, height } = scene.dimensions;
+
+  // Use document coordinates if passed a token document, otherwise use object coordinates
+  const doc = token.document || token;
+  const x = doc.x;
+  const y = doc.y;
+
+  // Invert the x because the coordinate system doesn't match our intuition for "closer to the screen"
+  const tokenX = width - x;
+  const tokenY = y;
+
+  const sortValue = Math.round(((tokenX + tokenY) / (width + height)) * 10000);
+
+  return sortValue;
+}
