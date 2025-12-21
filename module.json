@@ -10,7 +10,8 @@
     "styles/welcome.css",
     "styles/token-tab.css",
     "styles/tile-tab.css",
-    "styles/scene-tab.css"
+    "styles/scene-tab.css",
+    "styles/ruler.css"
   ],
   "authors": [
     {

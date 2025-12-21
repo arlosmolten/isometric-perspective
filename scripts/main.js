@@ -47,6 +47,8 @@ import {
   handleCanvasResize, 
 } from './scene.js'
 
+import { registerRuler } from './ruler.js';
+
 // application v2 update
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
@@ -206,7 +208,7 @@ Hooks.once("init", function() {
   else isometricModuleConfig.WORLD_ISO_FLAG = false;
 
   isometricModuleConfig.CONST = parseInt(game.version.split(".")[0]); // Extrai a versão principal
-
+  registerRuler();
 });
 
 
@@ -230,6 +232,7 @@ Hooks.on("ready", createTokenIsometricTab);
 // disabled until a better implementation is decided
 Hooks.on('renderTokenConfig', addPrecisionTokenArtListener);
 Hooks.on('renderTokenConfig', initTokenForm);
+Hooks.on('renderPrototypeTokenConfig', initTokenForm);
 
 //token management
 Hooks.on("createToken", handleCreateToken);

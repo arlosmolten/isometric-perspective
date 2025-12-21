@@ -43,6 +43,14 @@
     </div>
 
     <div class="form-group inline slim">
+        <label>{{localize 'isometric-perspective.tile_decoupleScale_name'}}</label>
+        <div class="form-fields">
+            <input type="checkbox" name="flags.isometric-perspective.isoDecoupleArtScale" {{checked document.flags.isometric-perspective.isoDecoupleArtScale}}>
+        </div>
+        <p class="notes">{{localize 'isometric-perspective.tile_decoupleScale_hint'}}</p>
+    </div>
+
+    <div class="form-group inline slim">
         <label>{{localize 'isometric-perspective.tile_occluding_name'}}</label>
         <div class="form-fields">
         <input type="checkbox" name="flags.isometric-perspective.OccludingTile" {{checked document.flags.isometric-perspective.OccludingTile}}>
