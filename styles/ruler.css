@@ -1,27 +1,27 @@
 /* CSS to prevent ruler labels from wrapping or being squashed by container boundaries */
 .waypoint-label.iso-ruler-label,
 .ruler-labels.token-ruler-labels .waypoint-label {
-    white-space: nowrap !important;
-    display: inline-flex !important;
-    flex-wrap: nowrap !important;
-    flex-direction: row !important;
-    width: max-content !important;
-    min-width: max-content !important;
-    max-width: none !important; /* CRITICAL: Prevent container from squashing the label */
-    align-items: center !important;
-    gap: 4px !important;
-    overflow: visible !important;
+    white-space: nowrap;
+    display: inline-flex;
+    flex-wrap: nowrap;
+    flex-direction: row;
+    width: max-content;
+    min-width: max-content;
+    max-width: none; /* CRITICAL: Prevent container from squashing the label */
+    align-items: center;
+    gap: 4px;
+    overflow: visible;
 }
 
 .waypoint-label.iso-ruler-label span,
 .waypoint-label span {
-    white-space: nowrap !important;
-    flex: 0 0 auto !important;
-    width: auto !important;
-    max-width: none !important;
+    white-space: nowrap;
+    flex: 0 0 auto;
+    width: auto;
+    max-width: none;
 }
 
 .waypoint-label.iso-ruler-label .img,
 .waypoint-label .img {
-    flex: 0 0 auto !important;
+    flex: 0 0 auto;
 }
