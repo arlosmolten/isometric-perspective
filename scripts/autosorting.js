@@ -1,4 +1,5 @@
 import { isometricModuleConfig } from './consts.js';
+import { calculateTokenSortValue } from './utils.js';
 
 export function registerSortingConfig() {
   const isometricWorldEnabled = game.settings.get(isometricModuleConfig.MODULE_ID, "worldIsometricFlag");
@@ -46,19 +47,6 @@ export function registerSortingConfig() {
 
 }
 
-function calculateTokenSortValue(token) {
-  const dimensions = canvas.scene.dimensions;
-
-  const { width, height } = dimensions;
-
-  // invert the x because the co-ordinate system doesn't match our intuition for "closer to the screen"
-  const tokenX = width - token.x;
-  const tokenY = token.y;
-
-  const sortValue = Math.round(((tokenX + tokenY) / (width + height)) * 10000);
-
-  return sortValue;
-}
 
 async function updateTokenSort(token) {
   const scene = game.scenes.active;
