@@ -60,11 +60,14 @@ export async function createTokenIsometricTab(app, html, data) {
 
 export function initTokenForm (app, html, context, options) {
 
-  const currentAnchorX = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorX');
-  const currentAnchorY = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorY');
-  const currentOffsetX = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetX');
-  const currentOffsetY = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY');
-  const currentScale = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'scale');
+  const tokenDoc = app.token ?? app.document ?? app.object;
+  if (!tokenDoc) return;
+
+  const currentAnchorX = tokenDoc.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorX');
+  const currentAnchorY = tokenDoc.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorY');
+  const currentOffsetX = tokenDoc.getFlag(isometricModuleConfig.MODULE_ID, 'offsetX');
+  const currentOffsetY = tokenDoc.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY');
+  const currentScale = tokenDoc.getFlag(isometricModuleConfig.MODULE_ID, 'scale');
 
   // const inputTextureAnchorX = html.querySelector('input[name="texture.anchorX"]');
   // const inputTextureAnchorY = html.querySelector('input[name="texture.anchorY"]');
@@ -160,10 +163,13 @@ export function addPrecisionTokenArtListener(app, html, context, options){
   const fineAnchorOffsetAdjustButton = html.querySelector('.fine-adjust-anchor');
   const isoAnchorToggleCheckbox = html.querySelector('.anchor-toggle-checkbox');
 
-  const offsetX = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetX') ?? 0;
-  const offsetY = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY') ?? 0;
-  const isoAnchorX = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorX') ?? 0;
-  const isoAnchorY = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorY') ?? 0;
+  /* Safe document retrieval for both TokenConfig and PrototypeTokenConfig */
+  const tokenDoc = app.token ?? app.document ?? app.object;
+
+  const offsetX = tokenDoc.getFlag(isometricModuleConfig.MODULE_ID, 'offsetX') ?? 0;
+  const offsetY = tokenDoc.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY') ?? 0;
+  const isoAnchorX = tokenDoc.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorX') ?? 0;
+  const isoAnchorY = tokenDoc.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorY') ?? 0;
 
   //prevent form submission on click
   fineArtOffsetAdjustButton.addEventListener('click', (event) => {
@@ -185,6 +191,10 @@ export function addPrecisionTokenArtListener(app, html, context, options){
   
   const onMouseDownAnchor = (event) => {
     event.preventDefault();
+    // For prototype tokens, app.token might be just data, not an object with mesh
+    // But precision listener likely requires a live mesh to be useful/safe
+    if (!app.token?.object?.mesh) return; 
+    
     const tokenMesh = app.token.object.mesh;
     if (!tokenMesh) return;
 

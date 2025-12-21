@@ -232,6 +232,7 @@ Hooks.on("ready", createTokenIsometricTab);
 // disabled until a better implementation is decided
 Hooks.on('renderTokenConfig', addPrecisionTokenArtListener);
 Hooks.on('renderTokenConfig', initTokenForm);
+Hooks.on('renderPrototypeTokenConfig', initTokenForm);
 
 //token management
 Hooks.on("createToken", handleCreateToken);
