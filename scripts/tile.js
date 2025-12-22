@@ -42,6 +42,18 @@ export function initTileForm(app, html, context, options){
   fineArtOffsetAdjustButton.addEventListener('click', (event) => {
     event.preventDefault();
   })
+  
+  const onMouseMove = (event) => {
+     adjustInputWithMouseDrag(event, tileOffsetConfig);
+  };
+  
+  const onMouseUp = (event) => {
+    event.preventDefault();
+    tileOffsetConfig.isDragging = false;
+    window.removeEventListener('mousemove', onMouseMove);
+    window.removeEventListener('mouseup', onMouseUp);
+  };
+
   // start tracking mouse movements on mousedown on the fine adjust button
   fineArtOffsetAdjustButton.addEventListener('mousedown', (event) => {
     event.preventDefault();
@@ -50,16 +62,10 @@ export function initTileForm(app, html, context, options){
     tileOffsetConfig.dragStartY = event.clientY;
     tileOffsetConfig.originalX = parseNum(tileOffsetConfig.inputX);
     tileOffsetConfig.originalY = parseNum(tileOffsetConfig.inputY);
+    
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
   });
-  // start tracking mouse movements when the mouse button is released anywhere in the entire window
-  window.addEventListener('mouseup', (event) => {
-    event.preventDefault();
-    tileOffsetConfig.isDragging = false;
-  });
-
-  window.addEventListener('mousemove', (event)=>{
-    adjustInputWithMouseDrag(event,tileOffsetConfig);
-  })
 
   //Dynamic tile and wall linking
 

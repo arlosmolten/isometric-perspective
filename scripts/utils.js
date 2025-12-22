@@ -32,8 +32,8 @@ export function getFlagName(str) {
 
 // adjust the input values in real time when the mosue is moving
 export function adjustInputWithMouseDrag(event,config){
-  event.preventDefault();
   if(config.isDragging){
+    event.preventDefault();
     const deltaX = event.clientX - config.dragStartX;
     const deltaY = event.clientY - config.dragStartY;
     const finalValueX = roundToPrecision((config.originalX - (deltaY * config.adjustmentX) ) , getDecimalPrecision(config.adjustmentX));
