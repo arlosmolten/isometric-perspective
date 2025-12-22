@@ -1,212 +1,654 @@
 import { isometricModuleConfig } from './consts.js';
-import { ISOMETRIC_CONST, PROJECTION_TYPES, DEFAULT_PROJECTION } from './consts.js';
+import { calculateTokenSortValue } from './utils.js';
 
-export function registerHUDConfig() {
-
-}
-
-export function handleRenderTokenHUD(hud, html, data) {
-  const scene = game.scenes.current;
-  const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
-  const isometricWorldEnabled = game.settings.get(isometricModuleConfig.MODULE_ID, "worldIsometricFlag");
-
-  if (isometricWorldEnabled && isSceneIsometric) {
-    requestAnimationFrame(() => adjustHUDPosition(hud, html));
-  }
-}
-
-export function handleRenderTileHUD(hud, html, data) {
-  const scene = game.scenes.current;
-  const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
-  const isometricWorldEnabled = game.settings.get(isometricModuleConfig.MODULE_ID, "worldIsometricFlag");
-
-  if (isometricWorldEnabled && isSceneIsometric) {
-    requestAnimationFrame(() => adjustHUDPosition(hud, html));
-  }
-}
-
-
-
-
-// Function to calculate the isometric position relative to the grid
-// Best for Tokens which should stay anchored to their grid location despite art offsets.
-export function calculateIsometricPosition(x, y) {
-  const rotation = ISOMETRIC_CONST.HudAngle;
-  const isoX =        (x + y) * Math.cos(rotation);
-  const isoY = (-1) * (x - y) * Math.sin(rotation);
-  return { x: isoX, y: isoY };
-}
-
-// Final HUD adjustment logic using a hybrid approach
-export function adjustHUDPosition(hud, html) {
-  const object = hud.object;
-  if (!object) return;
-
-  const documentName = object.document.documentName;
-
-  if (documentName === "Token") {
-    // Restore the proven trig-based calculation for tokens
-    const targetPos = calculateIsometricPosition(object.document.x, object.document.y);
-
-    Object.assign(html.style, {
-      left: `${targetPos.x}px`,
-      top:  `${targetPos.y}px`,
-      transform: 'translate(33%, -50%)' 
-    });
-
-    if (isometricModuleConfig.DEBUG_PRINT) {
-      console.log("Token HUD (Trig):", targetPos);
-    }
-  }
+export function registerDynamicTileConfig() {
+  const enableOcclusionDynamicTile = game.settings.get(isometricModuleConfig.MODULE_ID, "enableOcclusionDynamicTile");
+  const worldIsometricFlag = game.settings.get(isometricModuleConfig.MODULE_ID, "worldIsometricFlag");
   
-  else if (documentName === "Tile") {
-    const mesh = object.mesh;
-    if (!mesh) return;
+  if (!worldIsometricFlag || !enableOcclusionDynamicTile) return;
+  
+  // ---------------------- CANVAS ----------------------
+  Hooks.on('canvasInit', () => {
+    // Remove any existing container if it exists
+    if (alwaysVisibleContainer) {
+      canvas.stage.removeChild(alwaysVisibleContainer);
+      alwaysVisibleContainer.destroy({ children: true });
+    }
+    
+    // Cria o container principal
+    alwaysVisibleContainer = new PIXI.Container();
+    alwaysVisibleContainer.name = "AlwaysVisibleContainer";
+    alwaysVisibleContainer.eventMode = 'passive';
+    
+    // Cria subcamadas separadas para tiles e tokens
+    tilesLayer = new PIXI.Container();
+    tokensLayer = new PIXI.Container();
+    
+    tilesLayer.name = "AlwaysVisibleTiles";
+    tokensLayer.name = "AlwaysVisibleTokens";
+    
+    // Adiciona as camadas na ordem correta
+    alwaysVisibleContainer.addChild(tilesLayer);
+    alwaysVisibleContainer.addChild(tokensLayer);
+    
+    canvas.stage.addChild(alwaysVisibleContainer);
+    canvas.stage.sortChildren();
+  });
+  // Add a hook to reset the container when scene changes
+  Hooks.on('changeScene', () => {
+    if (alwaysVisibleContainer) {
+      // Remove the container from the stage
+      canvas.stage.removeChild(alwaysVisibleContainer);
+      
+      // Destroy the container and its children
+      alwaysVisibleContainer.destroy({ children: true });
+      
+      // Reset references
+      alwaysVisibleContainer = null;
+      tilesLayer = null;
+      tokensLayer = null;
+    }
+  });
+  Hooks.on('canvasReady', () => {
+    updateAlwaysVisibleElements();
+  });
+  Hooks.on('canvasTokensRefresh', () => {
+    updateAlwaysVisibleElements();
+  });
+  Hooks.on('updateUser', (user, changes) => {
+    if (user.id === game.user.id && 'character' in changes) {
+      updateAlwaysVisibleElements();
+    }
+  });
 
-    // Keep the scale-aware mesh-based projection for tiles as it was confirmed working
-    const meshGlobal = mesh.toGlobal({x: 0, y: 0});
-    const parent = html.parentElement || document.body;
-    const parentRect = parent.getBoundingClientRect();
-    const zoom = canvas.stage.scale.x;
 
-    const targetPos = {
-      x: (meshGlobal.x - parentRect.left) / zoom,
-      y: (meshGlobal.y - parentRect.top) / zoom
+
+  // ---------------------- TILE ----------------------
+  Hooks.on('createTile', (tile, data, options, userId) => {
+    tile.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', []); // Changed to array
+  });
+  Hooks.on('updateTile', async (tileDocument, change, options, userId) => {
+    if ('flags' in change && isometricModuleConfig.MODULE_ID in change.flags) {
+      const currentFlags = change.flags[isometricModuleConfig.MODULE_ID];
+      if ('linkedWallIds' in currentFlags) {
+        const validArray = ensureWallIdsArray(currentFlags.linkedWallIds);
+        await tileDocument.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', validArray);
+      }
+    }
+    updateAlwaysVisibleElements();
+  });
+  Hooks.on('refreshTile', (tile) => {
+    updateAlwaysVisibleElements();
+  });
+  Hooks.on('deleteTile', (tile, options, userId) => {
+    updateAlwaysVisibleElements();
+  });
+
+
+
+  // ---------------------- TOKEN ----------------------
+  Hooks.on('createToken', (token, options, userId) => {
+    // Adiciona um pequeno atraso para garantir que o token esteja completamente inicializado
+    setTimeout(() => {
+      updateAlwaysVisibleElements();
+    }, 100);
+  });
+  Hooks.on('controlToken', (token, controlled) => {
+    if (controlled) {
+      lastControlledToken = token; // Store the last controlled token
+    }
+    updateAlwaysVisibleElements();
+  });
+  Hooks.on('updateToken', (tokenDocument, change, options, userId) => {
+    // Se o token atualizado for o último controlado, atualize a referência
+    if (lastControlledToken && tokenDocument.id === lastControlledToken.id) {
+      lastControlledToken = canvas.tokens.get(tokenDocument.id);
+    }
+    updateAlwaysVisibleElements();
+  });
+  Hooks.on('deleteToken', (token, options, userId) => {
+    if (lastControlledToken && token.id === lastControlledToken.id) {
+      lastControlledToken = null;
+    }
+    updateAlwaysVisibleElements();
+  });
+  Hooks.on("refreshToken", (token) => {
+    updateAlwaysVisibleElements();
+  });
+  /*
+  Hooks.on('renderTokenConfig', (app, html, data) => {
+    // hide all tokens
+    updateTokensOpacity(0);
+
+    // Handler for the submit form
+    html.querySelector('form').on('submit', async (event) => {
+      updateTokensOpacity(1);
+    });
+  });
+  */
+
+
+
+  // ---------------------- OTHERS ----------------------
+  Hooks.on('sightRefresh', () => {
+    if (canvas.ready && alwaysVisibleContainer) {
+      updateAlwaysVisibleElements();
+    }
+  });
+
+  Hooks.on('updateWall', (wallDocument, change, options, userId) => {
+    // Verifica se a mudança é relacionada ao estado da porta
+    if ('ds' in change) {
+      // Procura por tiles que têm esta wall vinculada
+      const linkedTiles = canvas.tiles.placeables.filter(tile => {
+        const walls = getLinkedWalls(tile);
+        return walls.some(wall => wall && wall.id === wallDocument.id);
+      });
+      
+      // Se encontrou algum tile vinculado, atualiza os elementos visíveis
+      if (linkedTiles.length > 0) {
+        updateAlwaysVisibleElements();
+      }
+    }
+  });
+
+  // Additional buttons for the tile layer
+  /*Hooks.on("getSceneControlButtons", (controls) => {
+
+    // console.log("controls", controls)
+
+    // const newButtons = controls.find(b => b.name === "tiles"); // "token, measure, tiles, drawings, walls, lightning"
+    const dynamicTileTool = controls["tiles"].tools; // "token, measure, tiles, drawings, walls, lightning"
+
+    console.log("dynamicTileTool", dynamicTileTool.tools); 
+  
+    dynamicTileTool.opacityIncrease = {
+      name: 'dynamic-tile-increase',
+      title: 'Increase Dynamic Tile Opacity',
+      icon: 'fa-solid fa-layer-group',
+      active: true,
+      onClick: () => increaseTilesOpacity(),
+      button: true
     };
+    
+    dynamicTileTool.opacityDecrease = {
+      name: 'dynamic-tile-decrease',
+      title: 'Decrease Dynamic Tile Opacity',
+      icon: 'fa-duotone fa-solid fa-layer-group',
+      active: true,
+      onClick: () => decreaseTilesOpacity(),
+      button: true
+    };
+  });*/
+}
 
-    Object.assign(html.style, {
-      left: `${targetPos.x}px`,
-      top: `${targetPos.y}px`,
-      transform: 'translate(-50%, -50%)' 
-    });
 
-    if (isometricModuleConfig.DEBUG_PRINT) {
-      console.log("Tile HUD (Mesh):", targetPos);
+
+// Container PIXI para elementos sempre visíveis
+let alwaysVisibleContainer;
+let tilesLayer;
+let tokensLayer;
+let tilesOpacity = 1.0;
+let tokensOpacity = 1.0;
+let selectedWallIds = []; // Changed to array
+let lastControlledToken = null;
+
+
+function updateLayerOpacity(layer, opacity) {
+  if (!layer) return;
+  layer.children.forEach(sprite => {
+      sprite.alpha = opacity;
+  });
+}
+
+export function updateTilesOpacity(value) {
+  tilesOpacity = Math.max(0, Math.min(1, value));
+  if (tilesLayer) {
+    updateLayerOpacity(tilesLayer, tilesOpacity);
+  }
+}
+
+export function increaseTilesOpacity() {
+  updateTilesOpacity(tilesOpacity + 0.5);
+}
+
+export function decreaseTilesOpacity() {
+  updateTilesOpacity(tilesOpacity - 0.5);
+}
+
+export function resetOpacity() {
+  tilesOpacity = 1.0;
+  updateTilesOpacity(tilesOpacity);
+
+  //tokensOpacity = 1.0;
+  //updateTokensOpacity(tokensOpacity);
+}
+
+
+export function updateTokensOpacity(value) {
+  tokensOpacity = Math.max(0, Math.min(1, value));
+  if (tokensLayer) {
+      updateLayerOpacity(tokensLayer, tokensOpacity);
+  }
+}
+
+export function increaseTokensOpacity() {
+  updateTokensOpacity(tokensOpacity + 0.1);
+}
+
+export function decreaseTokensOpacity() {
+  updateTokensOpacity(tokensOpacity - 0.1);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function cloneTileSprite(tile, walls) {
+  const sprite = new PIXI.Sprite(tile.texture);
+  sprite.position.set(tile.position.x, tile.position.y);
+  sprite.anchor.set(tile.anchor.x, tile.anchor.y);
+  sprite.angle = tile.angle;
+  sprite.scale.set(tile.scale.x, tile.scale.y);
+  
+  // Check if any linked wall is a closed door
+  const hasClosedDoor = walls.some(wall => 
+    wall && (wall.document.door === 1 || wall.document.door === 2) && wall.document.ds === 1
+  );
+  
+  if (hasClosedDoor) {
+    return null; // Doesn't create the sprite if the door is open
+  }
+  
+  let alpha = tile.alpha * tilesOpacity;
+  sprite.alpha = alpha;
+  sprite.eventMode = 'passive';
+  sprite.originalTile = tile;
+  return sprite;
+}
+
+function cloneTokenSprite(token) {
+  if (!token || !token.texture) {
+    if (isometricModuleConfig.DEBUG_PRINT) { console.warn("Dynamic Tile cloneTokenSprite() common error.") }
+    return null;
+  }
+  try {
+    const sprite = new PIXI.Sprite(token.texture);
+    sprite.position.set(token.position.x, token.position.y);
+    sprite.anchor.set(token.anchor.x, token.anchor.y);
+    sprite.angle = token.angle;
+    sprite.scale.set(token.scale.x, token.scale.y);
+    sprite.alpha = token.alpha * tokensOpacity;
+    sprite.eventMode = 'passive';
+    sprite.originalToken = token;
+
+    // // Clone filters if they exist
+    // if (token.filters && token.filters.length > 0) {
+    //   sprite.filters = token.filters.map(filter => {
+    //     const newFilter = new filter.constructor(filter.uniforms);
+    //     Object.assign(newFilter, filter);
+    //     return newFilter;
+    //   });
+    // }
+
+    return sprite;
+  } catch (error) {
+    console.error("Erro ao clonar sprite do token:", error);
+    return null;
+  }
+}
+
+// Função para encontrar o token inicial na inicialização
+function getInitialToken() {
+  // Primeiro, tenta pegar o token controlado
+  const controlled = canvas.tokens.controlled[0];
+  if (controlled) return controlled;
+
+  // Se não houver token controlado, tenta usar o último token conhecido
+  if (lastControlledToken) return lastControlledToken;
+
+  // Se não houver último token conhecido, tenta pegar o token do personagem do usuário
+  const actor = game.user.character;
+  if (actor) {
+      const userToken = canvas.tokens.placeables.find(t => t.actor?.id === actor.id);
+      if (userToken) return userToken;
+  }
+
+  // Se ainda não encontrou, pega o primeiro token que o usuário possui permissão
+  const availableToken = canvas.tokens.placeables.find(t => t.observer);
+  if (availableToken) return availableToken;
+
+  // Se tudo falhar, retorna null
+  return null;
+}
+
+function updateAlwaysVisibleElements() {
+  if (!canvas.ready || !alwaysVisibleContainer) return;
+
+  // Clear layers
+  tilesLayer.removeChildren();
+  tokensLayer.removeChildren();
+
+  // Get the selected token
+  const controlled = getInitialToken();
+  if (!controlled) return;
+
+  // Collect Tiles with linked walls
+  const tilesWithLinkedWalls = canvas.tiles.placeables.filter(tile => {
+    // Usa a função auxiliar para garantir que temos um array
+    const walls = getLinkedWalls(tile);
+    return walls.length > 0;
+  });
+
+  // Update tiles
+  tilesWithLinkedWalls.forEach(tile => {
+    const walls = getLinkedWalls(tile);
+    
+    // Check if token can see any of the linked walls
+    const canSeeAnyWall = walls.some(wall => canTokenSeeWall(controlled, wall));
+
+    if (canSeeAnyWall) {
+      const clonedSprite = cloneTileSprite(tile.mesh, walls);
+      if (clonedSprite) {
+        tilesLayer.addChild(clonedSprite);
+      }
+    }
+  });
+
+  
+  
+  // Always add the controlled token
+  const controlledTokenSprite = cloneTokenSprite(controlled.mesh);
+  if (controlledTokenSprite) {  // Check if Sprite was created successfully
+    controlledTokenSprite.zIndex = calculateTokenSortValue(controlled);
+    tokensLayer.addChild(controlledTokenSprite);
+  }
+
+  // Add tokens that the controlled token can see
+  canvas.tokens.placeables.forEach(token => {
+    if (!token.mesh) return;  // Skip if the mesh does not exist
+    if (token.id === controlled.id) return; // Skip the controlled token
+
+    // Check if the token can be seen
+    if (canTokenSeeToken(controlled, token)) {
+      // Check if the token is behind some tile linked to a wall
+      const behindTiles = tilesWithLinkedWalls.filter(tile => {
+        const walls = getLinkedWalls(tile);
+
+        // Check if token is behind any of the linked walls
+        return walls.some(wall => {
+          if (!wall) return false;
+
+          // If the wall is a door and is open, do not consider token as "behind"
+          if ((wall.document.door === 1 || wall.document.door === 2) && wall.document.ds === 1) {
+            return false;
+          }
+
+          // Check if the token is above the wall
+          return isTokenInFrontOfWall(token, wall);
+        });
+      });
+
+      const tokenSprite = cloneTokenSprite(token.mesh);
+      if (tokenSprite) {
+        // Use isometric sorting for zIndex
+        tokenSprite.zIndex = calculateTokenSortValue(token);
+        
+        if (behindTiles.length > 0) {
+          // If behind a tile, move it to the back layer, but keep isometric relative order
+          tokenSprite.zIndex -= 20000; 
+        }
+        tokensLayer.addChild(tokenSprite);
+      }
+    }
+  });
+
+  updateLayerOpacity(tilesLayer, tilesOpacity);
+  //updateLayerOpacity(tokensLayer, tokensOpacity);
+
+  // Habilita o zIndex para a camada de tokens
+  tokensLayer.sortableChildren = true;
+}
+
+function ensureWallIdsArray(linkedWallIds) {
+  // Se for undefined ou null, retorna array vazio
+  if (!linkedWallIds) return [];
+
+  // Se já for um array, retorna ele mesmo
+  if (Array.isArray(linkedWallIds)) return linkedWallIds;
+
+  // Se for uma string
+  if (typeof linkedWallIds === 'string') {
+    // Se for uma string vazia ou só com espaços, retorna array vazio
+    if (!linkedWallIds.trim()) return [];
+    // Divide a string por vírgulas e limpa os espaços
+    return linkedWallIds.split(',').map(id => id.trim()).filter(id => id);
+  }
+
+  // Se for um objeto
+  if (typeof linkedWallIds === 'object') {
+    try {
+      // Tenta converter para string e depois para array
+      return JSON.stringify(linkedWallIds)
+        .replace(/[{}\[\]"]/g, '')
+        .split(',')
+        .map(id => id.trim())
+        .filter(id => id);
+    } catch {
+      return [];
+    }
+  }
+
+  // Se não for nenhum dos casos acima, retorna array vazio
+  return [];
+}
+
+// Função para obter walls linkadas a um tile de forma segura
+function getLinkedWalls(tile) {
+  if (!tile || !tile.document) return [];
+  const linkedWallIds = ensureWallIdsArray(tile.document.getFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds'));
+  return linkedWallIds.map(id => canvas.walls.get(id)).filter(Boolean);
+}
+
+// Função auxiliar para verificar e corrigir flags existentes
+async function validateAndFixTileFlags(tile) {
+  const currentLinkedWalls = tile.getFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds');
+  const validArray = ensureWallIdsArray(currentLinkedWalls);
+  
+  // Se o valor atual for diferente do array válido, atualiza
+  if (JSON.stringify(currentLinkedWalls) !== JSON.stringify(validArray)) {
+    await tile.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', validArray);
+  }
+  return validArray;
+}
+
+
+
+
+
+
+
+
+
+
+
+// Funções auxiliares para os calculos de posição
+
+
+/**
+
+  --- Regras para determinar visibilidade, partindo de um ponto de vista 2D (top-down) ---
+
+- Se a parede estiver na horizontal: Qualquer ponto que o token estiver abaixo da linha horizontal é
+considerado que ele esteja em frente a parede. Senão ele está atrás da parede.
+
+- Se a parede estiver na vertical: Qualquer ponto que o token estiver à esquerda da linha vertical que
+a parede faz, ele é considerado estar em frente a parede. Senão ele está atrás da parede.
+
+- Se a parede estiver inclinada com o sentido desta barra / e o angulo que ela faz com uma reta
+horizontal é menor que 45º: Trace uma linha infinita entre os dois pontos que formam a parede.
+Faça a diferença entre o ponto Y do token e o ponto y da linha sob o mesmo valor de X. Se essa
+diferença for positiva, o token está em frente a parede, senão ele está atrás da parede.
+
+- Se a parede estiver inclinada com o sentido desta barra \ e o angulo que ela faz com uma reta
+horizontal é menor que 45º: Trace uma linha infinita entre os dois pontos que formam a parede.
+Faça a diferença entre o ponto Y do token e o ponto y da linha sob o mesmo valor de X. Se essa
+diferença for positiva, o token está em frente a parede, senão ele está atrás da parede.
+
+- Se a parede estiver inclinada com o sentido desta barra / e o angulo que ela faz com uma reta
+horizontal é maior que 45º: Trace uma linha infinita entre os dois pontos que formam a parede.
+Faça a diferença entre o ponto Y do token e o ponto y da linha sob o mesmo valor de X. Se essa
+diferença for positiva, o token está atrás da parede, senão ele está na frente da parede.
+
+- Se a parede estiver inclinada com o sentido desta barra \ e o angulo que ela faz com uma reta
+horizontal é maior que 45º: Trace uma linha infinita entre os dois pontos que formam a parede.
+Faça a diferença entre o ponto Y do token e o ponto y da linha sob o mesmo valor de X. Se essa
+diferença for positiva, o token está em frente a parede, senão ele está atrás da parede.
+ 
+*/
+
+/**
+ * Calcula o ângulo em graus entre uma linha e a horizontal
+ * @param {number} x1 - Coordenada X do primeiro ponto
+ * @param {number} y1 - Coordenada Y do primeiro ponto
+ * @param {number} x2 - Coordenada X do segundo ponto
+ * @param {number} y2 - Coordenada Y do segundo ponto
+ * @returns {number} - Ângulo em graus (0-360)
+ */
+function calculateAngle(x1, y1, x2, y2) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  let angle = Math.atan2(Math.abs(dy), Math.abs(dx)) * (180 / Math.PI);
+  return angle;
+}
+
+
+
+/**
+* Determina se a parede está inclinada no sentido / ou \
+* @param {number} x1 - Coordenada X do primeiro ponto
+* @param {number} y1 - Coordenada Y do primeiro ponto
+* @param {number} x2 - Coordenada X do segundo ponto
+* @param {number} y2 - Coordenada Y do segundo ponto
+* @returns {string} - 'forward' para / ou 'backward' para \
+*/
+function getWallDirection(x1, y1, x2, y2) {
+  // Se y2 for menor que y1 quando x2 é maior que x1, é uma parede '/'
+  // Caso contrário, é uma parede '\'
+  if (x2 > x1) {
+    return y2 < y1 ? 'forward' : 'backward';
+  } else {
+    return y2 > y1 ? 'forward' : 'backward';
+  }
+}
+
+
+
+/**
+* Verifica se um token está em frente a uma parede baseado nas regras especificadas
+* @param {Object} token - Objeto token com propriedade center {x, y}
+* @param {Object} wall - Objeto wall com propriedades edge.a {x, y} e edge.b {x, y}
+* @returns {boolean} - true se o token estiver em frente à parede, false caso contrário
+*/
+function isTokenInFrontOfWall(token, wall) {
+  if (isometricModuleConfig.FOUNDRY_VERSION === 11) {
+    if (!wall?.A || !wall?.B || !token?.center) return false;
+  } else {
+    if (!wall?.edge?.a || !wall?.edge?.b || !token?.center) return false;
+  }
+
+  const { x: x1, y: y1 } = isometricModuleConfig.FOUNDRY_VERSION === 11 ? wall.A : wall.edge.a;
+  const { x: x2, y: y2 } = isometricModuleConfig.FOUNDRY_VERSION === 11 ? wall.B : wall.edge.b;
+  const { x: tokenX, y: tokenY } = token.center;
+
+  // Verifica se a parede é horizontal (ângulo próximo a 0°)
+  // Token está em frente se estiver abaixo da linha horizontal
+  if (Math.abs(y1 - y2) < 0.001) {
+    return tokenY > y1;
+  }
+
+  // Verifica se a parede é vertical (ângulo próximo a 90°)
+  // Token está em frente se estiver à esquerda da linha vertical
+  if (Math.abs(x1 - x2) < 0.001) {
+    return tokenX < x1;
+  }
+
+  // Calcula o ângulo da parede com a horizontal
+  const angle = calculateAngle(x1, y1, x2, y2);
+  
+  // Determina a direção da inclinação da parede (/ ou \)
+  const wallDirection = getWallDirection(x1, y1, x2, y2);
+
+  // Calcula a posição Y na linha da parede para o X do token
+  const slope = (y2 - y1) / (x2 - x1);
+  const wallYAtTokenX = slope * (tokenX - x1) + y1;
+  const difference = tokenY - wallYAtTokenX;
+
+  if (wallDirection === 'forward') { // Parede tipo /
+    if (angle < 45) {
+      return difference > 0; // Token está em frente se estiver acima da linha
+    } else {
+      return difference < 0; // Token está em frente se estiver abaixo da linha
+    }
+  } else { // Parede tipo \
+    if (angle < 45) {
+      return difference > 0; // Token está em frente se estiver acima da linha
+    } else {
+      return difference > 0; // Token está em frente se estiver acima da linha
     }
   }
 }
 
 
 
+/**
+* Verifica se um token pode ver uma parede
+* @param {Object} token - Objeto token
+* @param {Object} wall - Objeto wall
+* @returns {boolean} - true se o token puder ver a parede, false caso contrário
+*/
+function canTokenSeeWall(token, wall) {
+  if (!wall || !token) return false;
 
+  // Verifica se o token está em frente à parede
+  const isInFront = isTokenInFrontOfWall(token, wall);
+  if (!isInFront) return false;
 
+  // Verifica colisão com outros objetos entre o token e os pontos da parede
+  const wallPoints = isometricModuleConfig.FOUNDRY_VERSION === 11 ? [wall.A, wall.center, wall.B] : [wall.edge.a, wall.center, wall.edge.b];
+  const tokenPosition = token.center;
 
-
-
-/*
-// Função para calcular a posição isométrica
-export function calculateIsometricPosition_not(x, y) {
-  // Obter valores de rotação e skew
-  const rotation = ISOMETRIC_CONST.HudAngle; //ISOMETRIC_CONST.rotation;  // em graus
-  const skewX = 0;//ISOMETRIC_CONST.skewX;       // em graus
-  const skewY = 0;//ISOMETRIC_CONST.skewY;       // em graus
-
-  // Converter ângulos de graus para radianos
-  const rotationRad = rotation * (Math.PI / 180);
-  const skewXRad = skewX * (Math.PI / 180);
-  const skewYRad = skewY * (Math.PI / 180);
-
-  // 1. Aplicar distorções de skew
-  const skewedX = x + y * Math.tan(skewXRad);  // Distorção no eixo X devido ao skewX
-  const skewedY = y + x * Math.tan(skewYRad);  // Distorção no eixo Y devido ao skewY
-
-  // 2. Aplicar rotação nas coordenadas distorcidas
-  const isoX =        (skewedX + skewedY) * Math.cos(rotationRad);   // Aplique rotação ao eixo X
-  const isoY = (-1) * (skewedX - skewedY) * Math.sin(rotationRad); // Aplique rotação ao eixo Y
-
-  // Retornar a posição isométrica calculada
-  return { x: isoX, y: isoY };
-}
-
-function isometricToCartesianGPT(x_iso, y_iso) {
-  // Extrair os parâmetros de transformação
-  const rotation = Math.abs(ISOMETRIC_CONST.rotation);
-  const skewX = Math.abs(ISOMETRIC_CONST.skewX);
-  const skewY = Math.abs(ISOMETRIC_CONST.skewY);
-  
-  // Cria uma matriz de transformação com base nas rotações e distorções fornecidas
-  // Criando um objeto "dummy" para aplicar a transformação
-  const obj = new PIXI.Graphics();
-  console.log("obj", obj);
-
-  // Aplica a transformação com setTransform
-  obj.setTransform(x_iso, y_iso, 0, 0, 1, 1, -rotation, skewX, skewY);
-
-  // A matriz de transformação do objeto agora contém rotação e skew
-  const matrix = obj.transform.worldTransform;
-
-  // Inverter a matriz para reverter a transformação
-  const invertedMatrix = matrix.invert();
-  console.log(matrix);
-  console.log(invertedMatrix);
-
-  // Aplicar a inversa da matriz nas coordenadas isométricas
-  const cartesian = invertedMatrix.apply({ x: x_iso, y: y_iso });
-
-  return { x: cartesian.x, y: cartesian.y };
-}
-
-function isometricToCartesian(isoX, isoY) {
-  // Definir parâmetros de transformação
-  const rotation = ISOMETRIC_CONST.rotation;
-  const skewX = -ISOMETRIC_CONST.skewX;
-  const skewY = -ISOMETRIC_CONST.skewY;
-  
-  // Etapa 1: Reverter a rotação
-  const unrotatedX = isoX * Math.cos(rotation) - isoY * Math.sin(rotation);
-  const unrotatedY = isoX * Math.sin(rotation) + isoY * Math.cos(rotation);
-
-  // Etapa 2: Reverter o skew em X
-  const unskewedX = unrotatedX - unrotatedY * Math.tan(skewX);
-
-  // Etapa 3: Reverter o skew em Y
-  const cartesianY = unrotatedY - unskewedX * Math.tan(skewY);
-  const cartesianX = unskewedX;
-
-  return { x: cartesianX, y: cartesianY };
-}
-
-function isometricToCartesianGPT4o(x, y) {
-  const angle = 30; //ISOMETRIC_CONST.rotation;
-  const skewX = ISOMETRIC_CONST.skewX;
-  const skewY = ISOMETRIC_CONST.skewY;
-  const scale = 1; //-ISOMETRIC_CONST.ratio;
-  
-  // Ajuste de escala
-  let adjustedX = x * scale;
-  let adjustedY = y * scale;
-
-  // Cálculo dos valores da matriz composta T (com rotação + skewX + skewY)
-  const cosTheta = Math.cos(angle);
-  const sinTheta = Math.sin(angle);
-
-  // Componentes da matriz composta T
-  const a = cosTheta + sinTheta * skewY;
-  const b = cosTheta * skewX + sinTheta;
-  const c = -sinTheta + cosTheta * skewY;
-  const d = -sinTheta * skewX + cosTheta;
-
-  // Determinante de T
-  const detT = a * d - b * c;
-
-  if (detT === 0) {
-      throw new Error("A matriz de transformação não é invertível");
+  for (const point of wallPoints) {
+    const visibilityTest = isometricModuleConfig.FOUNDRY_VERSION === 11 ? canvas.effects.visibility.testVisibility(point, { tolerance: 2 }) : canvas.visibility?.testVisibility(point, { tolerance: 2 });
+    // Usa o testVisibility do token para verificar se ele pode ver o ponto
+    if (visibilityTest) {
+      const ray = new Ray(tokenPosition, point);
+      const collision = CONFIG.Canvas.polygonBackends.sight.testCollision(ray.B, ray.A, { 
+        mode: "any", 
+        type: "sight" 
+      });
+      
+      // Se não houver colisão com algum ponto dentro do alcance, o token pode ver a parede
+      if (!collision) {
+        return true
+      }
+    }
   }
 
-  // Inversão da matriz T^-1
-  const invDetT = 1 / detT;
-
-  // Matrizes inversas
-  const a_inv = d * invDetT;
-  const b_inv = -b * invDetT;
-  const c_inv = -c * invDetT;
-  const d_inv = a * invDetT;
-
-  // Aplicando a matriz inversa para encontrar as coordenadas cartesianas
-  let cartesianX = a_inv * adjustedX + b_inv * adjustedY;
-  let cartesianY = c_inv * adjustedX + d_inv * adjustedY;
-
-  // Retornar as coordenadas cartesianas
-  return { x: cartesianX, y: cartesianY };
+  return false;
 }
-*/
+
+function canTokenSeeToken(sourceToken, targetToken) {
+  if (!sourceToken || !targetToken) return false;
+  
+  // Usa o canvas testVisibility no token alvo como verificação
+  return canvas.visibility?.testVisibility(targetToken.center, { tolerance: 2 });
+}
