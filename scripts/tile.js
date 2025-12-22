@@ -1,165 +1,134 @@
-import { MODULE_ID, DEBUG_PRINT } from './main.js';
+import { isometricModuleConfig } from './consts.js';
 import { applyIsometricTransformation } from './transform.js';
+import { adjustInputWithMouseDrag, parseNum, patchConfig} from './utils.js';
 
-export function registerTileConfig() {
-  Hooks.on("renderTileConfig", handleRenderTileConfig);
+export async function createTileIsometricTab(app, html, data) {
 
-  Hooks.on("createTile", handleCreateTile);
-  Hooks.on("updateTile", handleUpdateTile);
-  Hooks.on("refreshTile", handleRefreshTile);
+  const tileTabConfig = {
+    moduleConfig: isometricModuleConfig,
+    label: game.i18n.localize("isometric-perspective.tab_isometric_name"),
+    tabGroup : "sheet",
+    tabId : "isometric",
+    icon: "fas fa-cube",
+    templatePath: 'modules/isometric-perspective/templates/tile-config.hbs'
+  }
+
+  // Tile config data
+  const FoundryTileConfig = foundry.applications.sheets.TileConfig;
+  const DefaultTileConfig = Object.values(CONFIG.Tile.sheetClasses.base).find((d) => d.default)?.cls;
+  const TileConfig = DefaultTileConfig?.prototype instanceof FoundryTileConfig ? DefaultTileConfig : FoundryTileConfig;
+  patchConfig(TileConfig,tileTabConfig);
+  
 }
 
-async function handleRenderTileConfig(app, html, data) {
-  const linkedWallIds = app.object.getFlag(MODULE_ID, 'linkedWallIds') || [];
-  const wallIdsString = Array.isArray(linkedWallIds) ? linkedWallIds.join(', ') : linkedWallIds;
+export function initTileForm(app, html, context, options){
 
-  // Carrega o template HTML para a nova aba
-  const tabHtml = await renderTemplate("modules/isometric-perspective/templates/tile-config.html", {
-    isoDisabled: app.object.getFlag(MODULE_ID, 'isoTileDisabled') ?? 1,
-    scale: app.object.getFlag(MODULE_ID, 'scale') ?? 1,
-    isFlipped: app.object.getFlag(MODULE_ID, 'tokenFlipped') ?? false,
-    offsetX: app.object.getFlag(MODULE_ID, 'offsetX') ?? 0,
-    offsetY: app.object.getFlag(MODULE_ID, 'offsetY') ?? 0,
-    linkedWallIds: wallIdsString,
-    isOccluding: app.object.getFlag(MODULE_ID, 'OccludingTile') ?? false
-  });
-
-  // Adiciona a nova aba ao menu
-  const tabs = html.find('.tabs:not(.secondary-tabs)');
-  tabs.append(`<a class="item" data-tab="isometric"><i class="fas fa-cube"></i> ${game.i18n.localize('isometric-perspective.tab_isometric_name')}</a>`);
-
-  // Adiciona o conteúdo da aba após a última aba existente
-  const lastTab = html.find('.tab').last();
-  lastTab.after(tabHtml);
-
-  // Update the offset fine adjustment button
-  updateAdjustOffsetButton(html);
-
-  // keeps the window height on auto
-  /*
-  const sheet = html.closest('.sheet');
-  if (sheet.length) {
-    sheet.css({ 'height': 'auto', 'min-height': '0' });
-    const windowContent = sheet.find('.window-content');
-    if (windowContent.length) {
-      windowContent.css({ 'height': 'auto', 'overflow': 'visible' });
-    }
+  //Tile art offset
+  const tileOffsetConfig = {
+    inputX : html.querySelector('input[name="flags.isometric-perspective.offsetX"]'),
+    inputY : html.querySelector('input[name="flags.isometric-perspective.offsetY"]'),
+    dragStartX: 0,
+    dragStartY: 0,
+    originalX: 0,
+    originalY: 0,
+    isDragging: false,
+    adjustmentX: 1,
+    adjustmentY: 0.5
   }
-  */
 
-  // Inicializa os valores dos controles
-  const isoTileCheckbox = html.find('input[name="flags.isometric-perspective.isoTileDisabled"]');
-  const flipCheckbox = html.find('input[name="flags.isometric-perspective.tokenFlipped"]');
-  const linkedWallInput = html.find('input[name="flags.isometric-perspective.linkedWallIds"]');
-  const occludingCheckbox = html.find('input[name="flags.isometric-perspective.OccludingTile"]');
-  
-  isoTileCheckbox.prop("checked", app.object.getFlag(MODULE_ID, "isoTileDisabled"));
-  flipCheckbox.prop("checked", app.object.getFlag(MODULE_ID, "tokenFlipped"));
-  linkedWallInput.val(wallIdsString);
-  occludingCheckbox.prop("checked", app.object.getFlag(MODULE_ID, "OccludingTile"));
-  
-  // Adiciona listener para atualizar o valor exibido do slider
-  html.find('.scale-slider').on('input', function() {
-    html.find('.range-value').text(this.value);
+  const fineArtOffsetAdjustButton = html.querySelector('.fine-adjust');
+
+  //prevent form submission
+  fineArtOffsetAdjustButton.addEventListener('click', (event) => {
+    event.preventDefault();
+  })
+  // start tracking mouse movements on mousedown on the fine adjust button
+  fineArtOffsetAdjustButton.addEventListener('mousedown', (event) => {
+    event.preventDefault();
+    tileOffsetConfig.isDragging = true;
+    tileOffsetConfig.dragStartX = event.clientX;
+    tileOffsetConfig.dragStartY = event.clientY;
+    tileOffsetConfig.originalX = parseNum(tileOffsetConfig.inputX);
+    tileOffsetConfig.originalY = parseNum(tileOffsetConfig.inputY);
+  });
+  // start tracking mouse movements when the mouse button is released anywhere in the entire window
+  window.addEventListener('mouseup', (event) => {
+    event.preventDefault();
+    tileOffsetConfig.isDragging = false;
   });
 
-  
-  // Handler para o formulário de submit
-  html.find('form').on('submit', async (event) => {
-    // Se o valor do checkbox é true, atualiza as flags com os novos valores
-    if (html.find('input[name="flags.isometric-perspective.isoTileDisabled"]').prop("checked")) {
-      await app.object.setFlag(MODULE_ID, "isoTileDisabled", true);
-    } else {
-      await app.object.unsetFlag(MODULE_ID, "isoTileDisabled");
-    }
+  window.addEventListener('mousemove', (event)=>{
+    adjustInputWithMouseDrag(event,tileOffsetConfig);
+  })
 
-    if (html.find('input[name="flags.isometric-perspective.tokenFlipped"]').prop("checked")) {
-      await app.object.setFlag(MODULE_ID, "tokenFlipped", true);
-    } else {
-      await app.object.unsetFlag(MODULE_ID, "tokenFlipped");
-    }
+  //Dynamic tile and wall linking
 
-    if (html.find('input[name="flags.isometric-perspective.OccludingTile"]').prop("checked")) {
-      await app.object.setFlag(MODULE_ID, "OccludingTile", true);
-    } else {
-      await app.object.unsetFlag(MODULE_ID, "OccludingTile");
-    }
+  const selectWallButton = html.querySelector('.select-wall');
+  const clearWallButton = html.querySelector('.clear-wall');
+  const linkedWallsIdInput = html.querySelector('input[name="flags.isometric-perspective.linkedWallIds"]');
 
-    // dynamictile.js linked wall logic
-    const wallIdsValue = linkedWallInput.val();
-    if (wallIdsValue) {
-      // Convertemos a string em array antes de salvar
-      const wallIdsArray = wallIdsValue.split(',').map(id => id.trim()).filter(id => id);
-      await app.object.setFlag(MODULE_ID, 'linkedWallIds', wallIdsArray);
-    } else {
-      await app.object.setFlag(MODULE_ID, 'linkedWallIds', []);
-    }
-  });
+  // Initialize values
+  const currentOffsetX = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetX');
+  const currentOffsetY = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY');
+  const currentScale = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'scale');
 
-  
-  // dynamictile.js event listeners for the buttons
-  html.find('button.select-wall').click(() => {
-    // Minimiza a janela e muda a camada selecionada para a WallLayer
+  const inputOffsetX = html.querySelector('input[name="flags.isometric-perspective.offsetX"]');
+  const inputOffsetY = html.querySelector('input[name="flags.isometric-perspective.offsetY"]');
+  const inputScale = html.querySelector('range-picker[name="flags.isometric-perspective.scale"]');
+
+  if (inputOffsetX) inputOffsetX.value = currentOffsetX ?? 0;
+  if (inputOffsetY) inputOffsetY.value = currentOffsetY ?? 0;
+  if (inputScale) inputScale.value = currentScale ?? 1;
+
+  selectWallButton?.addEventListener('click', selectWall);
+  clearWallButton?.addEventListener('click', clearWall);
+
+  // Tile config data
+  const FoundryTileConfig = foundry.applications.sheets.TileConfig;
+  const DefaultTileConfig = Object.values(CONFIG.Tile.sheetClasses.base).find((d) => d.default)?.cls;
+  const TileConfig = DefaultTileConfig?.prototype instanceof FoundryTileConfig ? DefaultTileConfig : FoundryTileConfig;
+
+  function selectWall(event) {    
     Object.values(ui.windows).filter(w => w instanceof TileConfig).forEach(j => j.minimize());
     canvas.walls.activate();
 
     Hooks.once('controlWall', async (wall) => {
       const selectedWallId = wall.id.toString();
-      const currentWallIds = app.object.getFlag(MODULE_ID, 'linkedWallIds') || [];
+      const currentWallIds = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds') || [];
       
-      // Adiciona o novo ID apenas se ele ainda não estiver na lista
+      // Add the new ID only if it is not already in the list.
       if (!currentWallIds.includes(selectedWallId)) {
         const newWallIds = [...currentWallIds, selectedWallId];
-        await app.object.setFlag(MODULE_ID, 'linkedWallIds', newWallIds);
-        html.find('input[name="flags.isometric-perspective.linkedWallIds"]').val(newWallIds.join(', '));
+        await app.document.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', newWallIds);
+        if (linkedWallsIdInput) linkedWallsIdInput.value = newWallIds.join(", ");
       }
 
-      // Retorna a janela a posição original e ativa a camada TileLayer
+      // Returns the window to its original position and activates the TileLayer layer.
       Object.values(ui.windows).filter(w => w instanceof TileConfig).forEach(j => j.maximize());
       canvas.tiles.activate();
-
-      // Keep the tab selected
-      requestAnimationFrame(() => {
-        const tabs = app._tabs[0];
-        if (tabs) tabs.activate("isometric");
-      });
-      
     });
-  });
+  }
 
-  html.find('button.clear-wall').click(async () => {
-    await app.object.setFlag(MODULE_ID, 'linkedWallIds', []);
-    html.find('input[name="flags.isometric-perspective.linkedWallIds"]').val('');
-
-    // Keep the tab selected
-    requestAnimationFrame(() => {
-      const tabs = app._tabs[0];
-      if (tabs) tabs.activate("isometric");
-    });
-  });
-
+  async function clearWall () {
+    await app.document.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', []);
+    if (linkedWallsIdInput) linkedWallsIdInput.value = '';
+  }
 }
 
-
-
-
-// Hooks.on("createTile")
-function handleCreateTile(tileDocument) {
+export function handleCreateTile(tileDocument) {
   const tile = canvas.tiles.get(tileDocument.id);
   if (!tile) return;
-  
   const scene = tile.scene;
-  const isSceneIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
+  const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   requestAnimationFrame(() => applyIsometricTransformation(tile, isSceneIsometric));
 }
 
-// Hooks.on("updateTile")
-function handleUpdateTile(tileDocument, updateData, options, userId) {
+export function handleUpdateTile(tileDocument, updateData, options, userId) {
   const tile = canvas.tiles.get(tileDocument.id);
   if (!tile) return;
   
   const scene = tile.scene;
-  const isSceneIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
+  const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   
   if (updateData.x !== undefined ||
       updateData.y !== undefined ||
@@ -170,82 +139,10 @@ function handleUpdateTile(tileDocument, updateData, options, userId) {
   }
 }
 
-// Hooks.on("refreshTile")
-function handleRefreshTile(tile) {
+export function handleRefreshTile(tile) {
   const scene = tile.scene;
-  const isSceneIsometric = scene.getFlag(MODULE_ID, "isometricEnabled");
+  const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   applyIsometricTransformation(tile, isSceneIsometric);
 }
-
-
-function updateAdjustOffsetButton(html) {
-  const offsetPointContainer = html.find('.offset-point')[0];
-
-  // Finds the fine adjustment button on the original HTML
-  const adjustButton = offsetPointContainer.querySelector('button.fine-adjust');
-
-  // Configures the fine adjustment button
-  adjustButton.style.width = '30px';
-  adjustButton.style.cursor = 'pointer';
-  adjustButton.style.padding = '1px 5px';
-  adjustButton.style.border = '1px solid #888';
-  adjustButton.style.borderRadius = '3px';
-  adjustButton.title = game.i18n.localize('isometric-perspective.tile_artOffset_mouseover'); //Hold and drag to fine-tune X and Y
-
-  // Adds the fine adjustment logic
-  let isAdjusting = false;
-  let startX = 0;
-  let startY = 0;
-  let originalValueX = 0;
-  let originalValueY = 0;
-
-  let offsetXInput = html.find('input[name="flags.isometric-perspective.offsetX"]')[0];
-  let offsetYInput = html.find('input[name="flags.isometric-perspective.offsetY"]')[0];
-
-  // Function to apply adjustment
-  const applyAdjustment = (e) => {
-    if (!isAdjusting) return;
-
-    // Calculates the difference on x and y axes
-    const deltaY = e.clientX - startX;
-    const deltaX = startY - e.clientY;
-    
-    // Fine tuning: every 10px of motion = 0.1 value 
-    const adjustmentX = deltaX * 0.1;
-    const adjustmentY = deltaY * 0.1;
-    
-    // Calculates new values
-    let newValueX = Math.round(originalValueX + adjustmentX);
-    let newValueY = Math.round(originalValueY + adjustmentY);
-    
-    // Rounding for 2 decimal places
-    newValueX = Math.round(newValueX * 100) / 100;
-    newValueY = Math.round(newValueY * 100) / 100;
-    
-    // Updates anchor inputs
-    offsetXInput.value = newValueX.toFixed(0);
-    offsetYInput.value = newValueY.toFixed(0);
-    offsetXInput.dispatchEvent(new Event('change', { bubbles: true }));
-    offsetYInput.dispatchEvent(new Event('change', { bubbles: true }));
-  };
-
-  // Listeners for Adjustment
-  adjustButton.addEventListener('mousedown', (e) => {
-    isAdjusting = true;
-    startX = e.clientX;
-    startY = e.clientY;
-    
-    // Obtains the original values ​​of offset inputs
-    originalValueX = parseFloat(offsetXInput.value);
-    originalValueY = parseFloat(offsetYInput.value);
-    
-    // Add global listeners
-    document.addEventListener('mousemove', applyAdjustment);
-    document.addEventListener('mouseup', () => {
-      isAdjusting = false;
-      document.removeEventListener('mousemove', applyAdjustment);
-    });
-    
-    e.preventDefault();
-  });
-}
+  
+  
