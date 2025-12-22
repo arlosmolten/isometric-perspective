@@ -1,8 +1,9 @@
-import { MODULE_ID, DEBUG_PRINT, FOUNDRY_VERSION } from './main.js';
+import { isometricModuleConfig } from './consts.js';
+import { calculateTokenSortValue } from './utils.js';
 
 export function registerDynamicTileConfig() {
-  const enableOcclusionDynamicTile = game.settings.get(MODULE_ID, "enableOcclusionDynamicTile");
-  const worldIsometricFlag = game.settings.get(MODULE_ID, "worldIsometricFlag");
+  const enableOcclusionDynamicTile = game.settings.get(isometricModuleConfig.MODULE_ID, "enableOcclusionDynamicTile");
+  const worldIsometricFlag = game.settings.get(isometricModuleConfig.MODULE_ID, "worldIsometricFlag");
   
   if (!worldIsometricFlag || !enableOcclusionDynamicTile) return;
   
@@ -64,14 +65,14 @@ export function registerDynamicTileConfig() {
 
   // ---------------------- TILE ----------------------
   Hooks.on('createTile', (tile, data, options, userId) => {
-    tile.setFlag(MODULE_ID, 'linkedWallIds', []); // Changed to array
+    tile.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', []); // Changed to array
   });
   Hooks.on('updateTile', async (tileDocument, change, options, userId) => {
-    if ('flags' in change && MODULE_ID in change.flags) {
-      const currentFlags = change.flags[MODULE_ID];
+    if ('flags' in change && isometricModuleConfig.MODULE_ID in change.flags) {
+      const currentFlags = change.flags[isometricModuleConfig.MODULE_ID];
       if ('linkedWallIds' in currentFlags) {
         const validArray = ensureWallIdsArray(currentFlags.linkedWallIds);
-        await tileDocument.setFlag(MODULE_ID, 'linkedWallIds', validArray);
+        await tileDocument.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', validArray);
       }
     }
     updateAlwaysVisibleElements();
@@ -120,7 +121,7 @@ export function registerDynamicTileConfig() {
     updateTokensOpacity(0);
 
     // Handler for the submit form
-    html.find('form').on('submit', async (event) => {
+    html.querySelector('form').on('submit', async (event) => {
       updateTokensOpacity(1);
     });
   });
@@ -152,25 +153,33 @@ export function registerDynamicTileConfig() {
   });
 
   // Additional buttons for the tile layer
-  Hooks.on("getSceneControlButtons", (controls) => {
-    const newButtons = controls.find(b => b.name === "tiles"); // "token, measure, tiles, drawings, walls, lightning"
+  /*Hooks.on("getSceneControlButtons", (controls) => {
+
+    // console.log("controls", controls)
+
+    // const newButtons = controls.find(b => b.name === "tiles"); // "token, measure, tiles, drawings, walls, lightning"
+    const dynamicTileTool = controls["tiles"].tools; // "token, measure, tiles, drawings, walls, lightning"
+
+    console.log("dynamicTileTool", dynamicTileTool.tools); 
   
-    newButtons.tools.push({
+    dynamicTileTool.opacityIncrease = {
       name: 'dynamic-tile-increase',
       title: 'Increase Dynamic Tile Opacity',
       icon: 'fa-solid fa-layer-group',
       active: true,
       onClick: () => increaseTilesOpacity(),
       button: true
-    },{
+    };
+    
+    dynamicTileTool.opacityDecrease = {
       name: 'dynamic-tile-decrease',
       title: 'Decrease Dynamic Tile Opacity',
       icon: 'fa-duotone fa-solid fa-layer-group',
       active: true,
       onClick: () => decreaseTilesOpacity(),
       button: true
-    });
-  });
+    };
+  });*/
 }
 
 
@@ -268,7 +277,7 @@ function cloneTileSprite(tile, walls) {
 
 function cloneTokenSprite(token) {
   if (!token || !token.texture) {
-    if (DEBUG_PRINT) { console.warn("Dynamic Tile cloneTokenSprite() common error.") }
+    if (isometricModuleConfig.DEBUG_PRINT) { console.warn("Dynamic Tile cloneTokenSprite() common error.") }
     return null;
   }
   try {
@@ -359,6 +368,7 @@ function updateAlwaysVisibleElements() {
   // Always add the controlled token
   const controlledTokenSprite = cloneTokenSprite(controlled.mesh);
   if (controlledTokenSprite) {  // Check if Sprite was created successfully
+    controlledTokenSprite.zIndex = calculateTokenSortValue(controlled);
     tokensLayer.addChild(controlledTokenSprite);
   }
 
@@ -389,8 +399,12 @@ function updateAlwaysVisibleElements() {
 
       const tokenSprite = cloneTokenSprite(token.mesh);
       if (tokenSprite) {
+        // Use isometric sorting for zIndex
+        tokenSprite.zIndex = calculateTokenSortValue(token);
+        
         if (behindTiles.length > 0) {
-          tokenSprite.zIndex = -1; // Rendering behind, if behind any tile
+          // If behind a tile, move it to the back layer, but keep isometric relative order
+          tokenSprite.zIndex -= 20000; 
         }
         tokensLayer.addChild(tokenSprite);
       }
@@ -440,18 +454,18 @@ function ensureWallIdsArray(linkedWallIds) {
 // Função para obter walls linkadas a um tile de forma segura
 function getLinkedWalls(tile) {
   if (!tile || !tile.document) return [];
-  const linkedWallIds = ensureWallIdsArray(tile.document.getFlag(MODULE_ID, 'linkedWallIds'));
+  const linkedWallIds = ensureWallIdsArray(tile.document.getFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds'));
   return linkedWallIds.map(id => canvas.walls.get(id)).filter(Boolean);
 }
 
 // Função auxiliar para verificar e corrigir flags existentes
 async function validateAndFixTileFlags(tile) {
-  const currentLinkedWalls = tile.getFlag(MODULE_ID, 'linkedWallIds');
+  const currentLinkedWalls = tile.getFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds');
   const validArray = ensureWallIdsArray(currentLinkedWalls);
   
   // Se o valor atual for diferente do array válido, atualiza
   if (JSON.stringify(currentLinkedWalls) !== JSON.stringify(validArray)) {
-    await tile.setFlag(MODULE_ID, 'linkedWallIds', validArray);
+    await tile.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', validArray);
   }
   return validArray;
 }
@@ -545,14 +559,14 @@ function getWallDirection(x1, y1, x2, y2) {
 * @returns {boolean} - true se o token estiver em frente à parede, false caso contrário
 */
 function isTokenInFrontOfWall(token, wall) {
-  if (FOUNDRY_VERSION === 11) {
+  if (isometricModuleConfig.FOUNDRY_VERSION === 11) {
     if (!wall?.A || !wall?.B || !token?.center) return false;
   } else {
     if (!wall?.edge?.a || !wall?.edge?.b || !token?.center) return false;
   }
 
-  const { x: x1, y: y1 } = FOUNDRY_VERSION === 11 ? wall.A : wall.edge.a;
-  const { x: x2, y: y2 } = FOUNDRY_VERSION === 11 ? wall.B : wall.edge.b;
+  const { x: x1, y: y1 } = isometricModuleConfig.FOUNDRY_VERSION === 11 ? wall.A : wall.edge.a;
+  const { x: x2, y: y2 } = isometricModuleConfig.FOUNDRY_VERSION === 11 ? wall.B : wall.edge.b;
   const { x: tokenX, y: tokenY } = token.center;
 
   // Verifica se a parede é horizontal (ângulo próximo a 0°)
@@ -609,11 +623,11 @@ function canTokenSeeWall(token, wall) {
   if (!isInFront) return false;
 
   // Verifica colisão com outros objetos entre o token e os pontos da parede
-  const wallPoints = FOUNDRY_VERSION === 11 ? [wall.A, wall.center, wall.B] : [wall.edge.a, wall.center, wall.edge.b];
+  const wallPoints = isometricModuleConfig.FOUNDRY_VERSION === 11 ? [wall.A, wall.center, wall.B] : [wall.edge.a, wall.center, wall.edge.b];
   const tokenPosition = token.center;
 
   for (const point of wallPoints) {
-    const visibilityTest = FOUNDRY_VERSION === 11 ? canvas.effects.visibility.testVisibility(point, { tolerance: 2 }) : canvas.visibility?.testVisibility(point, { tolerance: 2 });
+    const visibilityTest = isometricModuleConfig.FOUNDRY_VERSION === 11 ? canvas.effects.visibility.testVisibility(point, { tolerance: 2 }) : canvas.visibility?.testVisibility(point, { tolerance: 2 });
     // Usa o testVisibility do token para verificar se ele pode ver o ponto
     if (visibilityTest) {
       const ray = new Ray(tokenPosition, point);
