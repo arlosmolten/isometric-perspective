@@ -73,8 +73,7 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
   // It undoes rotation and deformation
   object.mesh.rotation = ISOMETRIC_CONST.reverseRotation;
   object.mesh.skew.set(ISOMETRIC_CONST.reverseSkewX, ISOMETRIC_CONST.reverseSkewY);
-  // Fix token anchor to bottom
-  object.mesh.anchor.set(0.5, 1);
+  //object.mesh.anchor.set(isoAnchorX, isoAnchorY);
     
   // recovers the object characteristics of the object (token/tile)
   let texture = object.texture;
@@ -176,41 +175,11 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
     // Create shadow and line graphics elements
     updateTokenVisuals(object, elevation, gridSize, gridDistance);
 
-    // Position the token in the center
+    // Position the token
     object.mesh.position.set(
       object.document.x + (scaleX * gridSize/2) + (scaleX * isoOffsets.x),
       object.document.y + (scaleX * gridSize/2) + (scaleX * isoOffsets.y)
     );
-
-    // Auto-align correction
-    try {
-      const worldCenter = new PIXI.Point(
-        object.document.x + (scaleX * gridSize/2) + (scaleX * isoOffsets.x),
-        object.document.y + (scaleX * gridSize/2) + (scaleX * isoOffsets.y)
-      );
-
-      const targetScreen = canvas.stage.worldTransform.apply(worldCenter);
-      const b = object.mesh.getBounds();
-      const baseScreen = new PIXI.Point(b.x + b.width / 2, b.y + b.height);
-
-      const deltaScreenX = targetScreen.x - baseScreen.x;
-      const deltaScreenY = targetScreen.y - baseScreen.y;
-
-      if (Math.abs(deltaScreenX) > 0.1 || Math.abs(deltaScreenY) > 0.1) {
-        const inv = canvas.stage.worldTransform.clone().invert();
-        const to = inv.apply(new PIXI.Point(deltaScreenX, deltaScreenY));
-        const zero = inv.apply(new PIXI.Point(0, 0));
-        const deltaWorldX = to.x - zero.x;
-        const deltaWorldY = to.y - zero.y;
-
-        object.mesh.position.set(
-          object.mesh.position.x + deltaWorldX,
-          object.mesh.position.y + deltaWorldY
-        );
-      }
-    } catch (e) {
-      if (DEBUG_PRINT) console.warn('[Isometric Perspective] Auto-align correction failed:', e);
-    }
     // original code
     //object.mesh.position.set(
       //object.document.x + (isoOffsets.x * scaleX),

@@ -1,19 +1,6 @@
 import { isometricModuleConfig } from './consts.js';
 import { ISOMETRIC_CONST, PROJECTION_TYPES, DEFAULT_PROJECTION } from './consts.js';
 
-// Calcula o delta entre a origem do mundo (0,0) na tela e o topo-esquerdo do #hud
-function computeHudDelta() {
-  try {
-    const hud = document.getElementById('hud');
-    if (!hud || !window.PIXI || !canvas?.stage) return { dx: 0, dy: 0 };
-    const wt = canvas.stage.worldTransform;
-    const origin = wt.apply(new PIXI.Point(0, 0));
-    const hudRect = hud.getBoundingClientRect();
-    // delta > 0 significa que o #hud está mais à direita/baixo do que a origem do mundo
-    return { dx: hudRect.left - origin.x, dy: hudRect.top - origin.y };
-  } catch { return { dx: 0, dy: 0 }; }
-}
-
 export function registerHUDConfig() {
 
 }

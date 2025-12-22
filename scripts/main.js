@@ -30,8 +30,6 @@ import { applyIsometricPerspective, applyBackgroundTransformation } from './tran
 import { updateIsometricConstants, parseCustomProjection, updateCustomProjection, PROJECTION_TYPES, DEFAULT_PROJECTION, CUSTOM_PROJECTION } from './consts.js';
 import { ISOMETRIC_CONST } from './consts.js';
 import { isoToCartesian, cartesianToIso } from './utils.js';
-import { registerMacroIntegration } from './macro-integration.js';
-import { registerV13ConfigHelper } from './v13-config-helper.js';
 
 import { registerOcclusionConfig } from './occlusion.js';
 import { addWelcomeScreen } from './welcome.js';
@@ -215,22 +213,7 @@ Hooks.once("init", function() {
 
 
 // Verifica se deve mostrar a tela de boas-vindas
-Hooks.once('ready', async function() {
-  // Register macro integration for V13 compatibility
-  registerMacroIntegration();
-  
-  // Register V13 configuration helper
-  registerV13ConfigHelper();
-  
-  if (game.settings.get(MODULE_ID, "showWelcome")) {
-    const welcome = new WelcomeScreen();
-    welcome.render(true);
-  }
-});
-
-
-
-
+// Checks whether to show the welcome screen
 
 //HOOKS REGISTRATION 
 
@@ -290,8 +273,7 @@ Hooks.on('updateToken',  updateOcclusionLayer);
 Hooks.on('updateTile',   updateOcclusionLayer);
 
 // Module initialization
-Hooks.on('init', () => {
-  console.log('[Isometric Perspective] Module loaded. Version check.');
+Hooks.once('ready', () => {
   if (canvas.ready) {
     initializeOcclusionLayer();
   }
