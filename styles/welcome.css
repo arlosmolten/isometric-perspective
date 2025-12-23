@@ -9,7 +9,7 @@
     line-height: 1.4;
 }
 
-h3 {
+.welcome-content h3 {
     /* color: #333; */
     text-align: center;
     margin: 0 0 15px 0;
