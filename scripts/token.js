@@ -1,13 +1,14 @@
 import { isometricModuleConfig, ISOMETRIC_CONST } from './consts.js';
 import { applyIsometricTransformation, updateTokenVisuals } from './transform.js';
-import { 
+import {
   cartesianToIso, 
   adjustInputWithMouseDrag,
   parseNum,
   patchConfig,
   isoToCartesian, 
   getFlagName,
-  calculateTokenSortValue
+  calculateTokenSortValue,
+  createAdjustableButton
 } from './utils.js';
 
 /**
@@ -131,117 +132,74 @@ export function handleDeleteToken(token) {
 
 export function addPrecisionTokenArtListener(app, html, context, options){
 
+  // --- 1. Art Offset Configuration ---
+  createAdjustableButton({
+    buttonElement: html.querySelector('.fine-adjust'),
+    inputs: [
+      html.querySelector('input[name="flags.isometric-perspective.offsetX"]'),
+      html.querySelector('input[name="flags.isometric-perspective.offsetY"]')
+    ],
+    adjustmentScale: [0.1, 0.1],
+    roundingPrecision: 2,
+    inputStep: 0.01
+  });
+
+  // --- 2. Anchor Offset Configuration ---
+  const inputIsoAnchorX = html.querySelector('input[name="flags.isometric-perspective.isoAnchorX"]');
+  const inputIsoAnchorY = html.querySelector('input[name="flags.isometric-perspective.isoAnchorY"]');
+  const isoAnchorToggleCheckbox = html.querySelector('input[name="isoAnchorToggle"]');
+
+  let alignmentLines; 
+
+  // Helper to redraw lines
+  function redrawLines(){
+       cleanup();
+       // Note: updateIsoAnchor logic remains same, it reads from inputs
+       const newPos = updateIsoAnchor(inputIsoAnchorX.value, inputIsoAnchorY.value);
+       alignmentLines = drawAlignmentLines(newPos);
+  };
+
+  createAdjustableButton({
+    buttonElement: html.querySelector('.fine-adjust-anchor'),
+    inputs: [inputIsoAnchorX, inputIsoAnchorY],
+    // Dynamic scale function to handle flipped tokens
+    adjustmentScale: () => {
+      let tokenMesh = app.token?.object?.mesh;
+      const signY = Math.sign(tokenMesh?.scale.y || 1);
+      const signX = Math.sign(tokenMesh?.scale.x || 1);
+      // Anchor X (index 0) uses Mesh Scale Y sign
+      // Anchor Y (index 1) uses Mesh Scale X sign
+      return [ 0.001 * signY, 0.001 * signX ];
+    },
+    roundingPrecision: 3, 
+    valueConstraints: { min: 0, max: 1 },
+    onInputCallback: redrawLines,
+    onDragEnd: () => {
+       if (!isoAnchorToggleCheckbox?.checked) cleanup();
+    },
+    inputStep: 0.001
+  });
+
   const artOffsetConfig = {
-    inputX : html.querySelector('input[name="flags.isometric-perspective.offsetX"]'),
-    inputY : html.querySelector('input[name="flags.isometric-perspective.offsetY"]'),
-    dragStartX: 0,
-    dragStartY: 0,
-    originalX: 0,
-    originalY: 0,
-    isDragging: false,
-    adjustmentX: 1,
-    adjustmentY: 1
-  }
-
-  const anchorOffsetConfig = {
-    inputX : html.querySelector('input[name="flags.isometric-perspective.isoAnchorX"]'),
-    inputY : html.querySelector('input[name="flags.isometric-perspective.isoAnchorY"]'),
-    dragStartX: 0,
-    dragStartY: 0,
-    originalX: 0,
-    originalY: 0,
-    isDragging: false,
-    showAlignmentLines: false,
-    adjustmentX: 0.01,
-    adjustmentY: 0.01
-  }
-
-  let alignmentLines; // used to be graphics but also the function create its own graphics object which is confusing so renaming it to avoid confusing namespace
-  let isAdjustingAnchor = false;
-
-  const fineArtOffsetAdjustButton = html.querySelector('.fine-adjust');
-  const fineAnchorOffsetAdjustButton = html.querySelector('.fine-adjust-anchor');
-  const isoAnchorToggleCheckbox = html.querySelector('.anchor-toggle-checkbox');
-
-  /* Safe document retrieval for both TokenConfig and PrototypeTokenConfig */
-  const tokenDoc = app.token ?? app.document ?? app.object;
-
-  const offsetX = tokenDoc.getFlag(isometricModuleConfig.MODULE_ID, 'offsetX') ?? 0;
-  const offsetY = tokenDoc.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY') ?? 0;
-  const isoAnchorX = tokenDoc.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorX') ?? 0;
-  const isoAnchorY = tokenDoc.getFlag(isometricModuleConfig.MODULE_ID, 'isoAnchorY') ?? 0;
-
-  //prevent form submission on click
-  fineArtOffsetAdjustButton.addEventListener('click', (event) => {
-    event.preventDefault();
-  })
-  //prevent form submission on click
-  fineAnchorOffsetAdjustButton.addEventListener('click', (event) => {
-    event.preventDefault();
-  })
-
-  const onMouseDownArt = (event) => {
-    event.preventDefault();
-    artOffsetConfig.isDragging = true;
-    artOffsetConfig.dragStartX = event.clientX;
-    artOffsetConfig.dragStartY = event.clientY;
-    artOffsetConfig.originalX = parseNum(artOffsetConfig.inputX);
-    artOffsetConfig.originalY = parseNum(artOffsetConfig.inputY);
+      inputX : html.querySelector('input[name="flags.isometric-perspective.offsetX"]'),
+      inputY : html.querySelector('input[name="flags.isometric-perspective.offsetY"]'), 
   };
   
-  const onMouseDownAnchor = (event) => {
-    event.preventDefault();
-    // For prototype tokens, app.token might be just data, not an object with mesh
-    // But precision listener likely requires a live mesh to be useful/safe
-    if (!app.token?.object?.mesh) return; 
-    
-    const tokenMesh = app.token.object.mesh;
-    if (!tokenMesh) return;
-
-    anchorOffsetConfig.isDragging = true;
-    anchorOffsetConfig.dragStartX = event.clientX;
-    anchorOffsetConfig.dragStartY = event.clientY;
-    anchorOffsetConfig.originalX = parseNum(anchorOffsetConfig.inputX);
-    anchorOffsetConfig.originalY = parseNum(anchorOffsetConfig.inputY);
-    
-    // Inversion adjustment logic
-    anchorOffsetConfig.adjustmentX = 0.01 * Math.sign(tokenMesh.scale.y);
-    anchorOffsetConfig.adjustmentY = 0.01 * Math.sign(tokenMesh.scale.x); 
-    
-    alignmentLines = drawAlignmentLines(updateIsoAnchor(anchorOffsetConfig.inputX.value, anchorOffsetConfig.inputY.value));
+  const anchorOffsetConfig = {
+      inputX : inputIsoAnchorX,
+      inputY : inputIsoAnchorY,
   };
 
-  const onMouseMove = (event) => {
-    if (artOffsetConfig.isDragging || anchorOffsetConfig.isDragging) {
-        adjustInputWithMouseDrag(event, artOffsetConfig.isDragging ? artOffsetConfig : anchorOffsetConfig);
+  if(isoAnchorToggleCheckbox) {
+      isoAnchorToggleCheckbox.addEventListener('change', (event)=> {
         updateOffset();
-    }
-  };
-
-  const onMouseUp = (event) => {
-    if (artOffsetConfig.isDragging || anchorOffsetConfig.isDragging) {
-      artOffsetConfig.isDragging = false;
-      anchorOffsetConfig.isDragging = false;
-      updateOffset();
-      
-      // Forces re-dispatch of change for final commit if needed
-      if (anchorOffsetConfig.inputX) anchorOffsetConfig.inputX.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-  };
-
-  // Clean up and register
-  fineArtOffsetAdjustButton.addEventListener('mousedown', onMouseDownArt);
-  fineAnchorOffsetAdjustButton.addEventListener('mousedown', onMouseDownAnchor);
-  document.addEventListener('mousemove', onMouseMove);
-  document.addEventListener('mouseup', onMouseUp);
-
-  isoAnchorToggleCheckbox.addEventListener('change', (event)=> {
-    updateOffset();
-  })
+      })
+  }
 
   // Update the lines when changing the inputs
-  artOffsetConfig.inputX.addEventListener('change',updateOffset);
-  artOffsetConfig.inputY.addEventListener('change',updateOffset);
+  if(artOffsetConfig.inputX) artOffsetConfig.inputX.addEventListener('change',updateOffset);
+  if(artOffsetConfig.inputY) artOffsetConfig.inputY.addEventListener('change',updateOffset);
+  if(anchorOffsetConfig.inputX) anchorOffsetConfig.inputX.addEventListener('change',updateOffset);
   anchorOffsetConfig.inputX.addEventListener('change',updateOffset);
   anchorOffsetConfig.inputY.addEventListener('change',updateOffset);
 

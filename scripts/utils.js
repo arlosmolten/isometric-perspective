@@ -147,3 +147,122 @@ export function calculateTokenSortValue(token) {
 
   return sortValue;
 }
+
+// Generic function to create adjustable buttons with drag functionality
+export function createAdjustableButton(options) {
+  // Destructure configuration options with default values
+  const {
+      buttonElement,            // Button element to attach listener to
+      inputs,                   // Array of input elements to update [InputX, InputY]
+      adjustmentScale = 0.1,    // Scale factor or Function returning [scaleX, scaleY]
+      valueConstraints = null,  // Optional min/max constraints {min, max}
+      roundingPrecision = 0,     // Number of decimal places
+      onInputCallback = null,    // Optional callback after input update
+      onDragStart = null,        // Optional callback on drag start
+      onDragEnd = null           // Optional callback on drag end
+  } = options;
+
+  if (!buttonElement) return;
+
+  // Apply basic styling if needed
+  buttonElement.style.cursor = 'pointer';
+
+  // Apply derived step attribute
+  const step = Math.pow(10, -roundingPrecision);
+  inputs.forEach(input => {
+      if (input) input.step = step;
+  });
+
+  // State variables
+  let isAdjusting = false;
+  let startX = 0;
+  let startY = 0;
+  let originalValues = [0, 0];
+
+  const applyAdjustment = (e) => {
+      if (!isAdjusting) return;
+
+      // Isometric Logic:
+      // Mouse Vertical (DeltaY) affects Input X (index 0)
+      // Mouse Horizontal (DeltaX) affects Input Y (index 1)
+      const moveY = e.clientY; 
+      const moveX = e.clientX;
+      
+      const deltaScreenX = moveX - startX;
+      const deltaScreenY = moveY - startY;
+
+      // Determine current scales
+      let scales = [0.1, 0.1];
+      if (typeof adjustmentScale === 'function') {
+          scales = adjustmentScale(); // Expects [scaleX, scaleY]
+      } else if (Array.isArray(adjustmentScale)) {
+          scales = adjustmentScale;
+      } else {
+          scales = [adjustmentScale, adjustmentScale];
+      }
+
+      // Axis Swap for Isometric:
+      // Input 0 (X) <--- Screen Y (Inverted: Up adds, Down subtracts for originalX logic? No, check original logic)
+      // Original logic: finalValueX = originalX - (deltaY * adj). DeltaY = clientY - startY. (Drag Down = Pos Delta).
+      // So Drag Down (Pos Delta) -> Subtracts X. Drag UP (Neg Delta) -> Adds X.
+      // My code below use -deltaScreenY. If Drag Down (Pos), -Pos is Neg. Adds negative -> Subtracts. Correct.
+      
+      const adjustments = [
+          -(deltaScreenY) * scales[0], 
+          deltaScreenX * scales[1]     
+      ];
+
+      // Update inputs
+      inputs.forEach((input, index) => {
+          if (!input) return;
+          
+          let newValue = originalValues[index] + adjustments[index];
+
+          // Constraints
+          if (valueConstraints) {
+              newValue = Math.max(valueConstraints.min, Math.min(valueConstraints.max, newValue));
+          }
+
+          // Rounding
+          const factor = Math.pow(10, roundingPrecision);
+          newValue = Math.round(newValue * factor) / factor;
+
+          input.value = newValue; 
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      
+      if (onInputCallback) onInputCallback();
+  };
+
+  const onMouseDown = (e) => {
+      e.preventDefault();
+      isAdjusting = true;
+      startX = e.clientX;
+      startY = e.clientY;
+
+      // Capture original values
+      originalValues = inputs.map(input => input ? (parseFloat(input.value) || 0) : 0);
+
+      if (onDragStart) onDragStart();
+
+      window.addEventListener('mousemove', applyAdjustment);
+      window.addEventListener('mouseup', onMouseUp);
+  };
+
+  const onMouseUp = (e) => {
+      isAdjusting = false;
+      window.removeEventListener('mousemove', applyAdjustment);
+      window.removeEventListener('mouseup', onMouseUp);
+      
+      if (onDragEnd) onDragEnd();
+  };
+
+  buttonElement.addEventListener('mousedown', onMouseDown);
+  
+  // Prevent form submission on click
+  buttonElement.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+  });
+}
