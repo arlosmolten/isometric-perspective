@@ -54,7 +54,7 @@
     "isometric-perspective.token_scale_name": "Isometric Scale",
     "isometric-perspective.token_scale_hint": "Adjust scale of token art when in isometric perspective (0.01x to 3x).",
     "isometric-perspective.token_disableScale_name": "Disable Isometric Auto-Scale",
-    "isometric-perspective.token_disableScale_hint": "If checked, this token will not auto-resize his art when its dimensions change.",
+    "isometric-perspective.token_disableScale_hint": "If checked, this token will not auto-resize its art when its dimensions change.",
 
     "isometric-perspective._comment": "Tile Configuration",
     "isometric-perspective.tile_enableIsometric_name": "Disable Isometric Tile",
@@ -72,8 +72,8 @@
     "isometric-perspective.tile_link_wall_select_wall": "Select Wall",
     "isometric-perspective.tile_link_wall_clear_wall": "Clear Wall",
     "isometric-perspective.tile_link_wall_hint": "Click the button to select a wall. This wall will be used to determine the tile's visibility with a selected token.",
-    "isometric-perspective.tile_decoupleScale_name": "Independent Art Scale",
-    "isometric-perspective.tile_decoupleScale_hint": "If checked, the tile art will ignore the footprint dimensions and maintain its natural scale or the one set below.",
+    "isometric-perspective.tile_decoupleScale_name": "Disable Isometric Auto-Scale",
+    "isometric-perspective.tile_decoupleScale_hint": "If checked, the tile will not auto-resize its art when its dimensions change.",
     
     "isometric-perspective._comment": "Warnings and Error Messages",
     "isometric-perspective.error_test": "Test error message",

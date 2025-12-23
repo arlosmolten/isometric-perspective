@@ -307,18 +307,17 @@ export function applyBackgroundTransformation(scene, isSceneIsometric, shouldTra
 
 // ----------------- Elevation -----------------
 
-// Manter registro de todos os containers visuais criados
-const visualContainers = new Set();
+// Manter registro de todos os tokens com visuais (para controle se necessário, embora atrelado ao token facilite)
+const tokensWithVisuals = new Set();
 
 // Função para limpar todos os visuais
 export function clearAllVisuals() {
-  for (const containerId of visualContainers) {
-    const container = canvas.stage.getChildByName(containerId);
-    if (container) {
-      canvas.stage.removeChild(container);
+  // Se estivermos atrelando ao token, basta iterar tokens existentes
+  if (canvas.tokens?.placeables) {
+    for (const token of canvas.tokens.placeables) {
+        removeTokenVisuals(token);
     }
   }
-  visualContainers.clear();
 }
 
 // Função para verificar se um token existe na cena atual
@@ -336,47 +335,54 @@ export function updateTokenVisuals(token, elevacao, gridSize, gridDistance) {
 
   // Cria um novo container
   const container = new PIXI.Container();
-  container.name = `${token.id}-visuals`;
+  container.name = "isometric-elevation-visuals";
   container.interactive = false;
   container.interactiveChildren = false;
   
-  // Registrar o container
-  visualContainers.add(container.name);
+  // Registrar o token
+  tokensWithVisuals.add(token.id);
+
+  // Center X/Y relativo ao token
+  // O código original usava token.h / 2. Vamos manter a lógica ou usar w/2, h/2?
+  // Original: token.x + token.h / 2.
+  // Vamos usar token.w / 2 e token.h / 2 para ser mais generico, ou manter token.h?
+  // Se o token não for quadrado, center seria w/2, h/2.
+  const centerX = token.w ? token.w / 2 : token.h / 2;
+  const centerY = token.h / 2;
 
   // Criar uma sombra circular no chão
   const shadow = new PIXI.Graphics();
   shadow.beginFill(0x000000, 0.3);
   shadow.drawCircle(0, 0, (canvas.grid.size/2) * (token.h/canvas.grid.size));
   shadow.endFill();
-  shadow.position.set(
-    token.x + token.h / 2, 
-    token.y + token.h / 2
-  );
+  shadow.position.set(centerX, centerY);
   container.addChild(shadow);
 
   // Criar uma linha conectando o chão ao token
+  // Offset da elevação
+  const offset = elevacao * (gridSize/gridDistance);
+
   const line = new PIXI.Graphics();
   line.lineStyle(2, 0xff0000, 0.5);
-  line.moveTo(              // vai para o centro do token
-    token.x + token.h / 2,
-    token.y + token.h / 2
-  ).lineTo(                 // desenha uma linha de onde moveu para a próxima posição
-    //centraliza no token + posiciona no cartesiano diretamente, porque eu preciso somente de uma linha na diagonal
-    (token.x + token.h/2) + (elevacao * (gridSize/gridDistance)),
-    (token.y + token.h/2) - (elevacao * (gridSize/gridDistance))
-  );
+  line.moveTo(centerX, centerY)
+      .lineTo(
+        centerX + offset,
+        centerY - offset
+      );
   container.addChild(line);
 
-  // Adicionar o container ao canvas
-  canvas.stage.addChild(container);
+  // Adicionar o container ao TOKEN, não ao stage.
+  // addChildAt(0) tenta colocar atrás do artwork principal se possível.
+  token.addChildAt(container, 0);
 }
 
 export function removeTokenVisuals(token) {
-  const container = canvas.stage.getChildByName(`${token.id}-visuals`);
+  const container = token.getChildByName("isometric-elevation-visuals");
   if (container) {
-    canvas.stage.removeChild(container);
-    visualContainers.delete(container.name);
+    token.removeChild(container);
+    container.destroy({children: true}); // Limpar memoria PIXI
   }
+  tokensWithVisuals.delete(token.id);
 }
 
 Hooks.on('canvasReady', () => { 
@@ -384,7 +390,8 @@ Hooks.on('canvasReady', () => {
 });
 
 Hooks.on('deleteToken', (token) => {
-  removeTokenVisuals(token);
+  // O child é destruído automaticamente com o token, mas removemos do set por sanidade
+  tokensWithVisuals.delete(token.id);
 });
 
 
