@@ -2,7 +2,7 @@
   "title": "Isometric Perspective",
   "id": "isometric-perspective",
   "description": "Changes the canvas perspective from top-down to isometric. V13 brought by WarpSpeedNyanCat, forked from https://github.com/warpspeednyancatpatreon/isometric-perspective",
-  "version": "0.9.0",
+  "version": "0.9.3",
   "esmodules": [
     "scripts/main.js"
   ],
@@ -31,9 +31,9 @@
     "minimum": "13",
     "verified": "13"
   },
-  "url": "https://github.com/warpspeednyancatpatreon/isometric-perspective",
-  "manifest": "https://github.com/warpspeednyancatpatreon/isometric-perspective/releases/latest/download/module.json",
-  "download": "https://github.com/warpspeednyancatpatreon/isometric-perspective/releases/latest/download/isometric-perspective.zip",
+  "url": "https://github.com/arlosmolten/isometric-perspective",
+  "manifest": "https://github.com/arlosmolten/isometric-perspective/releases/latest/download/module.json",
+  "download": "https://github.com/arlosmolten/isometric-perspective/releases/latest/download/isometric-perspective.zip",
   "languages": [
   {
     "lang": "en",

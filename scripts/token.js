@@ -1,5 +1,5 @@
 import { isometricModuleConfig, ISOMETRIC_CONST } from './consts.js';
-import { applyIsometricTransformation, updateTokenVisuals, removeTokenVisuals } from './transform.js';
+import { applyIsometricTransformation, updateTokenVisuals } from './transform.js';
 import {
   cartesianToIso, 
   adjustInputWithMouseDrag,

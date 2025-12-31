@@ -49,7 +49,7 @@ function createZip() {
     archive.file('module.json', { name: 'module.json' });
 
     // Adicionar diretórios lang, scripts, templates
-    const foldersToAdd = ['lang', 'scripts', 'templates'];
+    const foldersToAdd = ['lang', 'scripts', 'templates', 'styles'];
     for (const folder of foldersToAdd) {
         if (fs.existsSync(folder)) {
             archive.directory(folder, folder);
