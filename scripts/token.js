@@ -1,5 +1,5 @@
 import { isometricModuleConfig, ISOMETRIC_CONST } from './consts.js';
-import { applyIsometricTransformation, updateTokenVisuals } from './transform.js';
+import { applyIsometricTransformation, updateTokenVisuals, removeTokenVisuals } from './transform.js';
 import {
   cartesianToIso, 
   adjustInputWithMouseDrag,
@@ -126,9 +126,7 @@ export function handleRefreshToken(token) {
   if (isometricModuleConfig.DEBUG_PRINT) console.log("Hooks.on token.js refreshToken");
 }
 
-export function handleDeleteToken(token) {
-  updateTokenVisuals(token);
-}
+
 
 export function addPrecisionTokenArtListener(app, html, context, options){
 
