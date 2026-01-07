@@ -126,9 +126,7 @@ export function handleRefreshToken(token) {
   if (isometricModuleConfig.DEBUG_PRINT) console.log("Hooks.on token.js refreshToken");
 }
 
-export function handleDeleteToken(token) {
-  updateTokenVisuals(token);
-}
+
 
 export function addPrecisionTokenArtListener(app, html, context, options){
 

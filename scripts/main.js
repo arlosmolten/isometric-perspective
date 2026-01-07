@@ -7,7 +7,7 @@ import {
   handleCreateToken,
   handleUpdateToken,
   handleRefreshToken,
-  handleDeleteToken
+
  } from './token.js';
  
 import { 
@@ -238,7 +238,7 @@ Hooks.on('renderPrototypeTokenConfig', initTokenForm);
 Hooks.on("createToken", handleCreateToken);
 Hooks.on("updateToken", handleUpdateToken);
 Hooks.on("refreshToken", handleRefreshToken);
-Hooks.on("deleteToken", handleDeleteToken);
+
 
 // hud management
 Hooks.on("renderTokenHUD", handleRenderTokenHUD);
