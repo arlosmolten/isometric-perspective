@@ -71,15 +71,15 @@ async function updateTokenSort(token) {
        return { name: t.name, sort: calculateTokenSortValue(t), currentSort: t.document.sort };
     }).sort((a,b) => b.sort - a.sort); // Highest sort first
 
-    console.table(sortedOthers);
+    // console.table(sortedOthers);
     
     // Check if we are correctly placed
-    const potentiallyOccluded = sortedOthers.filter(t => t.sort > newSort);
-    const potentiallyOccluding = sortedOthers.filter(t => t.sort < newSort);
+    // const potentiallyOccluded = sortedOthers.filter(t => t.sort > newSort);
+    // const potentiallyOccluding = sortedOthers.filter(t => t.sort < newSort);
     
-    console.log(`Should be BEHIND (Higher Sort):`, potentiallyOccluded.map(t => `${t.name} (${t.id})`));
-    console.log(`Should be IN FRONT OF (Lower Sort):`, potentiallyOccluding.map(t => `${t.name} (${t.id})`));
-    console.groupEnd();
+    // console.log(`Should be BEHIND (Higher Sort):`, potentiallyOccluded.map(t => `${t.name} (${t.id})`));
+    // console.log(`Should be IN FRONT OF (Lower Sort):`, potentiallyOccluding.map(t => `${t.name} (${t.id})`));
+    // console.groupEnd();
   }
   
   // Creates a refresh object for the token
