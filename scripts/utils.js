@@ -1,3 +1,4 @@
+import { isometricModuleConfig } from './consts.js';
 // Função auxiliar para converter coordenadas isométricas para cartesianas
 export function isoToCartesian(isoX, isoY) {
   const angle = Math.PI / 4; // 45 graus em radianos
@@ -131,21 +132,39 @@ export function patchConfig(documentSheet, config, args) {
 export function calculateTokenSortValue(token) {
   const scene = canvas.scene;
   if (!scene) return 0;
-
-  const { width, height } = scene.dimensions;
-
+  
   // Use document coordinates if passed a token document, otherwise use object coordinates
   const doc = token.document || token;
   const x = doc.x;
   const y = doc.y;
 
-  // Invert the x because the coordinate system doesn't match our intuition for "closer to the screen"
-  const tokenX = width - x;
-  const tokenY = y;
+  // We want to sort by the "Visual Y" on the screen. 
+  // Objects lower on the screen (Higher Visual Y) are "in front" and should be drawn last (Higher Sort).
+  
+  // PIXI Transform Order: Scale -> Skew -> Rotate -> Translate
+  // We apply the Skew and Rotation to finding the Visual Y of the point.
+  // We use the actual canvas stage transform to ensure WYSIWYG correctness.
+  
+  const r = canvas.app.stage.rotation;
+  const sx = canvas.app.stage.skew.x;
+  const sy = canvas.app.stage.skew.y;
+  
+  const tanSx = Math.tan(sx);
+  const tanSy = Math.tan(sy);
+  
+  const xSkewed = x + y * tanSx;
+  const ySkewed = y + x * tanSy;
+  
+  const cosR = Math.cos(r);
+  const sinR = Math.sin(r);
+  const visualY = xSkewed * sinR + ySkewed * cosR;
 
-  const sortValue = Math.round(((tokenX + tokenY) / (width + height)) * 10000);
+  if (game.settings.get(isometricModuleConfig.MODULE_ID, "debug")) {
+     console.log(`[SortCalc] ${token.name || token.id} | (${x},${y}) -> VisY: ${visualY.toFixed(2)} | Sort: ${Math.round(visualY * 10)}`);
+  }
 
-  return sortValue;
+  // Multiply by 10 to keep precision in integer sort
+  return Math.round(visualY * 10);
 }
 
 // Generic function to create adjustable buttons with drag functionality
