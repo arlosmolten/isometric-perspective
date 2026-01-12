@@ -5,9 +5,6 @@
         <input id="{{rootId}}-isometric-perspective-enable-tile-enable-isometrics" type="checkbox" name="flags.isometric-perspective.isoTileDisabled" {{checked document.flags.isometric-perspective.isoTileDisabled}}>
     </div>
     <p class="hint">{{localize 'isometric-perspective.tile_enableIsometric_hint'}}</p>
-    
-    <hr>
-
     <div class="form-group offset-point">
         <label>{{localize 'isometric-perspective.tile_artOffset_name'}}</label>
         <div class="form-fields">
@@ -41,7 +38,7 @@
     </div>
 
     <div class="form-group">
-        <label>{{localize 'isometric-perspective.tile_decoupleScale_name'}}</label>
+        <label style="flex: 3;">{{localize 'isometric-perspective.tile_decoupleScale_name'}}</label>
         <div class="form-fields">
             <input type="checkbox" name="flags.isometric-perspective.isoDecoupleArtScale" {{checked document.flags.isometric-perspective.isoDecoupleArtScale}}>
         </div>
@@ -55,9 +52,6 @@
         </div>
         <p class="hint">{{localize 'isometric-perspective.tile_occluding_hint'}}</p>
     </div>
-
-    <hr>
-
     <div class="form-group">
         <label>{{localize 'isometric-perspective.tile_link_wall_name'}}</label>
         <input type="text" name="flags.isometric-perspective.linkedWallIds" value="{{linkedWallIds}}" readonly>

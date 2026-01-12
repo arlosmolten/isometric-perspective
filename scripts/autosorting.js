@@ -17,7 +17,7 @@ export function registerSortingConfig() {
 
   Hooks.on('updateToken', async (tokenDocument, change, options, userId) => {
     // Check if there has been a change in position
-    if ((change.x !== undefined || change.y !== undefined) && userId === game.userId) {
+    if (change.x !== undefined || change.y !== undefined) {
       const token = canvas.tokens.get(tokenDocument.id);
       if (token) await updateTokenSort(token);
     }
@@ -52,12 +52,35 @@ async function updateTokenSort(token) {
   const scene = game.scenes.active;
   if (!scene) return;
 
-  // Wait for the movement animation to complete
-  const anim = CanvasAnimation.getAnimation(token.animationName);
-  if(anim?.promise) await anim.promise;
+  // Wait for the movement animation to complete using robust helper
+  await awaitTokenAnimation(token.document);
   
   // Calculates the new sort value for the token
   const newSort = calculateTokenSortValue(token);
+
+  if (game.settings.get(isometricModuleConfig.MODULE_ID, "debug")) {
+    const others = canvas.tokens.placeables.filter(t => t.id !== token.id);
+    console.group(`Autosorting Debug: ${token.name} (${token.id})`);
+    console.log(`Pos: (${token.document.x}, ${token.document.y}) -> Calculated Sort: ${newSort}`);
+    
+    // Sort others by Visual Y to see expected order
+    const sortedOthers = others.map(t => {
+       const doc = t.document;
+       // Duplicate logic just for debug print or export calculateVisualY from utils if possible
+       // For now, re-using calculateTokenSortValue gives integer sort, which is proxy for VisualY
+       return { name: t.name, sort: calculateTokenSortValue(t), currentSort: t.document.sort };
+    }).sort((a,b) => b.sort - a.sort); // Highest sort first
+
+    console.table(sortedOthers);
+    
+    // Check if we are correctly placed
+    const potentiallyOccluded = sortedOthers.filter(t => t.sort > newSort);
+    const potentiallyOccluding = sortedOthers.filter(t => t.sort < newSort);
+    
+    console.log(`Should be BEHIND (Higher Sort):`, potentiallyOccluded.map(t => `${t.name} (${t.id})`));
+    console.log(`Should be IN FRONT OF (Lower Sort):`, potentiallyOccluding.map(t => `${t.name} (${t.id})`));
+    console.groupEnd();
+  }
   
   // Creates a refresh object for the token
   const update = {
@@ -106,3 +129,37 @@ function calculateTokenSortValue(token) {
   //return Math.floor((width - token.x) + (height - token.y));   // West
 }
 */
+
+/**
+ * Waits for a token's movement animation to complete.
+ * @param {TokenDocument} document 
+ */
+async function awaitTokenAnimation(document) {
+  const token = document.object;
+  if (!token) return;
+
+  // Give Foundry a tick to utilize animation properties
+  await new Promise(r => setTimeout(r, 0));
+
+  const anim = token.movementAnimationPromise || token.animation;
+  if (anim) {
+      try { await anim; } catch (e) { /* Ignore interruptions */ }
+  } else {
+      // Fallback: Check CanvasAnimation
+      if (CanvasAnimation && CanvasAnimation.animations) {
+          const animations = CanvasAnimation.animations;
+          // CanvasAnimation.animations can be an Object or Map depending on Foundry version
+          const entries = (animations instanceof Map) ? animations.entries() : Object.entries(animations);
+          
+          for (const [key, promiseData] of entries) {
+              if (key.includes(document.id)) {
+                  // promiseData might be the promise itself or an object containing the promise
+                  const promise = promiseData.promise || promiseData;
+                  if (promise) {
+                      try { await promise; } catch (e) {}
+                  }
+              }
+          }
+      }
+  }
+}
