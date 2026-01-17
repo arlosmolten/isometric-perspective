@@ -70,9 +70,6 @@ async function updateTokenSort(token) {
   // Calculates the new sort value for the token
   const newSort = calculateTokenSortValue(token);
 
-  // Avoid unnecessary updates if sort hasn't changed
-  if (token.document.sort === newSort) return;
-
   if (game.settings.get(isometricModuleConfig.MODULE_ID, "debug")) {
     const others = canvas.tokens.placeables.filter(t => t.id !== token.id);
     console.group(`Autosorting Debug: ${token.name} (${token.id})`);
