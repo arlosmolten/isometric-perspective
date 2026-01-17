@@ -28,6 +28,16 @@ export function handleRenderTileHUD(hud, html, data) {
 
 
 
+export function handleRenderDrawingHUD(hud, html, data) {
+  const scene = game.scenes.current;
+  const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
+  const isometricWorldEnabled = game.settings.get(isometricModuleConfig.MODULE_ID, "worldIsometricFlag");
+
+  if (isometricWorldEnabled && isSceneIsometric) {
+    requestAnimationFrame(() => adjustHUDPosition(hud, html));
+  }
+}
+
 // Function to calculate the isometric position relative to the grid
 // Best for Tokens which should stay anchored to their grid location despite art offsets.
 export function calculateIsometricPosition(x, y) {
@@ -37,52 +47,48 @@ export function calculateIsometricPosition(x, y) {
   return { x: isoX, y: isoY };
 }
 
-// Final HUD adjustment logic using a hybrid approach
+// Final HUD adjustment logic using a unified approach
 export function adjustHUDPosition(hud, html) {
   const object = hud.object;
   if (!object) return;
 
-  const documentName = object.document.documentName;
-
-  if (documentName === "Token") {
-    // Restore the proven trig-based calculation for tokens
-    const targetPos = calculateIsometricPosition(object.document.x, object.document.y);
-
-    Object.assign(html.style, {
-      left: `${targetPos.x}px`,
-      top:  `${targetPos.y}px`,
-      transform: 'translate(33%, -50%)' 
-    });
-
-    if (isometricModuleConfig.DEBUG_PRINT) {
-      console.log("Token HUD (Trig):", targetPos);
-    }
-  }
+  // 1. Get the center of the placeable in World Coordinates (Grid/Map space)
+  const center = object.center;
   
-  else if (documentName === "Tile") {
-    const mesh = object.mesh;
-    if (!mesh) return;
+  // 2. Project world coordinates to Global Screen Coordinates
+  // We use canvas.app.stage because it holds the Isometric Transform (Rotation/Skew) + Pan/Zoom
+  const globalPos = canvas.app.stage.toGlobal(center);
 
-    // Keep the scale-aware mesh-based projection for tiles as it was confirmed working
-    const meshGlobal = mesh.toGlobal({x: 0, y: 0});
-    const parent = html.parentElement || document.body;
-    const parentRect = parent.getBoundingClientRect();
-    const zoom = canvas.stage.scale.x;
+  // 3. Convert Global Screen Coordinates to HUD-Parent Local Coordinates
+  // This accounts for any scaling/positioning of the HUD layer itself
+  const parent = html.parentElement || document.body;
+  const parentRect = parent.getBoundingClientRect();
+  const zoom = canvas.stage.scale.x; // Assumes HUD parent scales with stage zoom (standard Foundry behavior)
 
-    const targetPos = {
-      x: (meshGlobal.x - parentRect.left) / zoom,
-      y: (meshGlobal.y - parentRect.top) / zoom
-    };
+  const targetPos = {
+    x: (globalPos.x - parentRect.left) / zoom,
+    y: (globalPos.y - parentRect.top) / zoom
+  };
 
-    Object.assign(html.style, {
-      left: `${targetPos.x}px`,
-      top: `${targetPos.y}px`,
-      transform: 'translate(-50%, -50%)' 
+  // 4. Apply position and scale to HUD element
+  // Scale HUD based on grid size to match isometric asset growth
+  // Default grid size is 100, if scene grid is larger (e.g. 256), HUD should scale up
+  const gridSize = canvas.scene.grid.size;
+  const hudScale = gridSize / 100;
+
+  Object.assign(html.style, {
+    left: `${targetPos.x}px`,
+    top: `${targetPos.y}px`,
+    transform: `translate(-50%, -50%) scale(${hudScale})`,
+    transformOrigin: "center"
+  });
+
+  if (isometricModuleConfig.DEBUG_PRINT) {
+    console.log(`HUD Adjustment [${object.document.documentName}]:`, {
+      worldCenter: center,
+      globalPos,
+      targetPos
     });
-
-    if (isometricModuleConfig.DEBUG_PRINT) {
-      console.log("Tile HUD (Mesh):", targetPos);
-    }
   }
 }
 
