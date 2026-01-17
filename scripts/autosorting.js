@@ -8,6 +8,9 @@ export function registerSortingConfig() {
   if (game.version.startsWith("11")) return; //There isn't a sort method on v11. Needs another way to sort.
 
   Hooks.on('createToken', async (tokenDocument, options, userId) => {
+    const scene = tokenDocument.parent;
+    if (!scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled")) return;
+    
     // If the movement is from the current user
     if (userId === game.userId) {
       const token = canvas.tokens.get(tokenDocument.id);
@@ -16,6 +19,9 @@ export function registerSortingConfig() {
   });
 
   Hooks.on('updateToken', async (tokenDocument, change, options, userId) => {
+    const scene = tokenDocument.parent;
+    if (!scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled")) return;
+
     // Check if there has been a change in position
     if (change.x !== undefined || change.y !== undefined) {
       const token = canvas.tokens.get(tokenDocument.id);
@@ -24,8 +30,9 @@ export function registerSortingConfig() {
   });
 
   Hooks.on("canvasReady", (canvas) => {
-    const scene = game.scenes.active;
+    const scene = canvas.scene;
     if (!scene) return;
+    if (!scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled")) return;
 
     const tokens = scene.tokens;
     const updates = tokens.map(tokenDocument => {
@@ -49,14 +56,22 @@ export function registerSortingConfig() {
 
 
 async function updateTokenSort(token) {
-  const scene = game.scenes.active;
+  // Use the token's scene, or fall back to the rendered canvas scene.
+  // We avoid game.scenes.active because the GM might be simulating movement on a non-active scene.
+  const scene = token.scene || token.document.parent || canvas.scene;
   if (!scene) return;
 
   // Wait for the movement animation to complete using robust helper
   await awaitTokenAnimation(token.document);
   
+  // Verify existence after await - the token might have been deleted during the animation (e.g. drag-drop)
+  if (!scene.tokens.has(token.document.id)) return;
+
   // Calculates the new sort value for the token
   const newSort = calculateTokenSortValue(token);
+
+  // Avoid unnecessary updates if sort hasn't changed
+  if (token.document.sort === newSort) return;
 
   if (game.settings.get(isometricModuleConfig.MODULE_ID, "debug")) {
     const others = canvas.tokens.placeables.filter(t => t.id !== token.id);

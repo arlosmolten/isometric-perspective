@@ -20,7 +20,8 @@ import {
 
 import { 
   handleRenderTokenHUD,
-  handleRenderTileHUD 
+  handleRenderTileHUD,
+  handleRenderDrawingHUD
 } from './hud.js';
 
 import { registerSortingConfig } from './autosorting.js';
@@ -243,6 +244,7 @@ Hooks.on("refreshToken", handleRefreshToken);
 // hud management
 Hooks.on("renderTokenHUD", handleRenderTokenHUD);
 Hooks.on("renderTileHUD", handleRenderTileHUD);
+Hooks.on("renderDrawingHUD", handleRenderDrawingHUD);
 
 //tile config
 Hooks.on("ready", createTileIsometricTab);
