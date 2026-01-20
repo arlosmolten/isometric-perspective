@@ -10,7 +10,7 @@ export function registerSortingConfig() {
   Hooks.on('createToken', async (tokenDocument, options, userId) => {
     const scene = tokenDocument.parent;
     if (!scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled")) return;
-    
+
     // If the movement is from the current user
     if (userId === game.userId) {
       const token = canvas.tokens.get(tokenDocument.id);
@@ -23,7 +23,7 @@ export function registerSortingConfig() {
     if (!scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled")) return;
 
     // Check if there has been a change in position
-    if (change.x !== undefined || change.y !== undefined) {
+    if ((change.x !== undefined || change.y !== undefined) && userId === game.userId) {
       const token = canvas.tokens.get(tokenDocument.id);
       if (token) await updateTokenSort(token);
     }
@@ -40,7 +40,7 @@ export function registerSortingConfig() {
       if (!token) return null;
 
       const newSort = calculateTokenSortValue(token);
-    
+
       return {
         _id: tokenDocument.id,
         sort: newSort
@@ -60,10 +60,11 @@ async function updateTokenSort(token) {
   // We avoid game.scenes.active because the GM might be simulating movement on a non-active scene.
   const scene = token.scene || token.document.parent || canvas.scene;
   if (!scene) return;
+  if (!token.document.isOwner) return;
 
   // Wait for the movement animation to complete using robust helper
   await awaitTokenAnimation(token.document);
-  
+
   // Verify existence after await - the token might have been deleted during the animation (e.g. drag-drop)
   if (!scene.tokens.has(token.document.id)) return;
 
@@ -77,32 +78,32 @@ async function updateTokenSort(token) {
     const others = canvas.tokens.placeables.filter(t => t.id !== token.id);
     console.group(`Autosorting Debug: ${token.name} (${token.id})`);
     console.log(`Pos: (${token.document.x}, ${token.document.y}) -> Calculated Sort: ${newSort}`);
-    
+
     // Sort others by Visual Y to see expected order
     const sortedOthers = others.map(t => {
-       const doc = t.document;
-       // Duplicate logic just for debug print or export calculateVisualY from utils if possible
-       // For now, re-using calculateTokenSortValue gives integer sort, which is proxy for VisualY
-       return { name: t.name, sort: calculateTokenSortValue(t), currentSort: t.document.sort };
-    }).sort((a,b) => b.sort - a.sort); // Highest sort first
+      const doc = t.document;
+      // Duplicate logic just for debug print or export calculateVisualY from utils if possible
+      // For now, re-using calculateTokenSortValue gives integer sort, which is proxy for VisualY
+      return { name: t.name, sort: calculateTokenSortValue(t), currentSort: t.document.sort };
+    }).sort((a, b) => b.sort - a.sort); // Highest sort first
 
     // console.table(sortedOthers);
-    
+
     // Check if we are correctly placed
     // const potentiallyOccluded = sortedOthers.filter(t => t.sort > newSort);
     // const potentiallyOccluding = sortedOthers.filter(t => t.sort < newSort);
-    
+
     // console.log(`Should be BEHIND (Higher Sort):`, potentiallyOccluded.map(t => `${t.name} (${t.id})`));
     // console.log(`Should be IN FRONT OF (Lower Sort):`, potentiallyOccluding.map(t => `${t.name} (${t.id})`));
     // console.groupEnd();
   }
-  
+
   // Creates a refresh object for the token
   const update = {
     _id: token.document.id,
     sort: newSort
   };
-  
+
   // Updates token in scene
   await scene.updateEmbeddedDocuments('Token', [update]);
 }
@@ -158,23 +159,23 @@ async function awaitTokenAnimation(document) {
 
   const anim = token.movementAnimationPromise || token.animation;
   if (anim) {
-      try { await anim; } catch (e) { /* Ignore interruptions */ }
+    try { await anim; } catch (e) { /* Ignore interruptions */ }
   } else {
-      // Fallback: Check CanvasAnimation
-      if (CanvasAnimation && CanvasAnimation.animations) {
-          const animations = CanvasAnimation.animations;
-          // CanvasAnimation.animations can be an Object or Map depending on Foundry version
-          const entries = (animations instanceof Map) ? animations.entries() : Object.entries(animations);
-          
-          for (const [key, promiseData] of entries) {
-              if (key.includes(document.id)) {
-                  // promiseData might be the promise itself or an object containing the promise
-                  const promise = promiseData.promise || promiseData;
-                  if (promise) {
-                      try { await promise; } catch (e) {}
-                  }
-              }
+    // Fallback: Check CanvasAnimation
+    if (CanvasAnimation && CanvasAnimation.animations) {
+      const animations = CanvasAnimation.animations;
+      // CanvasAnimation.animations can be an Object or Map depending on Foundry version
+      const entries = (animations instanceof Map) ? animations.entries() : Object.entries(animations);
+
+      for (const [key, promiseData] of entries) {
+        if (key.includes(document.id)) {
+          // promiseData might be the promise itself or an object containing the promise
+          const promise = promiseData.promise || promiseData;
+          if (promise) {
+            try { await promise; } catch (e) { }
           }
+        }
       }
+    }
   }
 }
