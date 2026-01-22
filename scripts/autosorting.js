@@ -10,7 +10,7 @@ export function registerSortingConfig() {
   Hooks.on('createToken', async (tokenDocument, options, userId) => {
     const scene = tokenDocument.parent;
     if (!scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled")) return;
-
+    
     // If the movement is from the current user
     if (userId === game.userId) {
       const token = canvas.tokens.get(tokenDocument.id);
@@ -64,7 +64,7 @@ async function updateTokenSort(token) {
 
   // Wait for the movement animation to complete using robust helper
   await awaitTokenAnimation(token.document);
-
+  
   // Verify existence after await - the token might have been deleted during the animation (e.g. drag-drop)
   if (!scene.tokens.has(token.document.id)) return;
 
