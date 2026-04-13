@@ -3,11 +3,9 @@ import { cartesianToIso } from './utils.js';
 import { ISOMETRIC_CONST } from './consts.js';
 
 
-// Função principal que muda o canvas da cena
+// Main function that changes the scene canvas.
 export function applyIsometricPerspective(scene, isSceneIsometric) {
   const isometricWorldEnabled = game.settings.get(isometricModuleConfig.MODULE_ID, "worldIsometricFlag");
-  //const isoAngle = ISOMETRIC_TRUE_ROTATION;
-  //const scale = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricScale") ?? 1;
   
   if (isometricWorldEnabled && isSceneIsometric) {
     canvas.app.stage.rotation = ISOMETRIC_CONST.rotation;
@@ -15,30 +13,21 @@ export function applyIsometricPerspective(scene, isSceneIsometric) {
       ISOMETRIC_CONST.skewX,
       ISOMETRIC_CONST.skewY
     );
-    adjustAllTokensAndTilesForIsometric();
+  
+  //previously was in an exported fuction but used within the same file once, no need to do that.  
+  const tokensAndTiles = [...canvas.tokens.placeables, ...canvas.tiles.placeables];
+  tokensAndTiles.forEach(obj => applyIsometricTransformation(obj, true));
+
   } else {
     canvas.app.stage.rotation = 0;
     canvas.app.stage.skew.set(0, 0);
   }
 }
 
-
-
-// Função auxiliar que chama a função de transformação isométrica em todos os tokens e tiles da cena
-/*export function adjustAllTokensAndTilesForIsometric() {
-  canvas.tokens.placeables.forEach(token => applyIsometricTransformation(token, true));
-  canvas.tiles.placeables.forEach(tile => applyIsometricTransformation(tile, true));
-}*/
-// Batch process to speed up this function
-export function adjustAllTokensAndTilesForIsometric() {
-  const tokensAndTiles = [...canvas.tokens.placeables, ...canvas.tiles.placeables];
-  tokensAndTiles.forEach(obj => applyIsometricTransformation(obj, true));
-}
-
 const canvasTile = foundry.canvas.placeables.Tile;
 const canvasToken = foundry.canvas.placeables.Token;
 
-// Função que aplica a transformação isométrica para um token ou tile -------------------------------------------------
+// Function that applies isometric transformation to a token or tile.
 export function applyIsometricTransformation(object, isSceneIsometric) {
   // Don't make any transformation if the isometric module isn't active
   const isometricWorldEnabled = game.settings.get(isometricModuleConfig.MODULE_ID, "worldIsometricFlag");
@@ -58,14 +47,8 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
     return
   }
 
-  
   // Don't make transformation on the token or tile if the scene isn't isometric
   if (!isSceneIsometric) {
-    //object.mesh.rotation = 0;
-    //object.mesh.skew.set(0, 0);
-    //object.mesh.scale.set(objTxtRatio, objTxtRatio);
-    //object.mesh.position.set(object.document.x, object.document.y);
-    //object.document.texture.fit = "contain"; //height
     object.mesh.anchor.set(0.5, 0.5);  // This is set to make isometric anchor don't mess with non-iso scenes
     return;
   }
@@ -73,7 +56,6 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
   // It undoes rotation and deformation
   object.mesh.rotation = ISOMETRIC_CONST.reverseRotation;
   object.mesh.skew.set(ISOMETRIC_CONST.reverseSkewX, ISOMETRIC_CONST.reverseSkewY);
-  //object.mesh.anchor.set(isoAnchorX, isoAnchorY);
     
   // recovers the object characteristics of the object (token/tile)
   let texture = object.texture;
@@ -86,7 +68,6 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
   let isoScaleDisabled = object.document.getFlag(isometricModuleConfig.MODULE_ID, "isoScaleDisabled");
   if (isoScaleDisabled) scaleX = scaleY = 1;
 
-  
   // elevation info
   let elevation = object.document.elevation;      // elevation from tokens and tiles
   let gridDistance = canvas.scene.grid.distance;  // size of one unit of the grid
@@ -98,10 +79,6 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
   // if module settings flag is not set, don't move art token
   let ElevationAdjustment = game.settings.get(isometricModuleConfig.MODULE_ID, "enableHeightAdjustment");
   if (!ElevationAdjustment) elevation = 0;
-  
-  
-  
-  
   
   if (object instanceof canvasToken) {
     let sx = 1; // standard x
@@ -180,23 +157,11 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
       object.document.x + (scaleX * gridSize/2) + (scaleX * isoOffsets.x),
       object.document.y + (scaleX * gridSize/2) + (scaleX * isoOffsets.y)
     );
-    // original code
-    //object.mesh.position.set(
-      //object.document.x + (isoOffsets.x * scaleX),
-      //object.document.y + (isoOffsets.y * scaleY)
-    //);
   }
 
-  
-  
-  
-  
-  
-  
   // If the object is a tile
   else if (object instanceof canvasTile) {
-    //const sceneScale = canvas.scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricScale") ?? 1;
-    
+
     // Apply the scale by maintaining the proportion of the original art
     let finalMeshScaleX, finalMeshScaleY;
     if (object.document.getFlag(isometricModuleConfig.MODULE_ID, "isoDecoupleArtScale")) {
@@ -209,7 +174,7 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
     object.mesh.scale.set(finalMeshScaleX, finalMeshScaleY);
     
     // Flip token horizontally, if the flag is active
-    let scaleFlip = object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tokenFlipped') ?? 0;
+    let scaleFlip = object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tileFlipped') ?? 0;
     if (scaleFlip) {
       let meshScaleX = object.mesh.scale.x;
       let meshScaleY = object.mesh.scale.y;
@@ -218,34 +183,42 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
 
     // Defines the manual offset to center the tile
     let isoOffsets = cartesianToIso(offsetX, offsetY);
-    
+
     // Set tile's position
-    object.mesh.position.set(
-      object.document.x + (scaleX / 2) + isoOffsets.x,
-      object.document.y + (scaleY / 2) + isoOffsets.y
-    );
+
+    //v13 compatibility
+    if (isometricModuleConfig.FOUNDRY_VERSION === 13) {
+      object.mesh.position.set(
+        object.document.x + (scaleX / 2) + isoOffsets.x,
+        object.document.y + (scaleY / 2) + isoOffsets.y
+      );
+    } else {
+      object.mesh.position.set(
+        // object.document.x + (scaleX / 2) + isoOffsets.x,
+        // object.document.y + (scaleY / 2) + isoOffsets.y
+
+        object.document.x + isoOffsets.x,
+        object.document.y + isoOffsets.y
+      );
+    }
   }
   
 }
 
 
-
-
-
-// Função para transformar o background da cena
+// Function to transform the scene background.
 export function applyBackgroundTransformation(scene, isSceneIsometric, shouldTransform) {
   if (!canvas?.primary?.background) {
     if (isometricModuleConfig.DEBUG_PRINT) console.warn("Background not found.");
     return;
   }
 
-  //const background = scene.stage.background; //don't work
   const background = canvas.environment.primary.background;
   const isometricWorldEnabled = game.settings.get(isometricModuleConfig.MODULE_ID, "worldIsometricFlag");
   const scale = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricScale") ?? 1;
   
   if (isometricWorldEnabled && isSceneIsometric && shouldTransform) {
-    // Aplica rotação isométrica
+    // Applies isometric rotation
     background.rotation = ISOMETRIC_CONST.reverseRotation;
     background.skew.set(
       ISOMETRIC_CONST.reverseSkewX,
@@ -286,13 +259,9 @@ export function applyBackgroundTransformation(scene, isSceneIsometric, shouldTra
     }*/
 
   } else {
-    // Reset transformações
+    // Reset transformations
     background.rotation = 0;
     background.skew.set(0, 0);
-    //background.transform.scale.set(1, 1);
-    //background.anchor.set(0.5, 0.5);
-    //background.scale.set(1, 1);
-    //background.transform.position.set(canvas.scene.width/2, canvas.scene.height/2);
     
     if (isometricModuleConfig.DEBUG_PRINT) console.log("applyBackgroundTransformation RESET")
   }
