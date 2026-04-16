@@ -187,16 +187,13 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
     // Set tile's position
 
     //v13 compatibility
-    if (isometricModuleConfig.FOUNDRY_VERSION === 13) {
+    if (game.release.generation < 14) {
       object.mesh.position.set(
         object.document.x + (scaleX / 2) + isoOffsets.x,
         object.document.y + (scaleY / 2) + isoOffsets.y
       );
     } else {
       object.mesh.position.set(
-        // object.document.x + (scaleX / 2) + isoOffsets.x,
-        // object.document.y + (scaleY / 2) + isoOffsets.y
-
         object.document.x + isoOffsets.x,
         object.document.y + isoOffsets.y
       );
@@ -266,11 +263,6 @@ export function applyBackgroundTransformation(scene, isSceneIsometric, shouldTra
     if (isometricModuleConfig.DEBUG_PRINT) console.log("applyBackgroundTransformation RESET")
   }
 }
-
-
-
-
-
 
 
 
@@ -362,10 +354,6 @@ Hooks.on('deleteToken', (token) => {
   // O child é destruído automaticamente com o token, mas removemos do set por sanidade
   tokensWithVisuals.delete(token.id);
 });
-
-
-
-
 
 
 // HOOK SETUP FOR COMPATIBILITY WITH FOUNDRY V11
