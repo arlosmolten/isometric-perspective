@@ -187,8 +187,7 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
     // Set tile's position
 
     //v13 compatibility
-    if (isometricModuleConfig.FOUNDRY_VERSION <= 14) {
-      console.log("v13?")
+    if (game.release.generation < 14) {
       object.mesh.position.set(
         object.document.x + (scaleX / 2) + isoOffsets.x,
         object.document.y + (scaleY / 2) + isoOffsets.y
