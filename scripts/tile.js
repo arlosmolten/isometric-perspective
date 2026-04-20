@@ -102,6 +102,16 @@ export function handleUpdateTile(tileDocument, updateData, options, userId) {
   
   const scene = tile.scene;
   const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
+
+  const isTileSortable = tile.document.flags[isometricModuleConfig.MODULE_ID]?.isoTileAutoSortingEnabled || false;
+
+  if (isTileSortable){
+    console.log("foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS", foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS)
+    tile.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
+    console.log("TILE:","ELEVATION", tile.mesh.elevation, "SORT LAYER", tile.mesh.sortLayer, "SORT", tile.mesh.sort, "zIndex" , tile.mesh.zIndex, "_lastSortedIndex" , tile.mesh._lastSortedIndex);
+  } else {
+    tile.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES;
+  }
   
   if (updateData.x !== undefined ||
       updateData.y !== undefined ||

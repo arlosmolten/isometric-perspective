@@ -129,7 +129,7 @@ export function patchConfig(documentSheet, config, args) {
  * @param {Token|TokenDocument} token - The token or token document to calculate for.
  * @returns {number} The calculated sort value.
  */
-export function calculateTokenSortValue(token) {
+export function calculateTokenSortValue(token) { 
   const scene = canvas.scene;
   if (!scene) return 0;
   
@@ -137,6 +137,8 @@ export function calculateTokenSortValue(token) {
   const doc = token.document || token;
   const x = doc.x;
   const y = doc.y;
+
+  // console.log("calculateTokenSortValue", x,y, doc);
 
   // We want to sort by the "Visual Y" on the screen. 
   // Objects lower on the screen (Higher Visual Y) are "in front" and should be drawn last (Higher Sort).
@@ -162,6 +164,10 @@ export function calculateTokenSortValue(token) {
   if (game.settings.get(isometricModuleConfig.MODULE_ID, "debug")) {
      console.log(`[SortCalc] ${token.name || token.id} | (${x},${y}) -> VisY: ${visualY.toFixed(2)} | Sort: ${Math.round(visualY * 10)}`);
   }
+
+  // console.log("calculateTokenSortValue:", "stage rotation", r, "skew x", sx , "skey y" , sy , "tanSx", tanSx, "tanSy", tanSy, "cosR", cosR , "sinR", sinR, "visualY" ,visualY )
+
+  // console.log("visualY" , Math.round(visualY * 10));
 
   // Multiply by 10 to keep precision in integer sort
   return Math.round(visualY * 10);

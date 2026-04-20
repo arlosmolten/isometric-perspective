@@ -222,6 +222,7 @@ Hooks.once("init", function() {
 Hooks.once('ready', addWelcomeScreen);
 //scene configuration
 Hooks.on('ready', createSceneIsometricTab);
+
 //scene management
 Hooks.on('renderSceneConfig', initSceneForm);
 Hooks.on("updateScene", handleUpdateScene);

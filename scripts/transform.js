@@ -79,7 +79,6 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
   // if module settings flag is not set, don't move art token
   let ElevationAdjustment = game.settings.get(isometricModuleConfig.MODULE_ID, "enableHeightAdjustment");
   if (!ElevationAdjustment) elevation = 0;
-  
   if (object instanceof canvasToken) {
     let sx = 1; // standard x
     let sy = 1; // standard y

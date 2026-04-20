@@ -25,7 +25,7 @@ export function registerSortingConfig() {
     // Check if there has been a change in position
     if ((change.x !== undefined || change.y !== undefined) && userId === game.userId) {
       const token = canvas.tokens.get(tokenDocument.id);
-      if (token) await updateTokenSort(token);
+      if (token) await updateTokenSort(token); // might require more than just tokens 
     }
   });
 
@@ -54,6 +54,8 @@ export function registerSortingConfig() {
 
 }
 
+// add an optional sortable tile to be sorted here , also look up PrimaryCanvasGroup
+// let tileSortingEnabled = object.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoTileAutosortingEnabled') ?? 0;
 
 async function updateTokenSort(token) {
   // Use the token's scene, or fall back to the rendered canvas scene.
@@ -73,8 +75,8 @@ async function updateTokenSort(token) {
 
   if (game.settings.get(isometricModuleConfig.MODULE_ID, "debug")) {
     const others = canvas.tokens.placeables.filter(t => t.id !== token.id);
-    console.group(`Autosorting Debug: ${token.name} (${token.id})`);
-    console.log(`Pos: (${token.document.x}, ${token.document.y}) -> Calculated Sort: ${newSort}`);
+    // console.group(`Autosorting Debug: ${token.name} (${token.id})`);
+    // console.log(`Pos: (${token.document.x}, ${token.document.y}) -> Calculated Sort: ${newSort}`);
 
     // Sort others by Visual Y to see expected order
     const sortedOthers = others.map(t => {
@@ -102,7 +104,10 @@ async function updateTokenSort(token) {
   };
 
   // Updates token in scene
+  // console.log("TOKEN SORT LAYER?" , token.mesh.sortLayer, "SORT" , token.mesh.sort);
+  
   await scene.updateEmbeddedDocuments('Token', [update]);
+  console.log("TOKEN:","ELEVATION", token.mesh.elevation, "SORT LAYER", token.mesh.sortLayer, "SORT", token.mesh.sort, "zIndex" , token.mesh.zIndex, "_lastSortedIndex" , token.mesh._lastSortedIndex);
 }
 
 
