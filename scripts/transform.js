@@ -233,7 +233,7 @@ export function applyBackgroundTransformation(scene, isSceneIsometric, shouldTra
     const paddingY = isoScene.height * padding;
       
     // Account for background offset settings
-    const offsetX = isoScene.background.offsetX || 0;
+    const offsetX = isoScene.background.offsetX || 0; /// scene.background is deprecated since v14 , Level.background and or Level texture instead
     const offsetY = isoScene.background.offsetY || 0;
     
     // Set position considering padding and offset

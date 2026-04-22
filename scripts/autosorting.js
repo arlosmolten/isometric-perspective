@@ -1,5 +1,5 @@
 import { isometricModuleConfig } from './consts.js';
-import { calculateTokenSortValue } from './utils.js';
+import { calculateTokenSortValue , comparePlaceablePosition} from './utils.js';
 
 export function registerSortingConfig() {
   const isometricWorldEnabled = game.settings.get(isometricModuleConfig.MODULE_ID, "worldIsometricFlag");
@@ -21,25 +21,25 @@ export function registerSortingConfig() {
   Hooks.on('updateToken', async (tokenDocument, change, options, userId) => {
     const scene = tokenDocument.parent;
     if (!scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled")) return;
-
     // Check if there has been a change in position
     if ((change.x !== undefined || change.y !== undefined) && userId === game.userId) {
       const token = canvas.tokens.get(tokenDocument.id);
       if (token) await updateTokenSort(token); // might require more than just tokens 
     }
+
   });
 
   Hooks.on("canvasReady", (canvas) => {
     const scene = canvas.scene;
     if (!scene) return;
     if (!scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled")) return;
-
+    
     const tokens = scene.tokens;
     const updates = tokens.map(tokenDocument => {
       const token = canvas.tokens.get(tokenDocument.id);
       if (!token) return null;
 
-      const newSort = calculateTokenSortValue(token);
+      const newSort = comparePlaceablePosition(token);
 
       return {
         _id: tokenDocument.id,
@@ -48,71 +48,30 @@ export function registerSortingConfig() {
     }).filter(update => update !== null);
 
     if (updates.length > 0) {
+      // comparePlaceablePosition(token, scene);
       scene.updateEmbeddedDocuments('Token', updates);
     }
   });
 
 }
 
-// add an optional sortable tile to be sorted here , also look up PrimaryCanvasGroup
-// let tileSortingEnabled = object.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoTileAutosortingEnabled') ?? 0;
-
 async function updateTokenSort(token) {
-  // Use the token's scene, or fall back to the rendered canvas scene.
-  // We avoid game.scenes.active because the GM might be simulating movement on a non-active scene.
+
+  //scene safety check
   const scene = token.scene || token.document.parent || canvas.scene;
   if (!scene) return;
   if (!token.document.isOwner) return;
-
-  // Wait for the movement animation to complete using robust helper
+  //safety check if the token has been deleted during movement
   await awaitTokenAnimation(token.document);
-  
-  // Verify existence after await - the token might have been deleted during the animation (e.g. drag-drop)
-  if (!scene.tokens.has(token.document.id)) return;
-
-  // Calculates the new sort value for the token
-  const newSort = calculateTokenSortValue(token);
-
-  if (game.settings.get(isometricModuleConfig.MODULE_ID, "debug")) {
-    const others = canvas.tokens.placeables.filter(t => t.id !== token.id);
-    // console.group(`Autosorting Debug: ${token.name} (${token.id})`);
-    // console.log(`Pos: (${token.document.x}, ${token.document.y}) -> Calculated Sort: ${newSort}`);
-
-    // Sort others by Visual Y to see expected order
-    const sortedOthers = others.map(t => {
-      const doc = t.document;
-      // Duplicate logic just for debug print or export calculateVisualY from utils if possible
-      // For now, re-using calculateTokenSortValue gives integer sort, which is proxy for VisualY
-      return { name: t.name, sort: calculateTokenSortValue(t), currentSort: t.document.sort };
-    }).sort((a, b) => b.sort - a.sort); // Highest sort first
-
-    // console.table(sortedOthers);
-
-    // Check if we are correctly placed
-    // const potentiallyOccluded = sortedOthers.filter(t => t.sort > newSort);
-    // const potentiallyOccluding = sortedOthers.filter(t => t.sort < newSort);
-
-    // console.log(`Should be BEHIND (Higher Sort):`, potentiallyOccluded.map(t => `${t.name} (${t.id})`));
-    // console.log(`Should be IN FRONT OF (Lower Sort):`, potentiallyOccluding.map(t => `${t.name} (${t.id})`));
-    // console.groupEnd();
-  }
-
-  // Creates a refresh object for the token
+  if (!scene.tokens.has(token.document.id)) return;  
+  // sort by grid Y 
+  const newSort = comparePlaceablePosition(token);
   const update = {
     _id: token.document.id,
     sort: newSort
   };
-
-  // Updates token in scene
-  // console.log("TOKEN SORT LAYER?" , token.mesh.sortLayer, "SORT" , token.mesh.sort);
-  
   await scene.updateEmbeddedDocuments('Token', [update]);
-  console.log("TOKEN:","ELEVATION", token.mesh.elevation, "SORT LAYER", token.mesh.sortLayer, "SORT", token.mesh.sort, "zIndex" , token.mesh.zIndex, "_lastSortedIndex" , token.mesh._lastSortedIndex);
 }
-
-
-
-
 
 /*
 // Adiciona um comando de macro para reordenar os tokens manualmente (opcional)

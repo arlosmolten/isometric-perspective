@@ -99,20 +99,23 @@ export function handleCreateTile(tileDocument) {
 export function handleUpdateTile(tileDocument, updateData, options, userId) {
   const tile = canvas.tiles.get(tileDocument.id);
   if (!tile) return;
-  
   const scene = tile.scene;
-  const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
 
   const isTileSortable = tile.document.flags[isometricModuleConfig.MODULE_ID]?.isoTileAutoSortingEnabled || false;
+  console.log("SORTABLE?", isTileSortable);
 
   if (isTileSortable){
-    console.log("foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS", foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS)
+    // console.log("foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS", foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS)
     tile.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
-    console.log("TILE:","ELEVATION", tile.mesh.elevation, "SORT LAYER", tile.mesh.sortLayer, "SORT", tile.mesh.sort, "zIndex" , tile.mesh.zIndex, "_lastSortedIndex" , tile.mesh._lastSortedIndex);
+    // console.log("TILE:","ELEVATION", tile.mesh.elevation, "SORT LAYER", tile.mesh.sortLayer, "SORT", tile.mesh.sort, "zIndex" , tile.mesh.zIndex, "_lastSortedIndex" , tile.mesh._lastSortedIndex);
+    console.log("TILE sort layer :", tile.mesh.sortLayer);
+    console.log("COMP" , tile.mesh.sortLayer, tile.mesh.object.mesh.sortLayer , tile.parent.children);
+    // console.log("changed primary layer", canvas.primary.children);
   } else {
     tile.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES;
   }
-  
+
+  const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");  
   if (updateData.x !== undefined ||
       updateData.y !== undefined ||
       updateData.width !== undefined ||

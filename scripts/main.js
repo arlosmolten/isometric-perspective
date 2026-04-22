@@ -15,7 +15,7 @@ import {
   initTileForm,
   handleCreateTile,
   handleUpdateTile,
-  handleRefreshTile
+  handleRefreshTile,
  } from './tile.js';
 
 import { 
@@ -241,7 +241,6 @@ Hooks.on("createToken", handleCreateToken);
 Hooks.on("updateToken", handleUpdateToken);
 Hooks.on("refreshToken", handleRefreshToken);
 
-
 // hud management
 Hooks.on("renderTokenHUD", handleRenderTokenHUD);
 Hooks.on("renderTileHUD", handleRenderTileHUD);
@@ -250,8 +249,6 @@ Hooks.on("renderDrawingHUD", handleRenderDrawingHUD);
 //tile config
 Hooks.on("ready", createTileIsometricTab);
 Hooks.on("renderTileConfig", initTileForm);
-// Hooks.on("renderTileConfig", handleRenderTileConfig);
-//tile management
 Hooks.on("createTile", handleCreateTile);
 Hooks.on("updateTile", handleUpdateTile);
 Hooks.on("refreshTile", handleRefreshTile);
