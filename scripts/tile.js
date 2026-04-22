@@ -1,6 +1,6 @@
 import { isometricModuleConfig } from './consts.js';
 import { applyIsometricTransformation } from './transform.js';
-import { adjustInputWithMouseDrag, parseNum, patchConfig, createAdjustableButton} from './utils.js';
+import { adjustInputWithMouseDrag, parseNum, patchConfig, createAdjustableButton,comparePlaceablePosition} from './utils.js';
 
 export async function createTileIsometricTab(app, html, data) {
 
@@ -101,20 +101,6 @@ export function handleUpdateTile(tileDocument, updateData, options, userId) {
   if (!tile) return;
   const scene = tile.scene;
 
-  const isTileSortable = tile.document.flags[isometricModuleConfig.MODULE_ID]?.isoTileAutoSortingEnabled || false;
-  console.log("SORTABLE?", isTileSortable);
-
-  if (isTileSortable){
-    // console.log("foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS", foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS)
-    tile.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
-    // console.log("TILE:","ELEVATION", tile.mesh.elevation, "SORT LAYER", tile.mesh.sortLayer, "SORT", tile.mesh.sort, "zIndex" , tile.mesh.zIndex, "_lastSortedIndex" , tile.mesh._lastSortedIndex);
-    console.log("TILE sort layer :", tile.mesh.sortLayer);
-    console.log("COMP" , tile.mesh.sortLayer, tile.mesh.object.mesh.sortLayer , tile.parent.children);
-    // console.log("changed primary layer", canvas.primary.children);
-  } else {
-    tile.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES;
-  }
-
   const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");  
   if (updateData.x !== undefined ||
       updateData.y !== undefined ||
@@ -129,6 +115,17 @@ export function handleRefreshTile(tile) {
   const scene = tile.scene;
   const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   applyIsometricTransformation(tile, isSceneIsometric);
+
+  const isTileSortable = tile.document.flags[isometricModuleConfig.MODULE_ID]?.isoTileAutoSortingEnabled || false;
+  // console.log("SORTABLE?", isTileSortable); // <---- this works , if the checkbox is on it returns true
+  let newSortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES; // <--- default layer for tiles , currenly 500
+
+  if (isTileSortable){
+    tile.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS; // <--- sortable tiles get moved to the token layer, currenly 700
+    tile.mesh.sort = comparePlaceablePosition(tile);
+  }
+
+  console.log("TILE sort layer :", tile.mesh.sortLayer); /// <--- but i keep seeing 500 instead of 700 and thats why im a bit confused
 }
   
   

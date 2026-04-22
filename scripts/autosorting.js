@@ -1,5 +1,5 @@
 import { isometricModuleConfig } from './consts.js';
-import { calculateTokenSortValue , comparePlaceablePosition} from './utils.js';
+import { comparePlaceablePosition} from './utils.js';
 
 export function registerSortingConfig() {
   const isometricWorldEnabled = game.settings.get(isometricModuleConfig.MODULE_ID, "worldIsometricFlag");

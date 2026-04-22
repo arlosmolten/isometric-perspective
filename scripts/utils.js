@@ -136,6 +136,7 @@ export function comparePlaceablePosition(placeable) {
   let newSort = placeable.mesh.sort ?? 0;
 
   canvasLayer.map( sprite => {
+    console.log("SPRITE", sprite.name, sprite.sortLayer)
     if(sprite.sortLayer === tokenMeshLayer){
       const spriteId = sprite.name.split(".").pop();
       const placeableId = placeable.mesh.name.split(".").pop();
