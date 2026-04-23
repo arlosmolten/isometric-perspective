@@ -109,6 +109,15 @@ export function handleUpdateTile(tileDocument, updateData, options, userId) {
       updateData.texture !== undefined) {
     requestAnimationFrame(() => applyIsometricTransformation(tile, isSceneIsometric));
   }
+
+  const isTileSortable = tile.document.flags[isometricModuleConfig.MODULE_ID]?.isoTileAutoSortingEnabled || false;
+  let newSortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES;
+
+  if (isTileSortable){
+    tile.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS; 
+    tile.mesh.sort = comparePlaceablePosition(tile, true); // need a fix
+  }
+
 }
 
 export function handleRefreshTile(tile) {
@@ -117,15 +126,12 @@ export function handleRefreshTile(tile) {
   applyIsometricTransformation(tile, isSceneIsometric);
 
   const isTileSortable = tile.document.flags[isometricModuleConfig.MODULE_ID]?.isoTileAutoSortingEnabled || false;
-  // console.log("SORTABLE?", isTileSortable); // <---- this works , if the checkbox is on it returns true
-  let newSortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES; // <--- default layer for tiles , currenly 500
+  let newSortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES;
 
   if (isTileSortable){
-    tile.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS; // <--- sortable tiles get moved to the token layer, currenly 700
-    tile.mesh.sort = comparePlaceablePosition(tile);
+    tile.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS; 
+    tile.mesh.sort = comparePlaceablePosition(tile, true); // need a fix
   }
-
-  console.log("TILE sort layer :", tile.mesh.sortLayer); /// <--- but i keep seeing 500 instead of 700 and thats why im a bit confused
 }
   
   

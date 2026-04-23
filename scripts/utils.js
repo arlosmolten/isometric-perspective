@@ -103,15 +103,6 @@ export function patchConfig(documentSheet, config, args) {
       
       const flags = doc.flags?.[config.moduleConfig.MODULE_ID] ?? {};
 
-      console.log("ARGS", 
-        {
-        ...flags,
-        ...args,
-        document: doc,
-        tab: context.tabs?.[partId],
-      }
-      ) 
-
       return {
         ...flags,
         ...args,
@@ -123,33 +114,49 @@ export function patchConfig(documentSheet, config, args) {
   }
 }
 
+//to avoid duplicate security checkers all over the place
+export function isIsometricAutosortingEnabledForPlaceable(placeable,scene) {
+  const isometricWorldEnabled = game.settings.get(isometricModuleConfig.MODULE_ID, "worldIsometricFlag");
+  const enableAutoSorting = game.settings.get(isometricModuleConfig.MODULE_ID, "enableAutoSorting");
+  if (!isometricWorldEnabled || !enableAutoSorting) return;
+  if (game.version.startsWith("11")) return; //There isn't a sort method on v11. Needs another way to sort.
+  if (!scene) return false;
+  if (!scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled")) {return false}
+  else { return true};
+}
+
 /**
  * Calculates the sort value for a token based on its y value on the grid compared to its siblings.
  * @param {Token|TokenDocument} token - The token or token document to calculate for.
  * @returns {number} The calculated sort value.
  */
-
-export function comparePlaceablePosition(placeable) { 
+export function comparePlaceablePosition(placeable) {
   const tokenMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
   const canvasLayer = canvas.primary.children;
-  const currentY = placeable.y;
+  let currentPlaceableY = placeable.document.y;
   let newSort = placeable.mesh.sort ?? 0;
 
   canvasLayer.map( sprite => {
-    console.log("SPRITE", sprite.name, sprite.sortLayer)
     if(sprite.sortLayer === tokenMeshLayer){
+
       const spriteId = sprite.name.split(".").pop();
       const placeableId = placeable.mesh.name.split(".").pop();
+      const placeableType = placeable.mesh.name.split(".").shift();
+      const spriteType = sprite.name.split(".").shift();
+
       if(placeableId !== spriteId){
-        if (currentY > sprite.object.y) {             
-          if (placeable.mesh.sort <= sprite.sort) {
-              newSort = sprite.sort + 1;
-          }
+        let currentCompareY = sprite.object.document.y;
+        // in v14 tiles point of origin is their visual center so their y coordinate isn't at their bottom edge , a small adjustment is required
+        if(spriteType === "Tile"){currentCompareY = sprite.object.document.y + (sprite.object.document.height * 0.5);}
+        if(placeableType === "Tile"){ currentPlaceableY = placeable.document.y + (placeable.document.height * 0.5);}
+        // compare Y coordinates and adjust the sort order in consequence
+        if (currentPlaceableY > currentCompareY) {             
+          if (placeable.mesh.sort <= sprite.sort) { newSort = sprite.sort + 1;}
         }
-        else if (currentY < sprite.object.y) {
-          if (placeable.mesh.sort >= sprite.sort) {
-              newSort = Math.max(0, sprite.sort - 1);
-          }
+        else if (currentPlaceableY < currentCompareY) {
+          if (placeable.mesh.sort >= sprite.sort) { newSort = Math.max(0, sprite.sort - 1); }
+        } else {
+          return; // in case of a tie, do nothing
         }
       }
     }
