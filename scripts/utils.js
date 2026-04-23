@@ -116,13 +116,9 @@ export function patchConfig(documentSheet, config, args) {
 
 //to avoid duplicate security checkers all over the place
 export function isIsometricAutosortingEnabledForPlaceable(placeable,scene) {
-  const isometricWorldEnabled = game.settings.get(isometricModuleConfig.MODULE_ID, "worldIsometricFlag");
-  const enableAutoSorting = game.settings.get(isometricModuleConfig.MODULE_ID, "enableAutoSorting");
-  if (!isometricWorldEnabled || !enableAutoSorting) return;
-  if (game.version.startsWith("11")) return; //There isn't a sort method on v11. Needs another way to sort.
+  if (game.version.startsWith("11")) return false; //There isn't a sort method on v11. Needs another way to sort.
   if (!scene) return false;
-  if (!scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled")) {return false}
-  else { return true};
+  if (scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled")) {return true}
 }
 
 /**

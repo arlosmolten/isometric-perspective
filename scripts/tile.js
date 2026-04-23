@@ -133,5 +133,21 @@ export function handleRefreshTile(tile) {
     tile.mesh.sort = comparePlaceablePosition(tile, true); // need a fix
   }
 }
+
+export function addDepthSortControls(controls){
+  //stuff
+  controls.tiles.tools.toggleDetphSort = {
+    name:" toggle depth sort",
+    icon: "fa-solid fa-sort",
+    order: Object.keys(controls.tokens.tools).length,
+    button: true,
+    visible: game.user.isGM,
+    onChange: () => {
+      // game.settings.get(isometricModuleConfig.MODULE_ID, "showWelcome")
+      
+      
+    }
+  }
+}
   
   

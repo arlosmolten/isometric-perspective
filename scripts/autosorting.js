@@ -6,22 +6,29 @@ import {
 
 export async function isoDepthSortReady(){
   const scene = canvas.scene;
+  if (!scene ||!canvas.ready) return;
   const tokens = scene.tokens;
   const updates = tokens.map(tokenDocument => {
-    const token = canvas.tokens.get(tokenDocument.id);
-      if(isIsometricAutosortingEnabledForPlaceable(token)){
-        if (!token) return null;
+    const token = tokenDocument.object;
+    const updateList =[];
+
+    if (token !== null){
+      if(isIsometricAutosortingEnabledForPlaceable(token,scene)){
         const newSort = comparePlaceablePosition(token);
-        return {
-          _id: tokenDocument.id,
-          sort: newSort
-        };
+        if (tokenDocument.sort!== newSort) {
+          updateList.push({
+            _id: token.id,
+            sort: newSort
+          });
+        }
       }
-    }).filter(update => update !== null);
-  
-    if (updates.length > 0) {
-      scene.updateEmbeddedDocuments('Token', updates);
     }
+    return updateList
+  })
+  const validUpdates = updates.filter(update => update._id && update._id!== "");
+  if (updates.length > 0) {
+    await scene.updateEmbeddedDocuments('Token', validUpdates);
+  }
 }
 
 export async function isoDepthSort(placeable,scene,label){   
@@ -49,10 +56,10 @@ async function awaitTokenAnimation(document) {
   if (anim) {
     try { await anim; } catch (e) { /* Ignore interruptions */ }
   } else {
-    // Fallback: Check CanvasAnimation
-    if (CanvasAnimation && CanvasAnimation.animations) {
-      const animations = CanvasAnimation.animations;
-      // CanvasAnimation.animations can be an Object or Map depending on Foundry version
+    // Fallback: Check foundry.canvas.animation.CanvasAnimation
+    if (foundry.canvas.animation.CanvasAnimation && foundry.canvas.animation.CanvasAnimation.animations) {
+      const animations = foundry.canvas.animation.CanvasAnimation.animations;
+      // foundry.canvas.animation.CanvasAnimation.animations can be an Object or Map depending on Foundry version
       const entries = (animations instanceof Map) ? animations.entries() : Object.entries(animations);
 
       for (const [key, promiseData] of entries) {

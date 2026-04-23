@@ -16,6 +16,7 @@ import {
   handleCreateTile,
   handleUpdateTile,
   handleRefreshTile,
+  addDepthSortControls
  } from './tile.js';
 
 import { 
@@ -203,7 +204,7 @@ Hooks.once("init", function() {
 
   // ------------- Executa os hooks de funcionalidades adicionais do módulo -------------
   registerDynamicTileConfig();
-  registerSortingConfig();
+  // registerSortingConfig();
   registerOcclusionConfig();
 
   
@@ -260,6 +261,7 @@ Hooks.on("renderTileConfig", initTileForm);
 Hooks.on("createTile", handleCreateTile);
 Hooks.on("updateTile", handleUpdateTile);
 Hooks.on("refreshTile", handleRefreshTile);
+// Hooks.on("getSceneControlButtons", addDepthSortControls);
 
 //autosorting
 Hooks.on("canvasReady", (canvas) => {isoDepthSortReady();})
@@ -296,7 +298,7 @@ Hooks.on('createToken', async (tokenDocument, options, userId) => {
  * @param {----- TESTING AREA / ÁREA DE TESTES -----}
 */
 // Wait for movement animation end
-// const anim = CanvasAnimation.getAnimation(token.animationName);
+// const anim = foundry.canvas.animation.CanvasAnimation.getAnimation(token.animationName);
 // if(anim?.promise) await anim.promise;
 
 /*
