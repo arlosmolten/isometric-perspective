@@ -79,7 +79,6 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
   // if module settings flag is not set, don't move art token
   let ElevationAdjustment = game.settings.get(isometricModuleConfig.MODULE_ID, "enableHeightAdjustment");
   if (!ElevationAdjustment) elevation = 0;
-  
   if (object instanceof canvasToken) {
     let sx = 1; // standard x
     let sy = 1; // standard y
@@ -234,7 +233,7 @@ export function applyBackgroundTransformation(scene, isSceneIsometric, shouldTra
     const paddingY = isoScene.height * padding;
       
     // Account for background offset settings
-    const offsetX = isoScene.background.offsetX || 0;
+    const offsetX = isoScene.background.offsetX || 0; /// scene.background is deprecated since v14 , Level.background and or Level texture instead
     const offsetY = isoScene.background.offsetY || 0;
     
     // Set position considering padding and offset

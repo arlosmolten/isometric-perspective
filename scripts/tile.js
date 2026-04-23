@@ -1,6 +1,6 @@
 import { isometricModuleConfig } from './consts.js';
 import { applyIsometricTransformation } from './transform.js';
-import { adjustInputWithMouseDrag, parseNum, patchConfig, createAdjustableButton} from './utils.js';
+import { adjustInputWithMouseDrag, parseNum, patchConfig, createAdjustableButton,comparePlaceablePosition} from './utils.js';
 
 export async function createTileIsometricTab(app, html, data) {
 
@@ -99,10 +99,9 @@ export function handleCreateTile(tileDocument) {
 export function handleUpdateTile(tileDocument, updateData, options, userId) {
   const tile = canvas.tiles.get(tileDocument.id);
   if (!tile) return;
-  
   const scene = tile.scene;
-  const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
-  
+
+  const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");  
   if (updateData.x !== undefined ||
       updateData.y !== undefined ||
       updateData.width !== undefined ||
@@ -110,12 +109,29 @@ export function handleUpdateTile(tileDocument, updateData, options, userId) {
       updateData.texture !== undefined) {
     requestAnimationFrame(() => applyIsometricTransformation(tile, isSceneIsometric));
   }
+
+  const isTileSortable = tile.document.flags[isometricModuleConfig.MODULE_ID]?.isoTileAutoSortingEnabled || false;
+  let newSortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES;
+
+  if (isTileSortable){
+    tile.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS; 
+    tile.mesh.sort = comparePlaceablePosition(tile, true); // need a fix
+  }
+
 }
 
 export function handleRefreshTile(tile) {
   const scene = tile.scene;
   const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   applyIsometricTransformation(tile, isSceneIsometric);
+
+  const isTileSortable = tile.document.flags[isometricModuleConfig.MODULE_ID]?.isoTileAutoSortingEnabled || false;
+  let newSortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES;
+
+  if (isTileSortable){
+    tile.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS; 
+    tile.mesh.sort = comparePlaceablePosition(tile, true); // need a fix
+  }
 }
   
   

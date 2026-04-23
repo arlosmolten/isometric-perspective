@@ -7,7 +7,8 @@ import {
   patchConfig,
   isoToCartesian, 
   getFlagName,
-  calculateTokenSortValue,
+  comparePlaceablePosition,
+  // calculateTokenSortValue,
   createAdjustableButton
 } from './utils.js';
 
@@ -23,7 +24,8 @@ function patchTokenSorting() {
     const autoSortEnabled = game.settings.get(isometricModuleConfig.MODULE_ID, "enableAutoSorting");
     
     if (isSceneIsometric && autoSortEnabled) {
-      this.mesh.zIndex = calculateTokenSortValue(this);
+      
+      this.mesh.zIndex = comparePlaceablePosition(this);
       if (this.controlled) this.mesh.zIndex += 0.1; // Minimal boost for selection visibility without breaking depth
     } else {
       return originalRefreshSort.apply(this);

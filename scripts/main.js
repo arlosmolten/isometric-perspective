@@ -15,7 +15,7 @@ import {
   initTileForm,
   handleCreateTile,
   handleUpdateTile,
-  handleRefreshTile
+  handleRefreshTile,
  } from './tile.js';
 
 import { 
@@ -24,13 +24,21 @@ import {
   handleRenderDrawingHUD
 } from './hud.js';
 
-import { registerSortingConfig } from './autosorting.js';
+import {
+  isoDepthSort,
+  isoDepthSortReady,
+} from './autosorting.js'
+
 import { registerDynamicTileConfig, increaseTilesOpacity, decreaseTilesOpacity } from './dynamictile.js';
 
 import { applyIsometricPerspective, applyBackgroundTransformation } from './transform.js';
 import { updateIsometricConstants, parseCustomProjection, updateCustomProjection, PROJECTION_TYPES, DEFAULT_PROJECTION, CUSTOM_PROJECTION } from './consts.js';
 import { ISOMETRIC_CONST } from './consts.js';
-import { isoToCartesian, cartesianToIso } from './utils.js';
+import { 
+  isoToCartesian, 
+  cartesianToIso,
+  isIsometricAutosortingEnabledForPlaceable
+} from './utils.js';
 
 import { registerOcclusionConfig } from './occlusion.js';
 import { addWelcomeScreen } from './welcome.js';
@@ -222,6 +230,7 @@ Hooks.once("init", function() {
 Hooks.once('ready', addWelcomeScreen);
 //scene configuration
 Hooks.on('ready', createSceneIsometricTab);
+
 //scene management
 Hooks.on('renderSceneConfig', initSceneForm);
 Hooks.on("updateScene", handleUpdateScene);
@@ -240,7 +249,6 @@ Hooks.on("createToken", handleCreateToken);
 Hooks.on("updateToken", handleUpdateToken);
 Hooks.on("refreshToken", handleRefreshToken);
 
-
 // hud management
 Hooks.on("renderTokenHUD", handleRenderTokenHUD);
 Hooks.on("renderTileHUD", handleRenderTileHUD);
@@ -249,12 +257,39 @@ Hooks.on("renderDrawingHUD", handleRenderDrawingHUD);
 //tile config
 Hooks.on("ready", createTileIsometricTab);
 Hooks.on("renderTileConfig", initTileForm);
-// Hooks.on("renderTileConfig", handleRenderTileConfig);
-//tile management
 Hooks.on("createTile", handleCreateTile);
 Hooks.on("updateTile", handleUpdateTile);
 Hooks.on("refreshTile", handleRefreshTile);
 
+//autosorting
+Hooks.on("canvasReady", (canvas) => {isoDepthSortReady();})
+Hooks.on("refreshToken", (token) => {
+  const scene = token.scene || token.document.parent || canvas.scene;
+  if(isIsometricAutosortingEnabledForPlaceable(token,scene)){
+    if (!token.document.isOwner) return;
+    isoDepthSort(token,scene,"Token");
+  }
+})
+Hooks.on('updateToken', async (tokenDocument, change, options, userId) => {
+  const scene = tokenDocument.parent;
+  const token = canvas.tokens.get(tokenDocument.id);
+  if(isIsometricAutosortingEnabledForPlaceable(token,scene)){
+    // Check if there has been a change in position
+    if ((change.x !== undefined || change.y !== undefined) && userId === game.userId) {
+      if (token) await isoDepthSort(token,scene,"Token");
+    }
+  }
+});
+Hooks.on('createToken', async (tokenDocument, options, userId) => {
+  const scene = tokenDocument.parent;
+  const token = canvas.tokens.get(tokenDocument.id);
+  if(isIsometricAutosortingEnabledForPlaceable(token,scene)){
+    // If the movement is from the current user
+    if (userId === game.userId) {
+      if (token) await isoDepthSort(token,scene,"Token");
+    }
+  }
+});
 
 
 /**

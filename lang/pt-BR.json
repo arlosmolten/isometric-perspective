@@ -59,6 +59,8 @@
     "isometric-perspective._comment": "Configuração de Tiles",
     "isometric-perspective.tile_enableIsometric_name": "Desabilitar Tile Isométrico",
     "isometric-perspective.tile_enableIsometric_hint": "Desabilita a transformação isométrica neste tile.",
+    "isometric-perspective.tile_enableIsometric_sorting_name": "Ativar classificação por profundidade de mosaico",
+    "isometric-perspective.tile_enableIsometric_sorting_hint": "Ative a classificação por profundidade de mosaico neste mosaico.",
     "isometric-perspective.tile_artOffset_name": "Deslocamento da Arte",
     "isometric-perspective.tile_artOffset_hint": "Desloca a posição da arte do tile no número de pixels indicado.",
     "isometric-perspective.tile_artOffset_mouseover": "Segure e arraste para ajustar X e Y",
