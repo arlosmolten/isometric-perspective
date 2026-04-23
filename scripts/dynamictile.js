@@ -1,5 +1,5 @@
 import { isometricModuleConfig } from './consts.js';
-import { calculateTokenSortValue } from './utils.js';
+import { comparePlaceablePosition } from './utils.js';
 
 export function registerDynamicTileConfig() {
   const enableOcclusionDynamicTile = game.settings.get(isometricModuleConfig.MODULE_ID, "enableOcclusionDynamicTile");
@@ -368,7 +368,7 @@ function updateAlwaysVisibleElements() {
   // Always add the controlled token
   const controlledTokenSprite = cloneTokenSprite(controlled.mesh);
   if (controlledTokenSprite) {  // Check if Sprite was created successfully
-    controlledTokenSprite.zIndex = calculateTokenSortValue(controlled);
+    controlledTokenSprite.zIndex = comparePlaceablePosition(controlled);
     tokensLayer.addChild(controlledTokenSprite);
   }
 
@@ -400,7 +400,7 @@ function updateAlwaysVisibleElements() {
       const tokenSprite = cloneTokenSprite(token.mesh);
       if (tokenSprite) {
         // Use isometric sorting for zIndex
-        tokenSprite.zIndex = calculateTokenSortValue(token);
+        tokenSprite.zIndex = comparePlaceablePosition(token);
         
         if (behindTiles.length > 0) {
           // If behind a tile, move it to the back layer, but keep isometric relative order
