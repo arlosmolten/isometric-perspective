@@ -49,28 +49,14 @@ async function awaitTokenAnimation(document) {
   const token = document.object;
   if (!token) return;
 
-  // Give Foundry a tick to utilize animation properties
-  await new Promise(r => setTimeout(r, 0));
+  // wait for the token movement to end
+  const movementAnim = token.animation || token.movementAnimationPromise;
+  if (movementAnim) {
+    try { await movementAnim; } catch (e) { /* Ignore interruptions */ }
+  }
 
-  const anim = token.movementAnimationPromise || token.animation;
-  if (anim) {
-    try { await anim; } catch (e) { /* Ignore interruptions */ }
-  } else {
-    // Fallback: Check foundry.canvas.animation.CanvasAnimation
-    if (foundry.canvas.animation.CanvasAnimation && foundry.canvas.animation.CanvasAnimation.animations) {
-      const animations = foundry.canvas.animation.CanvasAnimation.animations;
-      // foundry.canvas.animation.CanvasAnimation.animations can be an Object or Map depending on Foundry version
-      const entries = (animations instanceof Map) ? animations.entries() : Object.entries(animations);
-
-      for (const [key, promiseData] of entries) {
-        if (key.includes(document.id)) {
-          // promiseData might be the promise itself or an object containing the promise
-          const promise = promiseData.promise || promiseData;
-          if (promise) {
-            try { await promise; } catch (e) { }
-          }
-        }
-      }
-    }
+  // extra check if the token is moving on another level or between levels.
+  if (token.levelIndicator?.animation) {
+    try { await token.levelIndicator.animation; } catch (e) { }
   }
 }

@@ -168,10 +168,10 @@ export function createAdjustableButton(options) {
       inputs,                   // Array of input elements to update [InputX, InputY]
       adjustmentScale = 0.1,    // Scale factor or Function returning [scaleX, scaleY]
       valueConstraints = null,  // Optional min/max constraints {min, max}
-      roundingPrecision = 0,     // Number of decimal places
-      onInputCallback = null,    // Optional callback after input update
-      onDragStart = null,        // Optional callback on drag start
-      onDragEnd = null           // Optional callback on drag end
+      roundingPrecision = 0,    // Number of decimal places
+      onInputCallback = null,   // Optional callback after input update
+      onDragStart = null,       // Optional callback on drag start
+      onDragEnd = null          // Optional callback on drag end
   } = options;
 
   if (!buttonElement) return;
