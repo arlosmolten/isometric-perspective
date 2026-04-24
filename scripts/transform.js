@@ -225,9 +225,13 @@ export function applyBackgroundTransformation(scene, isSceneIsometric, shouldTra
       scale,
       scale * ISOMETRIC_CONST.ratio // Math.sqrt(3)
     );
-    
+    let isoScene = null;
     // Calculate scene dimensions and padding
-    const isoScene = canvas.scene;
+    if (game.release.generation < 14) {
+      isoScene = canvas.background; // for v13 and under
+    } else {
+      isoScene = canvas.level; // scene.background was deprecated in v14
+    }
     const padding = isoScene.padding;
     const paddingX = isoScene.width * padding;
     const paddingY = isoScene.height * padding;

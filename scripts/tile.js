@@ -35,7 +35,6 @@ export function initTileForm(app, html, context, options){
   });
 
   //Dynamic tile and wall linking
-
   const selectWallButton = html.querySelector('.select-wall');
   const clearWallButton = html.querySelector('.clear-wall');
   const linkedWallsIdInput = html.querySelector('input[name="flags.isometric-perspective.linkedWallIds"]');
@@ -115,7 +114,7 @@ export function handleUpdateTile(tileDocument, updateData, options, userId) {
 
   if (isTileSortable){
     tile.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS; 
-    tile.mesh.sort = comparePlaceablePosition(tile, true); // need a fix
+    tile.mesh.sort = comparePlaceablePosition(tile, true);
   }
 
 }
@@ -130,7 +129,20 @@ export function handleRefreshTile(tile) {
 
   if (isTileSortable){
     tile.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS; 
-    tile.mesh.sort = comparePlaceablePosition(tile, true); // need a fix
+    tile.mesh.sort = comparePlaceablePosition(tile, true);
+  }
+}
+
+export function addDepthSortControls(controls){
+  controls.tiles.tools.toggleDetphSort = {
+    name:" toggle depth sort",
+    icon: "fa-solid fa-sort",
+    order: Object.keys(controls.tokens.tools).length,
+    button: true,
+    visible: game.user.isGM,
+    onChange: () => {
+      // game.settings.get(isometricModuleConfig.MODULE_ID, "toggleTileDepthSort")
+    }
   }
 }
   
