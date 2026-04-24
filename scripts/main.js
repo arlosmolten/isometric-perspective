@@ -27,7 +27,7 @@ import {
 
 import {
   isoDepthSort,
-  isoDepthSortReady,
+  isoDepthSortMixin
 } from './autosorting.js'
 
 import { registerDynamicTileConfig, increaseTilesOpacity, decreaseTilesOpacity } from './dynamictile.js';
@@ -172,7 +172,6 @@ Hooks.once("init", function() {
   });
 
   // ------------- Registra os atalhos do módulo ------------- 
-  
   game.keybindings.register(isometricModuleConfig.MODULE_ID, 'increaseTilesOpacity', {
     name: game.i18n.localize('isometric-perspective.keybindings_increase_tile_opacity'), //name: 'Increase Tile Opacity',
     hint: game.i18n.localize('isometric-perspective.keybindings_increase_tile_opacity_hint'), //hint: 'Increases the opacity of always visible tiles.',
@@ -201,13 +200,11 @@ Hooks.once("init", function() {
     precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL
   });
 
-
   // ------------- Executa os hooks de funcionalidades adicionais do módulo -------------
   registerDynamicTileConfig();
   // registerSortingConfig();
   registerOcclusionConfig();
 
-  
   // Define global debug print variable
   if (game.settings.get(isometricModuleConfig.MODULE_ID, "debug"))
     isometricModuleConfig.DEBUG_PRINT = true;
@@ -221,12 +218,9 @@ Hooks.once("init", function() {
   registerRuler();
 });
 
-
-// Verifica se deve mostrar a tela de boas-vindas
-// Checks whether to show the welcome screen
-
 //HOOKS REGISTRATION 
-
+  // Verifica se deve mostrar a tela de boas-vindas
+  // Checks whether to show the welcome screen
 // WelcomeScreen
 Hooks.once('ready', addWelcomeScreen);
 //scene configuration
@@ -261,38 +255,13 @@ Hooks.on("renderTileConfig", initTileForm);
 Hooks.on("createTile", handleCreateTile);
 Hooks.on("updateTile", handleUpdateTile);
 Hooks.on("refreshTile", handleRefreshTile);
-// Hooks.on("getSceneControlButtons", addDepthSortControls);
+Hooks.on("getSceneControlButtons", addDepthSortControls);
 
 //autosorting
-Hooks.on("canvasReady", (canvas) => {isoDepthSortReady();})
-Hooks.on("refreshToken", (token) => {
-  const scene = token.scene || token.document.parent || canvas.scene;
-  if(isIsometricAutosortingEnabledForPlaceable(token,scene)){
-    if (!token.document.isOwner) return;
-    isoDepthSort(token,scene,"Token");
-  }
-})
-Hooks.on('updateToken', async (tokenDocument, change, options, userId) => {
-  const scene = tokenDocument.parent;
-  const token = canvas.tokens.get(tokenDocument.id);
-  if(isIsometricAutosortingEnabledForPlaceable(token,scene)){
-    // Check if there has been a change in position
-    if ((change.x !== undefined || change.y !== undefined) && userId === game.userId) {
-      if (token) await isoDepthSort(token,scene,"Token");
-    }
-  }
+Hooks.on("init", () => {
+  CONFIG.Token.objectClass = isoDepthSortMixin(CONFIG.Token.objectClass);
+  // CONFIG.Tile.objectClass = isoDepthSortMixin(CONFIG.Tile.objectClass); // will need probably its own type of mixin the logic is too different
 });
-Hooks.on('createToken', async (tokenDocument, options, userId) => {
-  const scene = tokenDocument.parent;
-  const token = canvas.tokens.get(tokenDocument.id);
-  if(isIsometricAutosortingEnabledForPlaceable(token,scene)){
-    // If the movement is from the current user
-    if (userId === game.userId) {
-      if (token) await isoDepthSort(token,scene,"Token");
-    }
-  }
-});
-
 
 /**
  * @param {----- TESTING AREA / ÁREA DE TESTES -----}

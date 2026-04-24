@@ -69,19 +69,15 @@ function getDecimalPrecision(step) {
 
 export function patchConfig(documentSheet, config, args) {
   if (!documentSheet) return;
-  
   // Check if already patched
   if (documentSheet.TABS?.sheet?.tabs?.some(tab => tab.id === config.tabId)) return;
-  
   // Adding the isometric tab data to the config parts
   if (documentSheet.TABS?.sheet?.tabs) {
     documentSheet.TABS.sheet.tabs.push({ id: config.tabId, group: config.tabGroup, label:config.label, icon: config.icon });
   }
-  
   // Adding the part template
   if (documentSheet.PARTS) {
     documentSheet.PARTS.isometric = {template: config.templatePath};
-
     // Re-order footer to be last
     if (documentSheet.PARTS.footer) {
       const footerPart = documentSheet.PARTS.footer;
@@ -100,9 +96,7 @@ export function patchConfig(documentSheet, config, args) {
         console.warn("Isometric Perspective: Unable to access token document");
         return { tab: context.tabs?.[partId] };
       }
-      
       const flags = doc.flags?.[config.moduleConfig.MODULE_ID] ?? {};
-
       return {
         ...flags,
         ...args,
