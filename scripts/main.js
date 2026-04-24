@@ -118,6 +118,16 @@ Hooks.once("init", function() {
     requiresReload: true
   });
 
+  game.settings.register(isometricModuleConfig.MODULE_ID, "depthSortActiveFlag", {
+    name: game.i18n.localize('isometric-perspective.settings_toggle_depth_sort_active'), //name: 'Toggle depth sorting',
+    hint: game.i18n.localize('isometric-perspective.settings_toggle_depth_sort_active_hint'), //hint: 'Toggle depth sorting for newly created tiles while active',
+    scope: 'world',
+    config: false,
+    default: false,
+    type: Boolean,
+    requiresReload: false
+  });
+
   /*
   game.settings.register(isometricModuleConfig.MODULE_ID, 'enableOcclusionTokenSilhouette', {
     name: game.i18n.localize('isometric-perspective.settings_token_silhouette_name'), //name: 'Enable Occlusion: Token Silhouette',
@@ -255,7 +265,9 @@ Hooks.on("renderTileConfig", initTileForm);
 Hooks.on("createTile", handleCreateTile);
 Hooks.on("updateTile", handleUpdateTile);
 Hooks.on("refreshTile", handleRefreshTile);
-Hooks.on("getSceneControlButtons", addDepthSortControls);
+Hooks.on("getSceneControlButtons", controls => {
+  addDepthSortControls(controls);
+});
 
 //autosorting
 Hooks.on("init", () => {

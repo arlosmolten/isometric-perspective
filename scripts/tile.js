@@ -93,6 +93,13 @@ export function handleCreateTile(tileDocument) {
   const scene = tile.scene;
   const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   requestAnimationFrame(() => applyIsometricTransformation(tile, isSceneIsometric));
+
+  const isDepthSortToggled = game.settings.get(isometricModuleConfig.MODULE_ID, "depthSortActiveFlag");
+  if(isDepthSortToggled){
+    tile.document.setFlag(isometricModuleConfig.MODULE_ID,"isoTileAutoSortingEnabled", true);
+  } else {
+    tile.document.setFlag(isometricModuleConfig.MODULE_ID,"isoTileAutoSortingEnabled", false);
+  }
 }
 
 export function handleUpdateTile(tileDocument, updateData, options, userId) {
@@ -134,14 +141,15 @@ export function handleRefreshTile(tile) {
 }
 
 export function addDepthSortControls(controls){
-  controls.tiles.tools.toggleDetphSort = {
-    name:" toggle depth sort",
+  controls.tiles.tools.toggleDephtSort = {
+    name:"toggleDephtSort",
+    title:"Toggle depth sort",
     icon: "fa-solid fa-sort",
-    order: Object.keys(controls.tokens.tools).length,
-    button: true,
+    order: Object.keys(controls.tiles.tools).length,
+    toggle: true,
     visible: game.user.isGM,
-    onChange: () => {
-      // game.settings.get(isometricModuleConfig.MODULE_ID, "toggleTileDepthSort")
+    onChange: (event,toggled) => {
+      game.settings.set(isometricModuleConfig.MODULE_ID, "depthSortActiveFlag",toggled);
     }
   }
 }
