@@ -12,6 +12,8 @@
     "isometric-perspective.settings_dynamic_tile_hint": "(BETA FEATURE. USE WITH CAUTION) Adjusts the visibility of tiles dynamically with the positioning of tokens. See how this feature works here.",
     "isometric-perspective.settings_token_sort_name": "Enable Automatic Token Sorting",
     "isometric-perspective.settings_token_sort_hint": "(BETA FEATURE. USE WITH CAUTION. V12+ ONLY) Automatically adjusts the tokens sort property value when moving it around the canvas.",
+    "isometric-perspective.settings_toggle_depth_sort_active": "Toggle depth sort",
+    "isometric-perspective.settings_toggle_depth_sort_active_hint": "Toggle depth sort for newly created tiles while active.",
     "isometric-perspective.settings_token_silhouette_name": "Enable Occlusion: Token Silhouette",
     "isometric-perspective.settings_token_silhouette_hint": "(BETA FEATURE WITH PERFORMANCE ISSUES. USE SPARENTLY) Creates a shadow effect on the token when behind a tile. GPU mode isn't working properly, but it is lightning fast. CPU is always heavy in processing, but a higher chunk option is faster trading quality fidelity. 'Chunk Size = 2' is the probably the better mode.",
     "isometric-perspective.settings_welcome_name": "Show Welcome Screen",

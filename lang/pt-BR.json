@@ -12,6 +12,8 @@
     "isometric-perspective.settings_dynamic_tile_hint": "(RECURSO EM TESTES. USE COM CUIDADO) Ajusta a visibilidade dos tiles dinamicamente com a posição dos tokens. Veja como esta funcionalidade funciona aqui.",
     "isometric-perspective.settings_token_sort_name": "Habilitar Ordenação Automática de Tokens",
     "isometric-perspective.settings_token_sort_hint": "(RECURSO EM TESTES. USE COM CUIDADO. SOMENTE PARA V12+) Ajusta automaticamente o valor de ordenação dos tokens ao movê-los pelo canvas.",
+    "isometric-perspective.settings_toggle_depth_sort_active": "Toggle depth sort",
+    "isometric-perspective.settings_toggle_depth_sort_active_hint": "Toggle depth sort for newly created tiles while active.", 
     "isometric-perspective.settings_token_silhouette_name": "Habilitar Oclusão: Silhueta de Token",
     "isometric-perspective.settings_token_silhouette_hint": "(RECURSO EM TESTES COM PROBLEMAS DE PERFORMANCE. USE DE FORMA LEVE) Cria um efeito de sombra sobre o token que estiver por trás de um tile. GPU não está funcionando corretamente, mas é super rápido. CPU é sempre pesado no processamento, mas é possível diminuir o impacto escolhendo um valor de chunk maior. 'Chunk Size = 2' é provavelmente a melhor opção.",
     "isometric-perspective.settings_welcome_name": "Mostrar Janela de Boas-Vindas",

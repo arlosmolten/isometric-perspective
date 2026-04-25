@@ -35,7 +35,6 @@ export function initTileForm(app, html, context, options){
   });
 
   //Dynamic tile and wall linking
-
   const selectWallButton = html.querySelector('.select-wall');
   const clearWallButton = html.querySelector('.clear-wall');
   const linkedWallsIdInput = html.querySelector('input[name="flags.isometric-perspective.linkedWallIds"]');
@@ -94,6 +93,13 @@ export function handleCreateTile(tileDocument) {
   const scene = tile.scene;
   const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   requestAnimationFrame(() => applyIsometricTransformation(tile, isSceneIsometric));
+
+  const isDepthSortToggled = game.settings.get(isometricModuleConfig.MODULE_ID, "depthSortActiveFlag");
+  if(isDepthSortToggled){
+    tile.document.setFlag(isometricModuleConfig.MODULE_ID,"isoTileAutoSortingEnabled", true);
+  } else {
+    tile.document.setFlag(isometricModuleConfig.MODULE_ID,"isoTileAutoSortingEnabled", false);
+  }
 }
 
 export function handleUpdateTile(tileDocument, updateData, options, userId) {
@@ -115,7 +121,7 @@ export function handleUpdateTile(tileDocument, updateData, options, userId) {
 
   if (isTileSortable){
     tile.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS; 
-    tile.mesh.sort = comparePlaceablePosition(tile, true); // need a fix
+    tile.mesh.sort = comparePlaceablePosition(tile, true);
   }
 
 }
@@ -130,7 +136,21 @@ export function handleRefreshTile(tile) {
 
   if (isTileSortable){
     tile.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS; 
-    tile.mesh.sort = comparePlaceablePosition(tile, true); // need a fix
+    tile.mesh.sort = comparePlaceablePosition(tile, true);
+  }
+}
+
+export function addDepthSortControls(controls){
+  controls.tiles.tools.toggleDephtSort = {
+    name:"toggleDephtSort",
+    title:"Toggle depth sort",
+    icon: "fa-solid fa-sort",
+    order: Object.keys(controls.tiles.tools).length,
+    toggle: true,
+    visible: game.user.isGM,
+    onChange: (event,toggled) => {
+      game.settings.set(isometricModuleConfig.MODULE_ID, "depthSortActiveFlag",toggled);
+    }
   }
 }
   

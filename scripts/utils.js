@@ -69,19 +69,15 @@ function getDecimalPrecision(step) {
 
 export function patchConfig(documentSheet, config, args) {
   if (!documentSheet) return;
-  
   // Check if already patched
   if (documentSheet.TABS?.sheet?.tabs?.some(tab => tab.id === config.tabId)) return;
-  
   // Adding the isometric tab data to the config parts
   if (documentSheet.TABS?.sheet?.tabs) {
     documentSheet.TABS.sheet.tabs.push({ id: config.tabId, group: config.tabGroup, label:config.label, icon: config.icon });
   }
-  
   // Adding the part template
   if (documentSheet.PARTS) {
     documentSheet.PARTS.isometric = {template: config.templatePath};
-
     // Re-order footer to be last
     if (documentSheet.PARTS.footer) {
       const footerPart = documentSheet.PARTS.footer;
@@ -100,9 +96,7 @@ export function patchConfig(documentSheet, config, args) {
         console.warn("Isometric Perspective: Unable to access token document");
         return { tab: context.tabs?.[partId] };
       }
-      
       const flags = doc.flags?.[config.moduleConfig.MODULE_ID] ?? {};
-
       return {
         ...flags,
         ...args,
@@ -116,13 +110,9 @@ export function patchConfig(documentSheet, config, args) {
 
 //to avoid duplicate security checkers all over the place
 export function isIsometricAutosortingEnabledForPlaceable(placeable,scene) {
-  const isometricWorldEnabled = game.settings.get(isometricModuleConfig.MODULE_ID, "worldIsometricFlag");
-  const enableAutoSorting = game.settings.get(isometricModuleConfig.MODULE_ID, "enableAutoSorting");
-  if (!isometricWorldEnabled || !enableAutoSorting) return;
-  if (game.version.startsWith("11")) return; //There isn't a sort method on v11. Needs another way to sort.
+  if (game.version.startsWith("11")) return false; //There isn't a sort method on v11. Needs another way to sort.
   if (!scene) return false;
-  if (!scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled")) {return false}
-  else { return true};
+  if (scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled")) {return true}
 }
 
 /**
@@ -172,10 +162,10 @@ export function createAdjustableButton(options) {
       inputs,                   // Array of input elements to update [InputX, InputY]
       adjustmentScale = 0.1,    // Scale factor or Function returning [scaleX, scaleY]
       valueConstraints = null,  // Optional min/max constraints {min, max}
-      roundingPrecision = 0,     // Number of decimal places
-      onInputCallback = null,    // Optional callback after input update
-      onDragStart = null,        // Optional callback on drag start
-      onDragEnd = null           // Optional callback on drag end
+      roundingPrecision = 0,    // Number of decimal places
+      onInputCallback = null,   // Optional callback after input update
+      onDragStart = null,       // Optional callback on drag start
+      onDragEnd = null          // Optional callback on drag end
   } = options;
 
   if (!buttonElement) return;
