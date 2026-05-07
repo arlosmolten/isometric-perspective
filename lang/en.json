@@ -78,6 +78,15 @@
     "isometric-perspective.tile_link_wall_hint": "Click the button to select a wall. This wall will be used to determine the tile's visibility with a selected token.",
     "isometric-perspective.tile_decoupleScale_name": "Disable Isometric Auto-Scale",
     "isometric-perspective.tile_decoupleScale_hint": "If checked, the tile will not auto-resize its art when its dimensions change.",
+
+    "isometric-perspective._comment": "Region Configuration",
+    "isometric-perspective.region_enableIsometric_room_sorting_name": "Enable region room depth sorting",
+    "isometric-perspective.region_enableIsometric_room_sorting_hint": "Sort linked tiles as front or back walls when tokens interact with this region",
+    "isometric-perspective.region_link_tile_name": "Link Tiles",
+    "isometric-perspective.region_link_tile_select_tile": "Select Tiles",
+    "isometric-perspective.region_link_tile_clear_tile": "Clear Tiles",
+    "isometric-perspective.region_link_front_tiles_hint": "Select tiles to mark them as a room's front walls, theses tiles will be depth sorted above tokens if tokens are within the region boundaries",
+    "isometric-perspective.region_link_back_tiles_hint": "Select tiles to mark them as a room's back walls, theses tiles will be depth sorted below tokens if tokens are within the region boundaries",
     
     "isometric-perspective._comment": "Warnings and Error Messages",
     "isometric-perspective.error_test": "Test error message",

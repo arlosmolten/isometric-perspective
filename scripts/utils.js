@@ -86,7 +86,7 @@ export function patchConfig(documentSheet, config, args) {
     }
   }
 
-  // Override part context to include the isometric-perspective config data
+  // Override part context to include the config data
   const defaultRenderPartContext = documentSheet.prototype._preparePartContext;
   documentSheet.prototype._preparePartContext = async function(partId, context, options) {
     if (partId === "isometric") {
@@ -133,6 +133,11 @@ export function comparePlaceablePosition(placeable) {
       const placeableId = placeable.mesh.name.split(".").pop();
       const placeableType = placeable.mesh.name.split(".").shift();
       const spriteType = sprite.name.split(".").shift();
+
+      //.parent.regions._source[0]
+      // if(placeableType === "Token"){
+      //   console.log(sprite.parent.regions?._source[0])
+      // }
 
       if(placeableId !== spriteId){
         let currentCompareY = sprite.object.document.y;

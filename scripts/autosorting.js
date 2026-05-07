@@ -19,6 +19,13 @@ export function isoDepthSortMixin(Base){
         this.mesh.sort = newSort;
       }
     }
+
+    _onUpdate(changed, options, userId) {
+      super._onUpdate(changed, options, userId);
+      
+      console.log("ON ANY REGIONS??", options.parent.regions._source[0])
+    }
+
   }
 }
 
