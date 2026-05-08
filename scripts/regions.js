@@ -86,7 +86,12 @@ export function handleCreateRegion(tileDocument) {
     //here be dragons
 }
 
+export function testRegionInteract(data){
+  console.log("TEST??" , data);
+}
+
 export function handleUpdateRegion(tileDocument, updateData, options, userId) {
+  // console.log("TOKEN??")
     //here be dragons
 }
 

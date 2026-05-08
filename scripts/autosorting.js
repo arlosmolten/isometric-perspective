@@ -1,6 +1,7 @@
 import { isometricModuleConfig } from './consts.js';
 import { 
   comparePlaceablePosition,
+  sortPlaceablePosition,
   isIsometricAutosortingEnabledForPlaceable
 } from './utils.js';
 
@@ -8,22 +9,68 @@ export function isoDepthSortMixin(Base){
   return class DepthSortPlaceable extends Base{
     _refreshState() {
       super._refreshState();
-      const sortableType = this.name.split(".").shift();
-      const newSort = comparePlaceablePosition(this);
-      if(sortableType === "Token"){
-        async () => await awaitTokenAnimation(this.document);
-        this.sort = newSort;
-        this.mesh.sort = newSort;
-      } else {
-        this.sort = newSort;
-        this.mesh.sort = newSort;
+      if (this.document.documentName === "Tile"){
+        const isTileSortable = this.document.flags[isometricModuleConfig.MODULE_ID]?.isoTileAutoSortingEnabled || false;
+        if (isTileSortable){ this.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS; 
+        } else { this.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES; }
       }
+      sortPlaceablePosition(this);
     }
-
     _onUpdate(changed, options, userId) {
       super._onUpdate(changed, options, userId);
-      
-      console.log("ON ANY REGIONS??", options.parent.regions._source[0])
+      sortPlaceablePosition(this);
+    }
+    _onControl(options){
+      super._onControl(options)
+      sortPlaceablePosition(this);
+    }
+    _onRelease(options){
+      super._onRelease(options);
+      sortPlaceablePosition(this);
+    }
+    _onHoverIn(event, {hoverOutOthers=false, updateLegend=true}={}){
+      super._onHoverIn(event, {hoverOutOthers=false, updateLegend=true}={});
+      sortPlaceablePosition(this);
+    }
+    _onHoverOut(event, {updateLegend=true}={}){
+      super._onHoverOut(event, {updateLegend=true}={});
+      sortPlaceablePosition(this);
+    }
+    _onClickLeft(event){
+      super._onClickLeft(event);
+      sortPlaceablePosition(this);
+    }
+    _onUnclickLeft(event){
+      super._onUnclickLeft(event);
+      sortPlaceablePosition(this);
+    }
+    _onClickRight(event){
+      super._onClickRight(event);
+      sortPlaceablePosition(this);
+    }
+    _onUnclickRight(event){
+      super._onUnclickRight(event);
+      sortPlaceablePosition(this);
+    }
+    _onDragLeftStart(event){
+      super._onDragLeftStart(event);
+      sortPlaceablePosition(this);
+    }
+    _onDragLeftMove(event){
+      super._onDragLeftMove(event);
+      sortPlaceablePosition(this);
+    }
+    _onDragLeftDrop(event){
+      super._onDragLeftDrop(event);
+      sortPlaceablePosition(this);
+    }
+    _onDragRightMove(event){
+      super._onDragRightMove(event);
+      sortPlaceablePosition(this);
+    }
+    _onDragRightCancel(event){
+      super._onDragRightCancel(event);
+      sortPlaceablePosition(this);
     }
 
   }

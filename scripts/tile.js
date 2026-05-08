@@ -116,13 +116,12 @@ export function handleUpdateTile(tileDocument, updateData, options, userId) {
     requestAnimationFrame(() => applyIsometricTransformation(tile, isSceneIsometric));
   }
 
-  const isTileSortable = tile.document.flags[isometricModuleConfig.MODULE_ID]?.isoTileAutoSortingEnabled || false;
-  let newSortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES;
-
-  if (isTileSortable){
-    tile.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS; 
-    tile.mesh.sort = comparePlaceablePosition(tile, true);
-  }
+  // const isTileSortable = tile.document.flags[isometricModuleConfig.MODULE_ID]?.isoTileAutoSortingEnabled || false;
+  // if (isTileSortable){
+  //   tile.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS; 
+  // } else {
+  //   tile.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES;
+  // }
 
 }
 
@@ -131,13 +130,6 @@ export function handleRefreshTile(tile) {
   const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   applyIsometricTransformation(tile, isSceneIsometric);
 
-  const isTileSortable = tile.document.flags[isometricModuleConfig.MODULE_ID]?.isoTileAutoSortingEnabled || false;
-  let newSortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES;
-
-  if (isTileSortable){
-    tile.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS; 
-    tile.mesh.sort = comparePlaceablePosition(tile, true);
-  }
 }
 
 export function addDepthSortControls(controls){
