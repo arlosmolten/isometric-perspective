@@ -124,49 +124,29 @@ export function sortPlaceablePosition(placeable) {
     const placeableMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
     const canvasLayer = canvas.primary.children;
     const currentSortLayer = placeable.mesh.parent
-    
+    const displayList = [];
     canvasLayer.map(sprite => {
       if(sprite.sortLayer === placeableMeshLayer){
-        
         const placeableId = placeable.document.id
-        const placeableType = placeable.document.documentName
-        const siblingId = sprite.object.document._id
-        const siblingType = sprite.object.document.documentName
-        
-        if(placeableId !== siblingId){
-          console.log("type:",placeableType,siblingType);
-          const currentPlaceable = {
-            id:placeableId,
-            type:placeableType,
-            y: placeable.document.y,
-            sort: placeable.mesh.sort
-          }
-          const currentSibling = {
-            id:siblingId,
-            type:siblingType,
-            y: sprite.object.document.y,
-            sort: sprite.sort
-          }
-          // compatibility fix: in v14 tiles point of origin is their visual center so their y coordinate isn't at their bottom edge , a small adjustment is required
-          if (game.release.generation >= 14) {
-            if(siblingType === "Tile"){ currentSibling.y = sprite.object.document.y + (sprite.object.document.height * 0.5);}
-            if(placeableType === "Tile"){ currentPlaceable.y = placeable.document.y + (placeable.document.height * 0.5);}
-          }          
-          if (currentPlaceable.y > currentSibling.y) {  // placeable Y is bigger than sibling Y
-            if (currentPlaceable.sort < currentSibling.sort) {  // placeable sort is lower than sibling , swap their sort values
-              placeable.mesh.sort = currentSibling.sort;
-              sprite.sort = currentPlaceable.sort;
-            }
-          } else if (currentPlaceable.y < currentSibling.y){ // placeable Y is smaller than sibling Y
-            if (currentPlaceable.sort > currentSibling.sort) { // placeable sort is bigger or equal than sibling
-              placeable.mesh.sort = currentSibling.sort;
-              sprite.sort = currentPlaceable.sort;
-            }
-          }
+        const currentSprite = {
+          type:sprite.object.document.documentName,
+          y: sprite.object.document.y,
+          height:sprite.object.document.height
         }
+        //v14 compatibility fix
+        if (game.release.generation >= 14) { if(currentSprite.type === "Tile"){ currentSprite.y = currentSprite.y + (currentSprite.height * 0.5);}}
+        displayList.push(sprite);
       }
     });
-    currentSortLayer.sortDirty = true;
+
+    displayList.sort((sprite,sibling)=> { return sprite.object.document.y - sibling.object.document.y})
+
+    for (let i = 0; i < displayList.length; i++) {
+      const currentSprite = displayList[i];
+      currentSprite.object.document.sort = i;
+      currentSprite.sort = i;
+    }
+    placeable.mesh.parent.sortDirty = true;
   }
 }
 
@@ -193,7 +173,7 @@ export function comparePlaceablePosition(placeable) {
         let currentCompareY = sprite.object.document.y;
         // in v14 tiles point of origin is their visual center so their y coordinate isn't at their bottom edge , a small adjustment is required
           if (game.release.generation >= 14) {
-            if(siblingType === "Tile"){currentSiblingY = sprite.object.document.y + (sprite.object.document.height * 0.5);}
+            if(siblingType === "Tile"){currentSpriteY = sprite.object.document.y + (sprite.object.document.height * 0.5);}
             if(placeableType === "Tile"){ currentPlaceableY = placeable.document.y + (placeable.document.height * 0.5);}
           }
         // compare Y coordinates and adjust the sort order in consequence
@@ -327,28 +307,3 @@ export function createAdjustableButton(options) {
       e.stopPropagation();
   });
 }
-
-//temp 
-
-        // const displayList = []
-
-        // if(placeableId !== siblingId){
-        //   let currentSiblingY = sprite.object.document.y;
-        //   // in v14 tiles point of origin is their visual center so their y coordinate isn't at their bottom edge , a small adjustment is required
-        //   if(siblingType === "Tile"){currentSiblingY = sprite.object.document.y + (sprite.object.document.height * 0.5);}
-        //   if(placeableType === "Tile"){ currentPlaceableY = placeable.document.y + (placeable.document.height * 0.5);}
-        //   displayList.push({sprite:sprite, y:sprite.y, sort:sprite.sort})
-        // }
-
-        // displayList.sort((a,b)=> a.y-b.y);
-
-        // let finalSort = 0;
-        // for (let i = 0; i < displayList.length; i++) {
-        //   if (currentPlaceableY > displayList[i].y) {
-        //     finalSort = Math.max(finalSort, displayList[i].sort + 1);
-        //   }
-        // }
-
-        // placeable.mesh.sort = finalSort;
-        // placeable.mesh.parent.sortDirty = true;
-        // console.log(placeable.document._id,finalSort);
