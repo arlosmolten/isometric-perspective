@@ -14,12 +14,16 @@ export function isoDepthSortMixin(Base){
         if (isTileSortable){ this.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS; 
         } else { this.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES; }
       }
+      this.zIndex = 0;
+      this.mesh.zIndex = 0;
+      // this.zIndex = this.isPreview ? 3 : this.controlled ? 2 : this.hover ? 1 : 0;
       sortPlaceablePosition(this);
     }
     _onUpdate(changed, options, userId) {
       super._onUpdate(changed, options, userId);
       sortPlaceablePosition(this);
     }
+    // initially i wanst overriding more than _onUpdate but i neded up adding theses to see if it would fix the problematic reordering on
     _onControl(options){
       super._onControl(options)
       sortPlaceablePosition(this);
@@ -29,6 +33,7 @@ export function isoDepthSortMixin(Base){
       sortPlaceablePosition(this);
     }
     _onHoverIn(event, {hoverOutOthers=false, updateLegend=true}={}){
+      // console.log("HOVER EVENT", event)
       super._onHoverIn(event, {hoverOutOthers=false, updateLegend=true}={});
       sortPlaceablePosition(this);
     }
@@ -74,14 +79,6 @@ export function isoDepthSortMixin(Base){
     }
 
   }
-}
-
-export async function isoDepthSort(placeable,scene,label){   
-    await awaitTokenAnimation(placeable.document); 
-    const newSort = comparePlaceablePosition(placeable);
-    placeable.sort = newSort;
-    placeable.mesh.sort = newSort;
-    console.log("SORTING?", placeable.sort, placeable.mesh.sort);
 }
 
 /**

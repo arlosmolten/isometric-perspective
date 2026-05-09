@@ -33,7 +33,7 @@ import {
 } from './hud.js';
 
 import {
-  isoDepthSort,
+  // isoDepthSort,
   isoDepthSortMixin
 } from './autosorting.js'
 
