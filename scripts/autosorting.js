@@ -21,63 +21,23 @@ export function isoDepthSortMixin(Base){
     }
     _onUpdate(changed, options, userId) {
       super._onUpdate(changed, options, userId);
-      sortPlaceablePosition(this);
-    }
-    // initially i wanst overriding more than _onUpdate but i neded up adding theses to see if it would fix the problematic reordering on
-    _onControl(options){
-      super._onControl(options)
-      sortPlaceablePosition(this);
-    }
-    _onRelease(options){
-      super._onRelease(options);
-      sortPlaceablePosition(this);
-    }
-    _onHoverIn(event, {hoverOutOthers=false, updateLegend=true}={}){
-      // console.log("HOVER EVENT", event)
-      super._onHoverIn(event, {hoverOutOthers=false, updateLegend=true}={});
-      sortPlaceablePosition(this);
-    }
-    _onHoverOut(event, {updateLegend=true}={}){
-      super._onHoverOut(event, {updateLegend=true}={});
-      sortPlaceablePosition(this);
-    }
-    _onClickLeft(event){
-      super._onClickLeft(event);
-      sortPlaceablePosition(this);
-    }
-    _onUnclickLeft(event){
-      super._onUnclickLeft(event);
-      sortPlaceablePosition(this);
-    }
-    _onClickRight(event){
-      super._onClickRight(event);
-      sortPlaceablePosition(this);
-    }
-    _onUnclickRight(event){
-      super._onUnclickRight(event);
-      sortPlaceablePosition(this);
-    }
-    _onDragLeftStart(event){
-      super._onDragLeftStart(event);
-      sortPlaceablePosition(this);
-    }
-    _onDragLeftMove(event){
-      super._onDragLeftMove(event);
-      sortPlaceablePosition(this);
-    }
-    _onDragLeftDrop(event){
-      super._onDragLeftDrop(event);
-      sortPlaceablePosition(this);
-    }
-    _onDragRightMove(event){
-      super._onDragRightMove(event);
-      sortPlaceablePosition(this);
-    }
-    _onDragRightCancel(event){
-      super._onDragRightCancel(event);
-      sortPlaceablePosition(this);
-    }
 
+      if (this.document.documentName === "Token"){
+        // const currentRegions = this.document.regions;
+        if ("_regions" in changed) {
+          const priorRegions = options._priorRegions?.[this.document.id]?.map(id => this.document.parent.regions.get(id));
+          const currentRegions = this.document.regions;
+          const newlyEnteredRegions = currentRegions.filter(region => !priorRegions.includes(region));
+          const currentRegionEnd = Array.from(newlyEnteredRegions).map(region => region);
+          console.log("current region? : " , currentRegionEnd[0]?.name, console.log("changed?",changed))
+        }
+
+      }
+      // prevent sorting when the y coordinates of a placeable didnt change ( thanks Michael for the tip! )
+      if ("y" in changed) {
+        sortPlaceablePosition(this);
+      }
+    }
   }
 }
 
