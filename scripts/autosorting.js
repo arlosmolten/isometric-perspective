@@ -31,7 +31,6 @@ export function isoDepthSortMixin(Base){
           const currentRegionEnd = Array.from(newlyEnteredRegions).map(region => region);
           console.log("current region? : " , currentRegionEnd[0]?.name, console.log("changed?",changed))
         }
-
       }
       // prevent sorting when the y coordinates of a placeable didnt change ( thanks Michael for the tip! )
       if ("y" in changed) {
