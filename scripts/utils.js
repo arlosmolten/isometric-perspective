@@ -86,7 +86,7 @@ export function patchConfig(documentSheet, config, args) {
     }
   }
 
-  // Override part context to include the isometric-perspective config data
+  // Override part context to include the config data
   const defaultRenderPartContext = documentSheet.prototype._preparePartContext;
   documentSheet.prototype._preparePartContext = async function(partId, context, options) {
     if (partId === "isometric") {
@@ -116,37 +116,72 @@ export function isIsometricAutosortingEnabledForPlaceable(placeable,scene) {
 }
 
 /**
- * Calculates the sort value for a token based on its y value on the grid compared to its siblings.
+ * change placeables sort values based on its y value on the grid compared to its siblings.
+ * @param {Placeable|PlaceableDocument} token - The token or token document to calculate for.
+ */
+export function sortPlaceablePosition(placeable) {
+  if(placeable.mesh.sortLayer === foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS ){
+    const placeableMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
+    const canvasLayer = canvas.primary.children;
+    const currentSortLayer = placeable.mesh.parent
+    const displayList = [];
+    canvasLayer.map(sprite => {
+      if(sprite.sortLayer === placeableMeshLayer){
+        const placeableId = placeable.document.id
+        const currentSprite = {
+          type:sprite.object.document.documentName,
+          y: sprite.object.document.y,
+          height:sprite.object.document.height
+        }
+        //v14 compatibility fix
+        if (game.release.generation >= 14) { if(currentSprite.type === "Tile"){ currentSprite.y = currentSprite.y + (currentSprite.height * 0.5);}}
+        displayList.push(sprite);
+      }
+    });
+
+    displayList.sort((sprite,sibling)=> { return sprite.object.document.y - sibling.object.document.y})
+
+    for (let i = 0; i < displayList.length; i++) {
+      const currentSprite = displayList[i];
+      currentSprite.object.document.sort = i;
+      currentSprite.sort = i;
+    }
+    placeable.mesh.parent.sortDirty = true;
+  }
+}
+
+/**
+ * Calculates the sort value for a placeable based on its y value on the grid compared to its siblings.
  * @param {Token|TokenDocument} token - The token or token document to calculate for.
  * @returns {number} The calculated sort value.
  */
 export function comparePlaceablePosition(placeable) {
-  const tokenMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
+  const placeableMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
   const canvasLayer = canvas.primary.children;
   let currentPlaceableY = placeable.document.y;
   let newSort = placeable.mesh.sort ?? 0;
 
   canvasLayer.map( sprite => {
-    if(sprite.sortLayer === tokenMeshLayer){
+    if(sprite.sortLayer === placeableMeshLayer){
 
-      const spriteId = sprite.name.split(".").pop();
-      const placeableId = placeable.mesh.name.split(".").pop();
-      const placeableType = placeable.mesh.name.split(".").shift();
-      const spriteType = sprite.name.split(".").shift();
+      const placeableId = placeable.document.id
+      const placeableType = placeable.document.documentName
+      const siblingId = sprite.object.document._id
+      const siblingType = sprite.object.document.documentName
 
-      if(placeableId !== spriteId){
+      if(placeableId !== siblingId){
         let currentCompareY = sprite.object.document.y;
         // in v14 tiles point of origin is their visual center so their y coordinate isn't at their bottom edge , a small adjustment is required
-        if(spriteType === "Tile"){currentCompareY = sprite.object.document.y + (sprite.object.document.height * 0.5);}
-        if(placeableType === "Tile"){ currentPlaceableY = placeable.document.y + (placeable.document.height * 0.5);}
+          if (game.release.generation >= 14) {
+            if(siblingType === "Tile"){currentSpriteY = sprite.object.document.y + (sprite.object.document.height * 0.5);}
+            if(placeableType === "Tile"){ currentPlaceableY = placeable.document.y + (placeable.document.height * 0.5);}
+          }
         // compare Y coordinates and adjust the sort order in consequence
         if (currentPlaceableY > currentCompareY) {             
           if (placeable.mesh.sort <= sprite.sort) { newSort = sprite.sort + 1;}
         }
         else if (currentPlaceableY < currentCompareY) {
           if (placeable.mesh.sort >= sprite.sort) { newSort = Math.max(0, sprite.sort - 1); }
-        } else {
-          return; // in case of a tie, do nothing
         }
       }
     }

@@ -1470,7 +1470,8 @@ function initializeOcclusionLayer() {
 
 	// Add to canvas stage
 	canvas.stage.addChild(occlusionConfig.container);
-	canvas.stage.sortChildren();
+
+	
 
 	occlusionConfig.initialized = true;
 }

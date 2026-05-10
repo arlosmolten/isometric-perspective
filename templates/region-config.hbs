@@ -1,0 +1,19 @@
+<section class="tab scrollable isometric-tab-content {{tab.cssClass}}"data-tab="isometric" data-group="sheet">
+    
+    <div class="form-group">
+        <label for="{{rootId}}-isometric-perspective-enable-isometric-room">{{localize 'isometric-perspective.region_enableIsometric_room_sorting_name'}}</label>
+        <input id="{{rootId}}-isometric-perspective-enable-isometric-room" type="checkbox" name="flags.isometric-perspective.isoRegionTilesAutoSortingEnabled" {{checked document.flags.isometric-perspective.isoRegionTilesAutoSortingEnabled}}>
+    </div>
+    <div class="linked-tiles-container hidden">
+        <div class="form-group">
+            <label>{{localize 'isometric-perspective.region_link_tile_name'}}</label>
+            <input type="text" name="flags.isometric-perspective.linkedTilesIds" value="{{linkedTilesIds}}" readonly>
+        </div>
+        
+        <div class="form-group">
+            <button type="button" class="select-tiles"><i class="fas fa-plug"></i> {{localize 'isometric-perspective.region_link_tile_select_tile'}}</button>
+            <button type="button" class="clear-tiles"><i class="fa-solid fa-burst"></i> {{localize 'isometric-perspective.region_link_tile_clear_tile'}}</button>
+            <p class="hint">{{localize 'isometric-perspective.region_link_front_tiles_hint'}}</p>
+        </div>
+    </div>
+</section>

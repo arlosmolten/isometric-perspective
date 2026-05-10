@@ -416,6 +416,7 @@ function updateAlwaysVisibleElements() {
 
   // Habilita o zIndex para a camada de tokens
   tokensLayer.sortableChildren = true;
+  
 }
 
 function ensureWallIdsArray(linkedWallIds) {

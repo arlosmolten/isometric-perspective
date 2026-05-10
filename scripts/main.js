@@ -19,6 +19,13 @@ import {
   addDepthSortControls
  } from './tile.js';
 
+ import {
+   createRegionIsometricTab,
+   initRegionForm,
+   handleUpdateRegion,
+   testRegionInteract
+ } from './regions.js'
+
 import { 
   handleRenderTokenHUD,
   handleRenderTileHUD,
@@ -26,7 +33,7 @@ import {
 } from './hud.js';
 
 import {
-  isoDepthSort,
+  // isoDepthSort,
   isoDepthSortMixin
 } from './autosorting.js'
 
@@ -253,6 +260,9 @@ Hooks.on('renderPrototypeTokenConfig', initTokenForm);
 Hooks.on("createToken", handleCreateToken);
 Hooks.on("updateToken", handleUpdateToken);
 Hooks.on("refreshToken", handleRefreshToken);
+Hooks.on("stopToken", (data)=>{
+  console.log("DATA:", data)
+});
 
 // hud management
 Hooks.on("renderTokenHUD", handleRenderTokenHUD);
@@ -269,10 +279,16 @@ Hooks.on("getSceneControlButtons", controls => {
   addDepthSortControls(controls);
 });
 
+//region config 
+Hooks.on("ready", createRegionIsometricTab);
+Hooks.on("renderRegionConfig", initRegionForm);
+Hooks.on("updateRegion", handleUpdateRegion);
+Hooks.on("tokenMoveWithin", testRegionInteract);
+
 //autosorting
 Hooks.on("init", () => {
   CONFIG.Token.objectClass = isoDepthSortMixin(CONFIG.Token.objectClass);
-  // CONFIG.Tile.objectClass = isoDepthSortMixin(CONFIG.Tile.objectClass); // will need probably its own type of mixin the logic is too different
+  CONFIG.Tile.objectClass = isoDepthSortMixin(CONFIG.Tile.objectClass);
 });
 
 /**
