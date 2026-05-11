@@ -119,7 +119,7 @@ export function isIsometricAutosortingEnabledForPlaceable(placeable,scene) {
  * change placeables sort values based on its y value on the grid compared to its siblings.
  * @param {Placeable|PlaceableDocument} token - The token or token document to calculate for.
  */
-export function sortPlaceablePosition(placeable) {
+export function sortPlaceablePosition(placeable, currentOccupiedRegion = null) {
   if(placeable.mesh.sortLayer === foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS ){
     const placeableMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
     const canvasLayer = canvas.primary.children;
@@ -127,19 +127,11 @@ export function sortPlaceablePosition(placeable) {
     const displayList = [];
     canvasLayer.map(sprite => {
       if(sprite.sortLayer === placeableMeshLayer){
-        const placeableId = placeable.document.id
-        const currentSprite = {
-          type:sprite.object.document.documentName,
-          y: sprite.object.document.y,
-          height:sprite.object.document.height
-        }
-        //v14 compatibility fix
-        if (game.release.generation >= 14) { if(currentSprite.type === "Tile"){ currentSprite.y = currentSprite.y + (currentSprite.height * 0.5);}}
         displayList.push(sprite);
       }
     });
 
-    displayList.sort((sprite,sibling)=> { return sprite.object.document.y - sibling.object.document.y})
+    displayList.sort((sprite,sibling)=> compareSpritePosition(sprite,sibling)) // compare function should be improved
 
     for (let i = 0; i < displayList.length; i++) {
       const currentSprite = displayList[i];
@@ -148,6 +140,42 @@ export function sortPlaceablePosition(placeable) {
     }
     placeable.mesh.parent.sortDirty = true;
   }
+}
+
+function compareSpritePosition(sprite,sibling){    
+  let result = 0;
+
+  const currentSprite = {
+    type:sprite.object.document.documentName,
+    y: sprite.object.document.y,
+    height:sprite.object.document.height,
+  }
+
+  const currentSibling = {
+    type:sibling.object.document.documentName,
+    y: sibling.object.document.y,
+    height:sprite.object.document.height,
+  }
+   
+  if (currentSprite.type === "Tile"){
+    if (game.release.generation < 14) { //v14 compatibility fix
+      currentSprite.y = currentSprite.y - (currentSprite.height*0.5);
+    }
+  }
+
+  if (currentSibling.type === "Tile"){
+    if (game.release.generation < 14) { //v14 compatibility fix
+      currentSibling.y = currentSibling.y - (currentSibling.height*0.5);
+    }
+  }
+
+  if (currentSprite.y > currentSibling.y) {
+    result = 1;
+  } else if (currentSprite.y < currentSibling.y) {
+    result = -1;
+  }
+
+  return result;
 }
 
 /**
@@ -306,4 +334,14 @@ export function createAdjustableButton(options) {
       e.preventDefault();
       e.stopPropagation();
   });
+}
+
+export function graphicDebugTool(x,y,container){
+  const dot = new PIXI.Graphics();
+  dot.drawRect(2000,2000,200,200);
+  // dot.drawRect(x,y,200,200);
+  dot.visible = true;
+  dot.beginFill(0xff0000)
+  dot.endFill();
+  container.addChild(dot);
 }
