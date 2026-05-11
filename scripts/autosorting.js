@@ -9,10 +9,13 @@ export function isoDepthSortMixin(Base){
   return class DepthSortPlaceable extends Base{
     _refreshState() {
       super._refreshState();
-      if (this.document.documentName === "Tile"){
+      if (this !== null && this.document.documentName === "Tile"){
         const isTileSortable = this.document.flags[isometricModuleConfig.MODULE_ID]?.isoTileAutoSortingEnabled || false;
-        if (isTileSortable){ this.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS; 
-        } else { this.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES; }
+        if (isTileSortable){ 
+          this.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS; 
+        } else { 
+          this.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES; 
+        }
       }
       this.zIndex = 0;
       this.mesh.zIndex = 0;
@@ -21,20 +24,23 @@ export function isoDepthSortMixin(Base){
     }
     _onUpdate(changed, options, userId) {
       super._onUpdate(changed, options, userId);
-      let currentRegionOnMovementEnd = null;
+
+      let currentOccupiedRegion = null;
+
       if (this.document.documentName === "Token"){
-        // const currentRegions = this.document.regions;
         if ("_regions" in changed) {
           const priorRegions = options._priorRegions?.[this.document.id]?.map(id => this.document.parent.regions.get(id));
           const currentRegions = this.document.regions;
           const newlyEnteredRegions = currentRegions.filter(region => !priorRegions.includes(region));
           const currentRegionEnd = Array.from(newlyEnteredRegions).map(region => region);
-          currentRegionOnMovementEnd = currentRegionEnd[0]?.flags[isometricModuleConfig.MODULE_ID]?.isoRegionTilesAutoSortingEnabled;
+          if (currentRegionEnd !== undefined && currentRegionEnd !== null && currentRegionEnd[0]?.flags[isometricModuleConfig.MODULE_ID]?.isoRegionTilesAutoSortingEnabled){
+            currentOccupiedRegion = currentRegionEnd
+          }
         }
       }
       // prevent sorting when the y coordinates of a placeable didnt change ( thanks Michael for the tip! )
       if ("y" in changed) {
-        sortPlaceablePosition(this, currentRegionOnMovementEnd);
+        sortPlaceablePosition(this, currentOccupiedRegion);
       }
     }
   }
