@@ -17,8 +17,10 @@ export function isoDepthSortMixin(Base){
           this.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES; 
         }
       }
+
       this.zIndex = 0;
       this.mesh.zIndex = 0;
+
       if (this.document.documentName === "Token"){
         const currentRegions = Array.from(this.document.regions).map(region => region);
         const regionList =[]
@@ -46,7 +48,6 @@ export function isoDepthSortMixin(Base){
           this.document.setFlag(isometricModuleConfig.MODULE_ID, 'hasRegion', regionList);
           sortPlaceablePosition(this)
         }
-        // console.log("CURRENT REGION:", currentRegions[0]._id)
       } else {
         sortPlaceablePosition(this);
       }

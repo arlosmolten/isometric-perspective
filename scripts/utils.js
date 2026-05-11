@@ -170,7 +170,6 @@ function compareSpritePosition(sprite,sibling){
       if (game.release.generation < 14) { currentSprite.y = currentSprite.y - (currentSprite.height*0.5);} //v14 compatibility fix 
       if(currentSprite.isLinked){
         if(currentSibling.hasRegion){
-          console.log("CHECK IF FLAG", currentSprite.isLinked, currentSibling.hasRegion)
           currentSibling.hasRegion.map(region => {
             if(region === currentSprite.isLinked){ currentSprite.forceSortBelow = true}
           })     
@@ -182,7 +181,6 @@ function compareSpritePosition(sprite,sibling){
       if (game.release.generation < 14) { currentSibling.y = currentSibling.y - (currentSibling.height*0.5);} //v14 compatibility fix 
       if(currentSibling.isLinked){
         if(currentSprite.hasRegion){
-          console.log("CHECK IF FLAG", currentSibling.isLinked, currentSprite.hasRegion)
           currentSprite.hasRegion.map(region => {
             if(region === currentSibling.isLinked){ currentSibling.forceSortBelow = true}
           })
@@ -197,12 +195,11 @@ function compareSpritePosition(sprite,sibling){
     }
 
     if(currentSprite.forceSortBelow === true){
-      console.log(currentSprite.type)
-      position = 1;
-    }
-    if(currentSprite.forceSortBelow === true){
-      console.log(currentSprite.type)
       position = -1;
+    }
+    
+    if(currentSibling.forceSortBelow === true){
+      position = 1;
     }
 
     return position;
