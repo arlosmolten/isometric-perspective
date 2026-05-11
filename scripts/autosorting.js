@@ -19,8 +19,17 @@ export function isoDepthSortMixin(Base){
       }
       this.zIndex = 0;
       this.mesh.zIndex = 0;
-      // this.zIndex = this.isPreview ? 3 : this.controlled ? 2 : this.hover ? 1 : 0;
-      sortPlaceablePosition(this);
+      if (this.document.documentName === "Token"){
+        const currentRegions = Array.from(this.document.regions).map(region => region);
+        const regionList =[]
+        currentRegions.map(region => {
+          regionList.push(region._id);
+        })
+        this.document.setFlag(isometricModuleConfig.MODULE_ID, 'hasRegion', regionList);
+        sortPlaceablePosition(this)
+      } else {
+        sortPlaceablePosition(this);
+      }
     }
     _onUpdate(changed, options, userId) {
       super._onUpdate(changed, options, userId);
@@ -29,20 +38,19 @@ export function isoDepthSortMixin(Base){
 
       if (this.document.documentName === "Token"){
         const currentRegions = Array.from(this.document.regions).map(region => region);
+        if ("y" in changed) {
+          const regionList =[]
+          currentRegions.map(region => {
+            regionList.push(region._id);
+          })
+          this.document.setFlag(isometricModuleConfig.MODULE_ID, 'hasRegion', regionList);
+          sortPlaceablePosition(this)
+        }
         // console.log("CURRENT REGION:", currentRegions[0]._id)
-        if ("y" in changed) { sortPlaceablePosition(this, currentRegions);}
-        // this.movementAnimationPromise.finally(() =>{
-        //   const currentRegions = Array.from(this.document.regions).map(region => region);
-        //   if ("y" in changed) { sortPlaceablePosition(this, currentRegions);}
-        // })
-      }
-      // prevent sorting when the y coordinates of a placeable didnt change ( thanks Michael for the tip! )
-      if ("y" in changed) {
+      } else {
         sortPlaceablePosition(this);
       }
     }
-
-    // movementAnimationPromise
   }
 }
 

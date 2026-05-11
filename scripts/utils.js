@@ -119,7 +119,7 @@ export function isIsometricAutosortingEnabledForPlaceable(placeable,scene) {
  * change placeables sort values based on its y value on the grid compared to its siblings.
  * @param {Placeable|PlaceableDocument} token - The token or token document to calculate for.
  */
-export function sortPlaceablePosition(placeable, regionIds) {
+export function sortPlaceablePosition(placeable) {
   if(placeable.mesh.sortLayer === foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS ){
     const placeableMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
     const canvasLayer = canvas.primary.children;
@@ -131,13 +131,8 @@ export function sortPlaceablePosition(placeable, regionIds) {
       }
     });
 
-    if (regionIds){
-      displayList.sort((sprite,sibling)=> compareSpritePosition(sprite,sibling,regionIds))
-    } else {
-      displayList.sort((sprite,sibling)=> compareSpritePosition(sprite,sibling))
-    }
-
-
+    displayList.sort((sprite,sibling)=> compareSpritePosition(sprite,sibling))
+    
     for (let i = 0; i < displayList.length; i++) {
       const currentSprite = displayList[i];
       currentSprite.object.document.sort = i;
@@ -147,7 +142,7 @@ export function sortPlaceablePosition(placeable, regionIds) {
   }
 }
 
-function compareSpritePosition(sprite,sibling,regionIds){    
+function compareSpritePosition(sprite,sibling){    
   let position = 0;
 
   const currentSprite = {
@@ -155,58 +150,64 @@ function compareSpritePosition(sprite,sibling,regionIds){
     type:sprite.object.document.documentName,
     y: sprite.object.document.y,
     height:sprite.object.document.height,
-    linkedRegion: null
+    forceSortBelow: false,
+    isLinked:sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'isLinked'),
+    hasRegion:sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'hasRegion')
   }
 
   const currentSibling = {
     id:sibling.object.document.id,
     type:sibling.object.document.documentName,
     y: sibling.object.document.y,
-    height:sprite.object.document.height,
-    linkedRegion: null
+    height:sibling.object.document.height,
+    forceSortBelow: false,
+    isLinked:sibling.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'isLinked'),
+    hasRegion:sibling.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'hasRegion')
   }
 
-  if (currentSprite.type === "Tile"){
-    if (game.release.generation < 14) { //v14 compatibility fix
-      currentSprite.y = currentSprite.y - (currentSprite.height*0.5);
-    }
-    if(sprite.object.document.flags[isometricModuleConfig.MODULE_ID]?.isLinked){
-      currentSprite.linkedRegion = sprite.object.document.flags[isometricModuleConfig.MODULE_ID]?.isLinked;
-      console.log("LINKED:", currentSprite.id,currentSprite.linkedRegion) // TODO: investigate why only one region get the linked id and the other dosent
-    }
-  }
-
-  if (currentSibling.type === "Tile"){
-    if (game.release.generation < 14) { //v14 compatibility fix
-      currentSibling.y = currentSibling.y - (currentSibling.height*0.5);
-    }
-    if(sprite.object.document.flags[isometricModuleConfig.MODULE_ID]?.isLinked){
-      currentSibling.linkedRegion = sprite.object.document.flags[isometricModuleConfig.MODULE_ID]?.isLinked;
-      console.log("LINKED:", currentSibling.id,currentSibling.linkedRegion) // TODO: investigate why only one region get the linked id and the other dosent
-    }
-  }
-
-  if (currentSprite.y > currentSibling.y) {
-    position = 1;
-  } else if (currentSprite.y < currentSibling.y) {
-    position = -1;
-  }
-
-  if (currentSibling.type === "Tile"){ // if a region id list is included from a token ending its movement on a region with linked tiles
-    if(regionIds){
-      if(currentSibling.linkedRegion !== null){
-        regionIds.map(region => {
-          if(region._id === currentSibling.linkedRegion) {
-            console.log("SO IT WORK NOW OR WHAT ???????????", currentSibling.id,currentSibling.linkedRegion)
-            // TODO: sorting logic fail or is overriden on another update
-            position = 1;
-          } 
-        })
+  if(currentSprite.id !== currentSibling.id){
+    if (currentSprite.type === "Tile"){
+      if (game.release.generation < 14) { currentSprite.y = currentSprite.y - (currentSprite.height*0.5);} //v14 compatibility fix 
+      if(currentSprite.isLinked){
+        if(currentSibling.hasRegion){
+          console.log("CHECK IF FLAG", currentSprite.isLinked, currentSibling.hasRegion)
+          currentSibling.hasRegion.map(region => {
+            if(region === currentSprite.isLinked){ currentSprite.forceSortBelow = true}
+          })     
+        }
       }
+    } 
+    
+    if (currentSibling.type === "Tile"){
+      if (game.release.generation < 14) { currentSibling.y = currentSibling.y - (currentSibling.height*0.5);} //v14 compatibility fix 
+      if(currentSibling.isLinked){
+        if(currentSprite.hasRegion){
+          console.log("CHECK IF FLAG", currentSibling.isLinked, currentSprite.hasRegion)
+          currentSprite.hasRegion.map(region => {
+            if(region === currentSibling.isLinked){ currentSibling.forceSortBelow = true}
+          })
+        }
+      }
+    } 
+    
+    if (currentSprite.y > currentSibling.y) {
+      position = 1;
+    } else if (currentSprite.y < currentSibling.y) {
+      position = -1;
     }
+
+    if(currentSprite.forceSortBelow === true){
+      console.log(currentSprite.type)
+      position = 1;
+    }
+    if(currentSprite.forceSortBelow === true){
+      console.log(currentSprite.type)
+      position = -1;
+    }
+
+    return position;
   }
 
-  return position;
 }
 
 /**

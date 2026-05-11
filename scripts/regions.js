@@ -68,7 +68,7 @@ export function initRegionForm(app, html, context, options){
         if (linkedTilesIdInput) linkedTilesIdInput.value = newTilesIds.join(", ");
         const canvasLayer = canvas.primary.children;
         const currentRegionId = context.document._id;
-        tile.document.setFlag(isometricModuleConfig.MODULE_ID, 'isLinked', currentRegionId); // TODO: somehow only one region get their flag set, others dont 
+        tile.document.setFlag(isometricModuleConfig.MODULE_ID, 'regionLink', currentRegionId); // TODO: somehow only one region get their flag set, others dont 
       }
       // Returns the window to its original position and activates the RegionLayer layer.
       Object.values(ui.windows).filter(w => w instanceof RegionConfig).forEach(j => j.maximize());
