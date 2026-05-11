@@ -21,7 +21,7 @@ export function isoDepthSortMixin(Base){
     }
     _onUpdate(changed, options, userId) {
       super._onUpdate(changed, options, userId);
-
+      let currentRegionOnMovementEnd = null;
       if (this.document.documentName === "Token"){
         // const currentRegions = this.document.regions;
         if ("_regions" in changed) {
@@ -29,16 +29,17 @@ export function isoDepthSortMixin(Base){
           const currentRegions = this.document.regions;
           const newlyEnteredRegions = currentRegions.filter(region => !priorRegions.includes(region));
           const currentRegionEnd = Array.from(newlyEnteredRegions).map(region => region);
-          console.log("current region? : " , currentRegionEnd[0]?.name, console.log("changed?",changed))
+          currentRegionOnMovementEnd = currentRegionEnd[0]?.flags[isometricModuleConfig.MODULE_ID]?.isoRegionTilesAutoSortingEnabled;
         }
       }
       // prevent sorting when the y coordinates of a placeable didnt change ( thanks Michael for the tip! )
       if ("y" in changed) {
-        sortPlaceablePosition(this);
+        sortPlaceablePosition(this, currentRegionOnMovementEnd);
       }
     }
   }
 }
+
 
 /**
  * Waits for a token's movement animation to complete.

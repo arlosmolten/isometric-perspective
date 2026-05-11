@@ -119,7 +119,7 @@ export function isIsometricAutosortingEnabledForPlaceable(placeable,scene) {
  * change placeables sort values based on its y value on the grid compared to its siblings.
  * @param {Placeable|PlaceableDocument} token - The token or token document to calculate for.
  */
-export function sortPlaceablePosition(placeable) {
+export function sortPlaceablePosition(placeable, isRegionOnMovementEnd = null) {
   if(placeable.mesh.sortLayer === foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS ){
     const placeableMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
     const canvasLayer = canvas.primary.children;
