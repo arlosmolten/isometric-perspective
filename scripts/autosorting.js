@@ -28,21 +28,21 @@ export function isoDepthSortMixin(Base){
       let currentOccupiedRegion = null;
 
       if (this.document.documentName === "Token"){
-        if ("_regions" in changed) {
-          const priorRegions = options._priorRegions?.[this.document.id]?.map(id => this.document.parent.regions.get(id));
-          const currentRegions = this.document.regions;
-          const newlyEnteredRegions = currentRegions.filter(region => !priorRegions.includes(region));
-          const currentRegionEnd = Array.from(newlyEnteredRegions).map(region => region);
-          if (currentRegionEnd !== undefined && currentRegionEnd !== null && currentRegionEnd[0]?.flags[isometricModuleConfig.MODULE_ID]?.isoRegionTilesAutoSortingEnabled){
-            currentOccupiedRegion = currentRegionEnd
-          }
-        }
+        const currentRegions = Array.from(this.document.regions).map(region => region);
+        // console.log("CURRENT REGION:", currentRegions[0]._id)
+        if ("y" in changed) { sortPlaceablePosition(this, currentRegions);}
+        // this.movementAnimationPromise.finally(() =>{
+        //   const currentRegions = Array.from(this.document.regions).map(region => region);
+        //   if ("y" in changed) { sortPlaceablePosition(this, currentRegions);}
+        // })
       }
       // prevent sorting when the y coordinates of a placeable didnt change ( thanks Michael for the tip! )
       if ("y" in changed) {
-        sortPlaceablePosition(this, currentOccupiedRegion);
+        sortPlaceablePosition(this);
       }
     }
+
+    // movementAnimationPromise
   }
 }
 

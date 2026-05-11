@@ -119,7 +119,7 @@ export function isIsometricAutosortingEnabledForPlaceable(placeable,scene) {
  * change placeables sort values based on its y value on the grid compared to its siblings.
  * @param {Placeable|PlaceableDocument} token - The token or token document to calculate for.
  */
-export function sortPlaceablePosition(placeable, currentOccupiedRegion = null) {
+export function sortPlaceablePosition(placeable, regionIds) {
   if(placeable.mesh.sortLayer === foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS ){
     const placeableMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
     const canvasLayer = canvas.primary.children;
@@ -131,7 +131,12 @@ export function sortPlaceablePosition(placeable, currentOccupiedRegion = null) {
       }
     });
 
-    displayList.sort((sprite,sibling)=> compareSpritePosition(sprite,sibling)) // compare function should be improved
+    if (regionIds){
+      displayList.sort((sprite,sibling)=> compareSpritePosition(sprite,sibling,regionIds))
+    } else {
+      displayList.sort((sprite,sibling)=> compareSpritePosition(sprite,sibling))
+    }
+
 
     for (let i = 0; i < displayList.length; i++) {
       const currentSprite = displayList[i];
@@ -142,24 +147,32 @@ export function sortPlaceablePosition(placeable, currentOccupiedRegion = null) {
   }
 }
 
-function compareSpritePosition(sprite,sibling){    
-  let result = 0;
+function compareSpritePosition(sprite,sibling,regionIds){    
+  let position = 0;
 
   const currentSprite = {
+    id:sprite.object.document.id,
     type:sprite.object.document.documentName,
     y: sprite.object.document.y,
     height:sprite.object.document.height,
+    linkedRegion: null
   }
 
   const currentSibling = {
+    id:sibling.object.document.id,
     type:sibling.object.document.documentName,
     y: sibling.object.document.y,
     height:sprite.object.document.height,
+    linkedRegion: null
   }
-   
+
   if (currentSprite.type === "Tile"){
     if (game.release.generation < 14) { //v14 compatibility fix
       currentSprite.y = currentSprite.y - (currentSprite.height*0.5);
+    }
+    if(sprite.object.document.flags[isometricModuleConfig.MODULE_ID]?.isLinked){
+      currentSprite.linkedRegion = sprite.object.document.flags[isometricModuleConfig.MODULE_ID]?.isLinked;
+      console.log("LINKED:", currentSprite.id,currentSprite.linkedRegion) // TODO: investigate why only one region get the linked id and the other dosent
     }
   }
 
@@ -167,15 +180,33 @@ function compareSpritePosition(sprite,sibling){
     if (game.release.generation < 14) { //v14 compatibility fix
       currentSibling.y = currentSibling.y - (currentSibling.height*0.5);
     }
+    if(sprite.object.document.flags[isometricModuleConfig.MODULE_ID]?.isLinked){
+      currentSibling.linkedRegion = sprite.object.document.flags[isometricModuleConfig.MODULE_ID]?.isLinked;
+      console.log("LINKED:", currentSibling.id,currentSibling.linkedRegion) // TODO: investigate why only one region get the linked id and the other dosent
+    }
   }
 
   if (currentSprite.y > currentSibling.y) {
-    result = 1;
+    position = 1;
   } else if (currentSprite.y < currentSibling.y) {
-    result = -1;
+    position = -1;
   }
 
-  return result;
+  if (currentSibling.type === "Tile"){ // if a region id list is included from a token ending its movement on a region with linked tiles
+    if(regionIds){
+      if(currentSibling.linkedRegion !== null){
+        regionIds.map(region => {
+          if(region._id === currentSibling.linkedRegion) {
+            console.log("SO IT WORK NOW OR WHAT ???????????", currentSibling.id,currentSibling.linkedRegion)
+            // TODO: sorting logic fail or is overriden on another update
+            position = 1;
+          } 
+        })
+      }
+    }
+  }
+
+  return position;
 }
 
 /**

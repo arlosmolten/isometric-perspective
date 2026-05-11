@@ -22,7 +22,7 @@ import {
  import {
    createRegionIsometricTab,
    initRegionForm,
-   handleUpdateRegion,
+  //  handleUpdateRegion,
   //  testRegionInteract
  } from './regions.js'
 
@@ -282,7 +282,7 @@ Hooks.on("getSceneControlButtons", controls => {
 //region config 
 Hooks.on("ready", createRegionIsometricTab);
 Hooks.on("renderRegionConfig", initRegionForm);
-Hooks.on("updateRegion", handleUpdateRegion);
+// Hooks.on("updateRegion", handleUpdateRegion);
 // Hooks.on("tokenMoveWithin", testRegionInteract);
 
 //autosorting

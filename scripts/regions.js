@@ -41,7 +41,6 @@ export function initRegionForm(app, html, context, options){
     linkTilesBox.classList.add('hidden');
   }
 
-
 // Region room tiles linking
   const selectTileButton = html.querySelector('.select-tiles');
   const clearTileButton = html.querySelector('.clear-tiles');
@@ -62,14 +61,15 @@ export function initRegionForm(app, html, context, options){
     Hooks.once('controlTile', async (tile) => {
       const selectedTilesId = tile.id.toString();
       const currentTilesIds = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'linkedTilesIds') || [];
-      
       // Add the new ID only if it is not already in the list.
       if (!currentTilesIds.includes(selectedTilesId)) {
         const newTilesIds = [...currentTilesIds, selectedTilesId];
         await app.document.setFlag(isometricModuleConfig.MODULE_ID, 'linkedTilesIds', newTilesIds);
         if (linkedTilesIdInput) linkedTilesIdInput.value = newTilesIds.join(", ");
+        const canvasLayer = canvas.primary.children;
+        const currentRegionId = context.document._id;
+        tile.document.setFlag(isometricModuleConfig.MODULE_ID, 'isLinked', currentRegionId); // TODO: somehow only one region get their flag set, others dont 
       }
-
       // Returns the window to its original position and activates the RegionLayer layer.
       Object.values(ui.windows).filter(w => w instanceof RegionConfig).forEach(j => j.maximize());
       canvas.regions.activate();
@@ -80,27 +80,6 @@ export function initRegionForm(app, html, context, options){
     await app.document.setFlag(isometricModuleConfig.MODULE_ID, 'linkedTilesIds', []);
     if (linkedTilesIdInput) linkedTilesIdInput.value = '';
   }
-}
-
-export function handleCreateRegion(tileDocument) {
-    //here be dragons
-}
-
-export function testRegionInteract(data){
-  console.log("TEST??" , data);
-}
-
-export function handleUpdateRegion(tileDocument, updateData, options, userId) {
-  // console.log("TOKEN??")
-    //here be dragons
-}
-
-export function handleRefreshRegion(tile) {
-    //here be dragons
-}
-
-export function addDepthSortControls(controls){
-    //here be dragons
 }
   
   
