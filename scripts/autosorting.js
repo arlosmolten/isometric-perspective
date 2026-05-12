@@ -16,6 +16,7 @@ export function isoDepthSortMixin(Base){
         } else { 
           this.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES; 
         }
+        // console.log("exs87FIUnqNJYNEI", this.document.flags)
       }
 
       this.zIndex = 0;

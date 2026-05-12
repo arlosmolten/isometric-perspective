@@ -65,10 +65,12 @@ export function initRegionForm(app, html, context, options){
       if (!currentTilesIds.includes(selectedTilesId)) {
         const newTilesIds = [...currentTilesIds, selectedTilesId];
         await app.document.setFlag(isometricModuleConfig.MODULE_ID, 'linkedTilesIds', newTilesIds);
-        if (linkedTilesIdInput) linkedTilesIdInput.value = newTilesIds.join(", ");
+        if (linkedTilesIdInput) linkedTilesIdInput.value = newTilesIds.join(",");
         const canvasLayer = canvas.primary.children;
         const currentRegionId = context.document._id;
-        tile.document.setFlag(isometricModuleConfig.MODULE_ID, 'regionLink', currentRegionId); // TODO: somehow only one region get their flag set, others dont 
+        // console.log("tile.document.getFlag", tile.document.getFlag(isometricModuleConfig.MODULE_ID, 'regionLink'))
+        console.log("tile.document.getFlag", tile.document.flags, currentRegionId)
+        tile.document.setFlag(isometricModuleConfig.MODULE_ID, 'regionLink', currentRegionId); // this flag aint set correctly
       }
       // Returns the window to its original position and activates the RegionLayer layer.
       Object.values(ui.windows).filter(w => w instanceof RegionConfig).forEach(j => j.maximize());
@@ -77,6 +79,16 @@ export function initRegionForm(app, html, context, options){
   }
 
   async function clearTiles () {
+    const canvasLayer = canvas.primary.children;
+    const linkedTilesIds = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'linkedTilesIds')
+    
+    // unlink linked tiles regionLink
+    canvasLayer.filter(children => children.object?.document?.getFlag(isometricModuleConfig.MODULE_ID, 'regionLink'))
+    .filter( tile => tile.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'regionLink') === app.document.id)
+    .map( tile => {
+      tile.object.document.setFlag(isometricModuleConfig.MODULE_ID, 'regionLink', []);
+    })
+
     await app.document.setFlag(isometricModuleConfig.MODULE_ID, 'linkedTilesIds', []);
     if (linkedTilesIdInput) linkedTilesIdInput.value = '';
   }

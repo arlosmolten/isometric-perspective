@@ -132,6 +132,8 @@ export function sortPlaceablePosition(placeable) {
     });
 
     displayList.sort((sprite,sibling)=> compareSpritePosition(sprite,sibling))
+    // so when entering the 2nd region, the token is sorted back to 0 , there is a problem with the sorting logic , need to be investigated!
+    displayList.map( sprite => console.log(sprite.name, sprite.sort))
     
     for (let i = 0; i < displayList.length; i++) {
       const currentSprite = displayList[i];
@@ -151,7 +153,8 @@ function compareSpritePosition(sprite,sibling){
     y: sprite.object.document.y,
     height:sprite.object.document.height,
     forceSortBelow: false,
-    isLinked:sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'isLinked'),
+    forceSortAbove: false,
+    regionLink:sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'regionLink'),
     hasRegion:sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'hasRegion')
   }
 
@@ -161,47 +164,73 @@ function compareSpritePosition(sprite,sibling){
     y: sibling.object.document.y,
     height:sibling.object.document.height,
     forceSortBelow: false,
-    isLinked:sibling.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'isLinked'),
+    forceSortAbove: false,
+    regionLink:sibling.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'regionLink'),
     hasRegion:sibling.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'hasRegion')
   }
 
   if(currentSprite.id !== currentSibling.id){
     if (currentSprite.type === "Tile"){
-      if (game.release.generation < 14) { currentSprite.y = currentSprite.y - (currentSprite.height*0.5);} //v14 compatibility fix 
-      if(currentSprite.isLinked){
+      // if (game.release.generation < 14) { currentSprite.y = currentSprite.y - (currentSprite.height*0.5);} //v14 compatibility fix
+      currentSprite.y = currentSprite.y - (currentSprite.height*0.5);
+      if(currentSprite.regionLink){
         if(currentSibling.hasRegion){
           currentSibling.hasRegion.map(region => {
-            if(region === currentSprite.isLinked){ currentSprite.forceSortBelow = true}
+            if(region === currentSprite.regionLink){ 
+              // console.log("SPRITE BELOW")
+              currentSprite.forceSortBelow = true
+              currentSibling.forceSortAbove = true
+            }
           })     
         }
       }
     } 
     
     if (currentSibling.type === "Tile"){
-      if (game.release.generation < 14) { currentSibling.y = currentSibling.y - (currentSibling.height*0.5);} //v14 compatibility fix 
-      if(currentSibling.isLinked){
+      // if (game.release.generation < 14) { currentSibling.y = currentSibling.y - (currentSibling.height*0.5);} //v14 compatibility fix
+      currentSibling.y = currentSibling.y - (currentSibling.height*0.5);
+      //TODO: possible cause : the sprite region dosent properly match correctly ir is skipped somewhere ...
+      if(currentSibling.regionLink){
         if(currentSprite.hasRegion){
           currentSprite.hasRegion.map(region => {
-            if(region === currentSibling.isLinked){ currentSibling.forceSortBelow = true}
+            if(region === currentSibling.regionLink){ 
+              // console.log("SPRITE ABOVE")
+              currentSprite.forceSortAbove = true
+              currentSibling.forceSortBelow = true
+            }
           })
         }
       }
     } 
+
+    // possible cases: 
+    /** 
+     * - either the y sort logic need to be separate from the region sort
+     * - multiple regions are not handled well when comparing the token
+     * - token should be y sorted against all region sorted tiles and not just the ones matching the region it stands on
+     * - mixin should be split into two mixins , one for tiles and one for tokens tokens 
+     * - compare regions y coordinates???? lol // kinda insane but why not at this point? 
+     *   if a region is below another its tiles should appear above for sure ... this is turning into a tree sort ooof
+    */
     
     if (currentSprite.y > currentSibling.y) {
-      position = 1;
-    } else if (currentSprite.y < currentSibling.y) {
       position = -1;
+    } else if (currentSprite.y < currentSibling.y) {
+      position = 1;
     }
 
-    if(currentSprite.forceSortBelow === true){
+    // starting to understand that the logic might be good but the ordering in the parent function might be not
+    if(currentSprite.forceSortBelow === true && currentSibling.forceSortAbove === true){
+      // console.log("SPRITE FORCED BELOW")
       position = -1;
     }
     
-    if(currentSibling.forceSortBelow === true){
+    if(currentSprite.forceSortAbove === true && currentSibling.forceSortBelow === true){
+      // console.log("SPRITE FORCED ABOVE")
       position = 1;
     }
 
+    // console.log("AFTER ALL THIS:", position)
     return position;
   }
 
