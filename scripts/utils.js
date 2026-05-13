@@ -119,21 +119,17 @@ export function isIsometricAutosortingEnabledForPlaceable(placeable,scene) {
  * change placeables sort values based on its y value on the grid compared to its siblings.
  * @param {Placeable|PlaceableDocument} token - The token or token document to calculate for.
  */
-export function sortPlaceablePosition(placeable) {
+export function sortPlaceableByPosition(placeable) {
   if(placeable.mesh.sortLayer === foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS ){
     const placeableMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
     const canvasLayer = canvas.primary.children;
     const currentSortLayer = placeable.mesh.parent
-    const displayList = [];
-    canvasLayer.map(sprite => {
-      if(sprite.sortLayer === placeableMeshLayer){
-        displayList.push(sprite);
-      }
-    });
 
-    displayList.sort((sprite,sibling)=> compareSpritePosition(sprite,sibling))
+    const displayList = canvasLayer.filter( sprite => sprite.sortLayer === placeableMeshLayer);
+
+    displayList.sort((sprite,sibling)=> compareSpriteByPosition(sprite.object.document,sibling.object.document));
     // so when entering the 2nd region, the token is sorted back to 0 , there is a problem with the sorting logic , need to be investigated!
-    displayList.map( sprite => console.log(sprite.name, sprite.sort))
+    // displayList.map( sprite => console.log(sprite.name,sprite.object.document.id, sprite.sort))
     
     for (let i = 0; i < displayList.length; i++) {
       const currentSprite = displayList[i];
@@ -144,96 +140,113 @@ export function sortPlaceablePosition(placeable) {
   }
 }
 
-function compareSpritePosition(sprite,sibling){    
-  let position = 0;
+export function sortPlaceableByRegion(placeable) {
+  if(placeable.mesh.sortLayer === foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS ){
+    const placeableMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
+    const canvasLayer = canvas.primary.children;
+    const currentSortLayer = placeable.mesh.parent
 
-  const currentSprite = {
-    id:sprite.object.document.id,
-    type:sprite.object.document.documentName,
-    y: sprite.object.document.y,
-    height:sprite.object.document.height,
-    forceSortBelow: false,
-    forceSortAbove: false,
-    regionLink:sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'regionLink'),
-    hasRegion:sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'hasRegion')
+    const displayList = canvasLayer.filter( sprite => sprite.sortLayer === placeableMeshLayer);
+
+    displayList.sort((sprite,sibling)=> {
+      let compare = 0;
+      if( sprite.object.document.documentName === "Token" || sibling.object.document.documentName === "Token" ) {
+        if(sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion')){
+          compare = compareSpriteByRegion(sprite.object.document,sibling.object.document);
+        } else if (sibling.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion')) {
+          compare = compareSpriteByRegion(sprite.object.document,sibling.object.document);
+        }
+        return compare;
+      }
+    });
+
+    for (let i = 0; i < displayList.length; i++) {
+      const currentSprite = displayList[i];
+      currentSprite.object.document.sort = i;
+      currentSprite.sort = i;
+    }
+
+    placeable.mesh.parent.sortDirty = true;
   }
+}
 
-  const currentSibling = {
-    id:sibling.object.document.id,
-    type:sibling.object.document.documentName,
-    y: sibling.object.document.y,
-    height:sibling.object.document.height,
-    forceSortBelow: false,
-    forceSortAbove: false,
-    regionLink:sibling.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'regionLink'),
-    hasRegion:sibling.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'hasRegion')
-  }
 
-  if(currentSprite.id !== currentSibling.id){
-    if (currentSprite.type === "Tile"){
-      // if (game.release.generation < 14) { currentSprite.y = currentSprite.y - (currentSprite.height*0.5);} //v14 compatibility fix
-      currentSprite.y = currentSprite.y - (currentSprite.height*0.5);
-      if(currentSprite.regionLink){
-        if(currentSibling.hasRegion){
-          currentSibling.hasRegion.map(region => {
-            if(region === currentSprite.regionLink){ 
-              // console.log("SPRITE BELOW")
-              currentSprite.forceSortBelow = true
-              currentSibling.forceSortAbove = true
-            }
-          })     
+// possible cases: 
+/** 
+ * - region detection is not working properly
+ * - sorting logic is erroneous -- on this
+ * - x/y sorting might require more complex logic taking the x in account , in fact it seems right now quite unreliable
+ * - token sorting is broken again, currently very supicious of how the +1 - 1 case is often resolved as 0 , 
+ *   like it seems that there is a case where all 4 conditions are ignored
+*/
+
+function compareSpriteByRegion(sprite,sibling) {
+  let sortChange = 0; // positive value = sorted above, negative value = sorted below
+  const currentSprite = sortableSprite(sprite);
+  const currentSibling = sortableSprite(sibling);
+
+    if(currentSprite.id !== currentSibling.id){
+    if (currentSprite.type === "Token" && currentSibling.type === "Tile"){
+      if(currentSprite.occupiedRegion && currentSibling.linkedRegion){
+        if( currentSprite.occupiedRegion === currentSibling.linkedRegion){
+          console.log("TOKEN > TILE!", currentSprite.occupiedRegion, currentSibling.linkedRegion )
+          currentSprite.forceSortAbove = true
+          currentSibling.forceSortBelow = true
         }
       }
-    } 
-    
-    if (currentSibling.type === "Tile"){
-      // if (game.release.generation < 14) { currentSibling.y = currentSibling.y - (currentSibling.height*0.5);} //v14 compatibility fix
-      currentSibling.y = currentSibling.y - (currentSibling.height*0.5);
-      //TODO: possible cause : the sprite region dosent properly match correctly ir is skipped somewhere ...
-      if(currentSibling.regionLink){
-        if(currentSprite.hasRegion){
-          currentSprite.hasRegion.map(region => {
-            if(region === currentSibling.regionLink){ 
-              // console.log("SPRITE ABOVE")
-              currentSprite.forceSortAbove = true
-              currentSibling.forceSortBelow = true
-            }
-          })
+
+    } else if (currentSprite.type === "Tile" && currentSibling.type === "Token"){
+      if(currentSprite.linkedRegion && currentSibling.occupiedRegion){
+        if(currentSprite.linkedRegion === currentSibling.occupiedRegion){
+          console.log("TILE > TOKEN!", currentSprite.occupiedRegion, currentSibling.linkedRegion )
+          currentSprite.forceSortBelow = true
+          currentSibling.forceSortAbove = true
         }
       }
-    } 
-
-    // possible cases: 
-    /** 
-     * - either the y sort logic need to be separate from the region sort
-     * - multiple regions are not handled well when comparing the token
-     * - token should be y sorted against all region sorted tiles and not just the ones matching the region it stands on
-     * - mixin should be split into two mixins , one for tiles and one for tokens tokens 
-     * - compare regions y coordinates???? lol // kinda insane but why not at this point? 
-     *   if a region is below another its tiles should appear above for sure ... this is turning into a tree sort ooof
-    */
-    
-    if (currentSprite.y > currentSibling.y) {
-      position = -1;
-    } else if (currentSprite.y < currentSibling.y) {
-      position = 1;
     }
 
-    // starting to understand that the logic might be good but the ordering in the parent function might be not
-    if(currentSprite.forceSortBelow === true && currentSibling.forceSortAbove === true){
-      // console.log("SPRITE FORCED BELOW")
-      position = -1;
+    if(currentSprite.forceSortAbove){
+      sortChange = 1;
     }
     
-    if(currentSprite.forceSortAbove === true && currentSibling.forceSortBelow === true){
-      // console.log("SPRITE FORCED ABOVE")
-      position = 1;
+    if(currentSprite.forceSortBelow){
+      sortChange = -1;
     }
 
-    // console.log("AFTER ALL THIS:", position)
-    return position;
+ }
+}
+
+function compareSpriteByPosition(sprite,sibling){    
+  let sortChange = 0; // positive value = sorted above, negative value = sorted below
+  const currentSprite = sortableSprite(sprite);
+  const currentSibling = sortableSprite(sibling);
+
+  if (currentSprite.y > currentSibling.y) {
+    // console.log("Y ABOVE?", "DOC Y", currentSprite.y, "ISO Y", currentSprite.isoCords.y)
+    sortChange = 1;
+  } else if (currentSprite.y < currentSibling.y) {
+    // console.log("Y BELOW?")
+    sortChange = -1;
   }
 
+  return sortChange;
+}
+
+function sortableSprite(sprite){
+  return {
+    id:sprite.id,
+    type:sprite.documentName,
+    x: sprite.documentName === "TILE"? sprite.x - (sprite.width * 0.5) : sprite.x,
+    y: sprite.documentName === "TILE"? sprite.y - (sprite.height * 0.5) : sprite.y,
+    isoCords: cartesianToIso(sprite.x,sprite.y),
+    height:sprite.height,
+    width:sprite.width,
+    forceSortBelow: false,
+    forceSortAbove: false,
+    linkedRegion:sprite.getFlag(isometricModuleConfig.MODULE_ID, 'regionLink'),
+    occupiedRegion: sprite.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion')
+  }
+  return sortableSprite;
 }
 
 /**
