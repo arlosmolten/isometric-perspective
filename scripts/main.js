@@ -34,7 +34,8 @@ import {
 
 import {
   // isoDepthSort,
-  isoDepthSortMixin
+  isoDepthSortTileMixin,
+  isoDepthSortTokenMixin
 } from './autosorting.js'
 
 import { registerDynamicTileConfig, increaseTilesOpacity, decreaseTilesOpacity } from './dynamictile.js';
@@ -236,8 +237,7 @@ Hooks.once("init", function() {
 });
 
 //HOOKS REGISTRATION 
-  // Verifica se deve mostrar a tela de boas-vindas
-  // Checks whether to show the welcome screen
+
 // WelcomeScreen
 Hooks.once('ready', addWelcomeScreen);
 //scene configuration
@@ -260,9 +260,6 @@ Hooks.on('renderPrototypeTokenConfig', initTokenForm);
 Hooks.on("createToken", handleCreateToken);
 Hooks.on("updateToken", handleUpdateToken);
 Hooks.on("refreshToken", handleRefreshToken);
-// Hooks.on("stopToken", (data)=>{
-//   console.log("DATA:", data)
-// });
 
 // hud management
 Hooks.on("renderTokenHUD", handleRenderTokenHUD);
@@ -282,13 +279,11 @@ Hooks.on("getSceneControlButtons", controls => {
 //region config 
 Hooks.on("ready", createRegionIsometricTab);
 Hooks.on("renderRegionConfig", initRegionForm);
-// Hooks.on("updateRegion", handleUpdateRegion);
-// Hooks.on("tokenMoveWithin", testRegionInteract);
 
 //autosorting
 Hooks.on("init", () => {
-  CONFIG.Token.objectClass = isoDepthSortMixin(CONFIG.Token.objectClass);
-  CONFIG.Tile.objectClass = isoDepthSortMixin(CONFIG.Tile.objectClass);
+  CONFIG.Token.objectClass = isoDepthSortTokenMixin(CONFIG.Token.objectClass);
+  CONFIG.Tile.objectClass = isoDepthSortTileMixin(CONFIG.Tile.objectClass);
 });
 
 /**
