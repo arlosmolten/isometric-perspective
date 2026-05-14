@@ -1,6 +1,6 @@
 import { isometricModuleConfig } from './consts.js';
 import { applyIsometricTransformation } from './transform.js';
-import { adjustInputWithMouseDrag, parseNum, patchConfig, createAdjustableButton,comparePlaceablePosition} from './utils.js';
+import { adjustInputWithMouseDrag, parseNum, patchConfig, createAdjustableButton} from './utils.js';
 
 export async function createTileIsometricTab(app, html, data) {
 

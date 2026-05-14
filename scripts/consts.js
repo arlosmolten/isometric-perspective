@@ -157,6 +157,13 @@ export const isometricModuleConfig = {
   FOUNDRY_VERSION:0
 }
 
+// inter module compatibility
+// fast flip
+export const fastFlipCompatiility = {
+  MODULE_ID:"fast-flip",
+  TILE_MIRROR_HORIZONTAL: "tileMirrorHorizontal"
+}
+
 /*
 // values in degrees
 export let ISOMETRIC_CONST = {

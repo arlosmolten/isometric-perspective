@@ -1,4 +1,4 @@
-import { isometricModuleConfig } from './consts.js';
+import { isometricModuleConfig,fastFlipCompatiility } from './consts.js';
 // Função auxiliar para converter coordenadas isométricas para cartesianas
 export function isoToCartesian(isoX, isoY) {
   const angle = Math.PI / 4; // 45 graus em radianos
@@ -108,35 +108,20 @@ export function patchConfig(documentSheet, config, args) {
   }
 }
 
-//to avoid duplicate security checkers all over the place
-export function isIsometricAutosortingEnabledForPlaceable(placeable,scene) {
-  if (game.version.startsWith("11")) return false; //There isn't a sort method on v11. Needs another way to sort.
-  if (!scene) return false;
-  if (scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled")) {return true}
-}
+
 
 /**
  * change placeables sort values based on its y value on the grid compared to its siblings.
- * @param {Placeable|PlaceableDocument} token - The token or token document to calculate for.
+ * @param {Placeable|PlaceableDocument} placeable - The placeable document used as a reference for the sortlayer.
  */
 export function sortPlaceableByPosition(placeable) {
   if(placeable.mesh.sortLayer === foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS ){
     const placeableMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
     const canvasLayer = canvas.primary.children;
     const currentSortLayer = placeable.mesh.parent
-
-    const displayList = canvasLayer.filter( sprite => sprite.sortLayer === placeableMeshLayer);
-
-    displayList.sort((sprite,sibling)=> compareSpriteByPosition(sprite.object.document,sibling.object.document));
-    // so when entering the 2nd region, the token is sorted back to 0 , there is a problem with the sorting logic , need to be investigated!
-    // displayList.map( sprite => console.log(sprite.name,sprite.object.document.id, sprite.sort))
-    
-    for (let i = 0; i < displayList.length; i++) {
-      const currentSprite = displayList[i];
-      currentSprite.object.document.sort = i;
-      currentSprite.sort = i;
-    }
-    placeable.mesh.parent.sortDirty = true;
+    return canvasLayer
+    .filter( sprite => sprite.sortLayer === placeableMeshLayer)
+    .sort((sprite,sibling)=> compareSpriteByPosition(sprite,sibling));
   }
 }
 
@@ -147,37 +132,32 @@ export function sortPlaceableByRegion(placeable) {
     const currentSortLayer = placeable.mesh.parent
 
     const displayList = canvasLayer.filter( sprite => sprite.sortLayer === placeableMeshLayer);
-
-    displayList.sort((sprite,sibling)=> {
+    
+    return displayList.toSorted((sprite,sibling)=> {
       let compare = 0;
       if( sprite.object.document.documentName === "Token" || sibling.object.document.documentName === "Token" ) {
         if(sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion')){
-          compare = compareSpriteByRegion(sprite.object.document,sibling.object.document);
+          compare = compareSpriteByRegion(sprite,sibling);
         } else if (sibling.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion')) {
-          compare = compareSpriteByRegion(sprite.object.document,sibling.object.document);
+          compare = compareSpriteByRegion(sprite,sibling);
         }
         return compare;
       }
     });
 
-    for (let i = 0; i < displayList.length; i++) {
-      const currentSprite = displayList[i];
-      currentSprite.object.document.sort = i;
-      currentSprite.sort = i;
-    }
-
-    placeable.mesh.parent.sortDirty = true;
   }
 }
-
 
 // possible cases: 
 /** 
  * - region detection is not working properly
- * - sorting logic is erroneous -- on this
- * - x/y sorting might require more complex logic taking the x in account , in fact it seems right now quite unreliable
+ * - sorting by position now is probably working properly now, at least it no longer get undefined or duplicates
+ * - x/y sorting seems to still have issues with offset
  * - token sorting is broken again, currently very supicious of how the +1 - 1 case is often resolved as 0 , 
  *   like it seems that there is a case where all 4 conditions are ignored
+ * 
+ *  the sort by position is finally working as intended ( for now until a new bug is found) but seems to be quite more robust than before
+ *  this is the next form of sorting that needs attention
 */
 
 function compareSpriteByRegion(sprite,sibling) {
@@ -189,7 +169,6 @@ function compareSpriteByRegion(sprite,sibling) {
     if (currentSprite.type === "Token" && currentSibling.type === "Tile"){
       if(currentSprite.occupiedRegion && currentSibling.linkedRegion){
         if( currentSprite.occupiedRegion === currentSibling.linkedRegion){
-          console.log("TOKEN > TILE!", currentSprite.occupiedRegion, currentSibling.linkedRegion )
           currentSprite.forceSortAbove = true
           currentSibling.forceSortBelow = true
         }
@@ -198,7 +177,6 @@ function compareSpriteByRegion(sprite,sibling) {
     } else if (currentSprite.type === "Tile" && currentSibling.type === "Token"){
       if(currentSprite.linkedRegion && currentSibling.occupiedRegion){
         if(currentSprite.linkedRegion === currentSibling.occupiedRegion){
-          console.log("TILE > TOKEN!", currentSprite.occupiedRegion, currentSibling.linkedRegion )
           currentSprite.forceSortBelow = true
           currentSibling.forceSortAbove = true
         }
@@ -216,76 +194,40 @@ function compareSpriteByRegion(sprite,sibling) {
  }
 }
 
+/**
+ * compare two placeables by Y positions if one of the placable is a tile that is flipped
+ * otherwise compare them by x positions.
+ * this is due to the X axis being a diagonal from bottom left to top right ( acending)
+ * an y being a diagonal from bottom riight to top left ( descending)
+ *  y-      +x
+ *    y-  x+
+ *      o
+ *    x-  y+
+ * x-        y+
+*/
+
 function compareSpriteByPosition(sprite,sibling){    
-  let sortChange = 0; // positive value = sorted above, negative value = sorted below
+  let sortChange = 0;
   const currentSprite = sortableSprite(sprite);
   const currentSibling = sortableSprite(sibling);
-
-  if (currentSprite.y > currentSibling.y) {
-    // console.log("Y ABOVE?", "DOC Y", currentSprite.y, "ISO Y", currentSprite.isoCords.y)
-    sortChange = 1;
-  } else if (currentSprite.y < currentSibling.y) {
-    // console.log("Y BELOW?")
-    sortChange = -1;
-  }
-
+    if(currentSprite.tileMirrorHorizontal || currentSprite.tileFlipped || currentSibling.tileMirrorHorizontal || currentSibling.tileFlipped){
+      sortChange = sortByY(currentSprite,currentSibling);
+    } else {
+      sortChange = sortByX(currentSprite,currentSibling);
+    }
   return sortChange;
 }
 
-function sortableSprite(sprite){
-  return {
-    id:sprite.id,
-    type:sprite.documentName,
-    x: sprite.documentName === "TILE"? sprite.x - (sprite.width * 0.5) : sprite.x,
-    y: sprite.documentName === "TILE"? sprite.y - (sprite.height * 0.5) : sprite.y,
-    isoCords: cartesianToIso(sprite.x,sprite.y),
-    height:sprite.height,
-    width:sprite.width,
-    forceSortBelow: false,
-    forceSortAbove: false,
-    linkedRegion:sprite.getFlag(isometricModuleConfig.MODULE_ID, 'regionLink'),
-    occupiedRegion: sprite.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion')
-  }
-  return sortableSprite;
+function sortByX(spriteA , spriteB){
+  let result = 1;
+  if (spriteA.x > spriteB.x) { result = -1;}
+  return result;
 }
 
-/**
- * Calculates the sort value for a placeable based on its y value on the grid compared to its siblings.
- * @param {Token|TokenDocument} token - The token or token document to calculate for.
- * @returns {number} The calculated sort value.
- */
-export function comparePlaceablePosition(placeable) {
-  const placeableMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
-  const canvasLayer = canvas.primary.children;
-  let currentPlaceableY = placeable.document.y;
-  let newSort = placeable.mesh.sort ?? 0;
-
-  canvasLayer.map( sprite => {
-    if(sprite.sortLayer === placeableMeshLayer){
-
-      const placeableId = placeable.document.id
-      const placeableType = placeable.document.documentName
-      const siblingId = sprite.object.document._id
-      const siblingType = sprite.object.document.documentName
-
-      if(placeableId !== siblingId){
-        let currentCompareY = sprite.object.document.y;
-        // in v14 tiles point of origin is their visual center so their y coordinate isn't at their bottom edge , a small adjustment is required
-          if (game.release.generation >= 14) {
-            if(siblingType === "Tile"){currentSpriteY = sprite.object.document.y + (sprite.object.document.height * 0.5);}
-            if(placeableType === "Tile"){ currentPlaceableY = placeable.document.y + (placeable.document.height * 0.5);}
-          }
-        // compare Y coordinates and adjust the sort order in consequence
-        if (currentPlaceableY > currentCompareY) {             
-          if (placeable.mesh.sort <= sprite.sort) { newSort = sprite.sort + 1;}
-        }
-        else if (currentPlaceableY < currentCompareY) {
-          if (placeable.mesh.sort >= sprite.sort) { newSort = Math.max(0, sprite.sort - 1); }
-        }
-      }
-    }
-  });
-  return newSort;
+function sortByY(spriteA , spriteB){
+  let result = 1;
+  if (spriteA.y < spriteB.y) { result = -1;}
+  return result;
 }
 
 // Generic function to create adjustable buttons with drag functionality
@@ -407,12 +349,62 @@ export function createAdjustableButton(options) {
   });
 }
 
-export function graphicDebugTool(x,y,container){
-  const dot = new PIXI.Graphics();
-  dot.drawRect(2000,2000,200,200);
-  // dot.drawRect(x,y,200,200);
-  dot.visible = true;
-  dot.beginFill(0xff0000)
-  dot.endFill();
-  container.addChild(dot);
+// used to debug visually a point on the tile selection box's footprint but its bugged, should fix later
+// export function graphicDebugTool(x,y,container){
+//   const dot = new PIXI.Graphics();
+//   dot.drawRect(2000,2000,200,200);
+//   // dot.drawRect(x,y,200,200);
+//   dot.visible = true;
+//   dot.beginFill(0xff0000)
+//   dot.endFill();
+//   container.addChild(dot);
+// }
+
+function sortableSprite(sprite){
+
+  let adjustedX = sprite.object.document.x;
+  let adjustedY = sprite.object.document.y;
+  if(sprite.object.document.documentName === "Tile"){
+    adjustedX = (sprite.object.document.x) - (sprite.object.document.width * 0.5)
+    adjustedY = (sprite.object.document.y) + (sprite.object.document.height * 0.25)
+  }
+  return {
+    id:sprite.object.document.id,
+    type:sprite.object.document.documentName,
+    name: sprite.object.document.name? sprite.object.document.name : "no name",
+    x: adjustedX,
+    y: adjustedY,
+    height:sprite.object.document.height,
+    width:sprite.object.document.width,
+    forceSortBelow: false,
+    forceSortAbove: false,
+    linkedRegion:sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'regionLink'),
+    occupiedRegion: sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion'),
+    tileMirrorHorizontal: sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL)?sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL) : null,
+    tileFlipped: sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tileFlipped')?sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID,'tileFlipped') : null
+  }
+  return sortableSprite;
+}
+
+// for debugging canvasLayers
+export function debugCanvasLayer(spriteList){
+    const data = []
+    spriteList.map(sprite => {
+      data.push({
+        // id: sprite.object.document.id,
+        // type: sprite.object.document.documentName,
+        name: sprite.object.document.name? sprite.object.document.name : "no name",
+        //sprite.documentName === "Tile"? (sprite.x) - (sprite.width *0.25) : sprite.x,
+        // x: sprite.object.document.x,
+        // y: sprite.object.document.y,
+        x: sprite.object.document.documentName === "Tile"? (sprite.object.document.x) - (sprite.object.document.width*0.25) : sprite.object.document.x,
+        y: sprite.object.document.documentName === "Tile"? (sprite.object.document.y) + (sprite.object.document.width*0.25) : sprite.object.document.y,
+        // sortLayer: sprite.sortLayer, 
+        sort: sprite.sort,
+        // occupiedRegion: sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion')? sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion') : "none",
+        // tileMirrorHorizontal: sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL)?sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL) : null,
+        // tileFlipped: sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tileFlipped')?sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID,'tileFlipped') : null,
+      })
+    });
+    console.table(data)
 }
