@@ -1,5 +1,5 @@
 import { isometricModuleConfig } from './consts.js';
-import { adjustInputWithMouseDrag, parseNum, patchConfig, createAdjustableButton,comparePlaceablePosition} from './utils.js';
+import { adjustInputWithMouseDrag, parseNum, patchConfig, createAdjustableButton} from './utils.js';
 
 export async function createRegionIsometricTab(app, html, data) {
 

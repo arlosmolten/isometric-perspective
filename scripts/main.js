@@ -46,7 +46,6 @@ import { ISOMETRIC_CONST } from './consts.js';
 import { 
   isoToCartesian, 
   cartesianToIso,
-  isIsometricAutosortingEnabledForPlaceable
 } from './utils.js';
 
 import { registerOcclusionConfig } from './occlusion.js';
