@@ -65,6 +65,8 @@
     "isometric-perspective.tile_enableIsometric_sorting_hint": "Enable tile depth sorting on this tile.",
     "isometric-perspective.tile_artOffset_name": "Art Offset",
     "isometric-perspective.tile_artOffset_hint": "Offset the tile art position in pixels.",
+    "isometric-perspective.tile_enableIsometric_anchor_gizmo": "Enable art offset gizmo",
+    "isometric-perspective.tile_enableIsometric_anchor_gizmo_hint": "Display an alignment gizmo centered on the tile anchor point to give a better idea of where a tile should be offset if needed",
     "isometric-perspective.tile_artOffset_mouseover": "Hold and drag to fine-tune X and Y",
     "isometric-perspective.tile_scale_name": "Isometric Scale",
     "isometric-perspective.tile_scale_hint": "Adjust scale of tile art when in isometric perspective (0.01x to 3x).",
@@ -80,12 +82,11 @@
     "isometric-perspective.tile_decoupleScale_hint": "If checked, the tile will not auto-resize its art when its dimensions change.",
 
     "isometric-perspective._comment": "Region Configuration",
-    "isometric-perspective.region_enableIsometric_room_sorting_name": "Enable region room depth sorting",
-    "isometric-perspective.region_enableIsometric_room_sorting_hint": "Sort linked tiles as front or back walls when tokens interact with this region",
+    "isometric-perspective.region_enableIsometric_room_sorting_name": "Enable depth sorting by linking tiles to this region.",
+    "isometric-perspective.region_enableIsometric_room_sorting_hint": "Sort linked tiles as back walls when tokens interact with this region",
     "isometric-perspective.region_link_tile_name": "Link Tiles",
     "isometric-perspective.region_link_tile_select_tile": "Select Tiles",
     "isometric-perspective.region_link_tile_clear_tile": "Clear Tiles",
-    "isometric-perspective.region_link_front_tiles_hint": "Select tiles to mark them as a room's front walls, theses tiles will be depth sorted above tokens if tokens are within the region boundaries",
     "isometric-perspective.region_link_back_tiles_hint": "Select tiles to mark them as a room's back walls, theses tiles will be depth sorted below tokens if tokens are within the region boundaries",
     
     "isometric-perspective._comment": "Warnings and Error Messages",

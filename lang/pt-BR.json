@@ -65,6 +65,8 @@
     "isometric-perspective.tile_enableIsometric_sorting_hint": "Ative a classificação por profundidade de mosaico neste mosaico.",
     "isometric-perspective.tile_artOffset_name": "Deslocamento da Arte",
     "isometric-perspective.tile_artOffset_hint": "Desloca a posição da arte do tile no número de pixels indicado.",
+    "isometric-perspective.tile_enableIsometric_anchor_gizmo": "Ativar gizmo de deslocamento de arte",
+    "isometric-perspective.tile_enableIsometric_anchor_gizmo_hint": "Exiba um indicador de alinhamento centralizado no ponto de ancoragem do bloco para dar uma ideia melhor de onde um bloco deve ser deslocado, se necessário.",
     "isometric-perspective.tile_artOffset_mouseover": "Segure e arraste para ajustar X e Y",
     "isometric-perspective.tile_scale_name": "Escala Isométrica",
     "isometric-perspective.tile_scale_hint": "Ajusta a escala da arte do tile no modo isométrico (0.01x a 3x).",
@@ -76,6 +78,14 @@
     "isometric-perspective.tile_link_wall_select_wall": "Selecionar Parede",
     "isometric-perspective.tile_link_wall_clear_wall": "Limpar Parede",
     "isometric-perspective.tile_link_wall_hint": "Clique no botão para selecionar uma parede. Ela será usada para determinar a visibilidade do tile com um token selecionado.",
+
+    "isometric-perspective._comment": "Configuração de região",
+    "isometric-perspective.region_enableIsometric_room_sorting_name": "Ative a classificação por profundidade vinculando os mosaicos a esta região.",
+    "isometric-perspective.region_enableIsometric_room_sorting_hint": "Classifique os blocos vinculados como paredes de fundo quando os tokens interagirem com esta região.",
+    "isometric-perspective.region_link_tile_name": "Blocos de tiles",
+    "isometric-perspective.region_link_tile_select_tile": "Selecione os blocos",
+    "isometric-perspective.region_link_tile_clear_tile": "Azulejos tiles",
+    "isometric-perspective.region_link_back_tiles_hint": "Selecione os ladrilhos para marcá-los como paredes de fundo de uma sala; esses ladrilhos serão classificados por profundidade abaixo dos marcadores, caso os marcadores estejam dentro dos limites da região.",
 
     "isometric-perspective._comment": "Avisos e Mensagens de Erro",
     "isometric-perspective.error_test": "Mensagem de erro de teste",
