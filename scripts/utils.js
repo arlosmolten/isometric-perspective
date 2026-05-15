@@ -164,13 +164,26 @@ function compareSpriteByPosition(sprite,sibling){
   let sortChange = 0;
   const currentSprite = sortableSprite(sprite);
   const currentSibling = sortableSprite(sibling);
-    if(currentSprite.tileMirrorHorizontal || currentSprite.tileFlipped || currentSibling.tileMirrorHorizontal || currentSibling.tileFlipped){
-      sortChange = sortByY(currentSprite,currentSibling);
-    } else if(isRegionMatching(currentSprite,currentSibling)){ // still flickering
+
+  if(isRegionMatching(currentSprite,currentSibling)){
+    if(currentSprite.type === "Tile"){
       sortChange = -1;
+    } else if (currentSibling.type === "Tile"){
+      sortChange = 1;
+    }
+  } else {
+    if(currentSprite.tileMirrorHorizontal || currentSprite.tileFlipped || currentSibling.tileMirrorHorizontal || currentSibling.tileFlipped){
+      if(currentSprite.type === "Tile"){drawTileAnchorLines(currentSprite)}
+      if(currentSibling.type === "Tile"){drawTileAnchorLines(currentSprite)}
+
+      sortChange = sortByY(currentSprite,currentSibling);
     } else {
+      if(currentSprite.type === "Tile"){drawTileAnchorLines(currentSprite)}
+      if(currentSibling.type === "Tile"){drawTileAnchorLines(currentSprite)}
+
       sortChange = sortByX(currentSprite,currentSibling);
     }
+  }
   return sortChange;
 }
 
@@ -187,7 +200,6 @@ function sortByY(spriteA , spriteB){
   return result;
 }
 
-// still not sure if that works
 function isRegionMatching (sprite, sibling){
   if(sprite.occupiedRegion !== null && sibling.linkedRegion !== null){
     if(sprite.occupiedRegion === sibling.linkedRegion){return true}
@@ -318,43 +330,101 @@ export function createAdjustableButton(options) {
   });
 }
 
+function toggleAnchorAxis(object,toggle){
+  cleanupTileAnchorLines()
+  if(toggle){
+    drawTileAnchorLines(object)
+  }
+}
+
 // used to debug visually a point on the tile selection box's footprint but its bugged, should fix later
-// export function graphicDebugTool(x,y,container){
-//   const dot = new PIXI.Graphics();
-//   dot.drawRect(2000,2000,200,200);
-//   // dot.drawRect(x,y,200,200);
-//   dot.visible = true;
-//   dot.beginFill(0xff0000)
-//   dot.endFill();
-//   container.addChild(dot);
-// }
+function drawTileAnchorLines(objectAnchor) {
+  // Removes existing lines
+  cleanupTileAnchorLines();
+  
+  // Create container for the lines
+  const xAxisLine = new PIXI.Graphics();
+  xAxisLine.name = 'anchorLine';
+  xAxisLine.lineStyle(2, 0x0000FF, 0.75); // line width, color, opacity
+
+  const yAxisLine = new PIXI.Graphics();
+  yAxisLine.name = 'anchorLine';
+  yAxisLine.lineStyle(2, 0xFF0000, 0.75); // line width, color, opacity
+
+  const zAxisLine = new PIXI.Graphics();
+  zAxisLine.name = 'anchorLine';
+  zAxisLine.lineStyle(2, 0x00FF00, 0.75); // line width, color, opacity
+
+  // Calculate diagonal length
+  const canvasWidth = canvas.dimensions.width;
+  const canvasHeight = canvas.dimensions.height;
+  const diagonalLength = Math.sqrt(Math.pow(canvasWidth, 2) + Math.pow(canvasHeight, 2));
+
+  //horizontal lines
+  xAxisLine.moveTo(objectAnchor.x, objectAnchor.y - diagonalLength / 2);
+  xAxisLine.lineTo(objectAnchor.x, objectAnchor.y + diagonalLength / 2);
+  yAxisLine.moveTo(objectAnchor.x - diagonalLength / 2, objectAnchor.y);
+  yAxisLine.lineTo(objectAnchor.x + diagonalLength / 2, objectAnchor.y);
+  
+  // vertical line
+  zAxisLine.moveTo(objectAnchor.x, objectAnchor.y);
+  zAxisLine.lineTo(objectAnchor.x + diagonalLength / 2, objectAnchor.y - diagonalLength / 2);
+
+  // Add on canvas
+  canvas.stage.addChild(xAxisLine);
+  canvas.stage.addChild(yAxisLine);
+  canvas.stage.addChild(zAxisLine);
+};
+
+function cleanupTileAnchorLines() {
+  const existingLines = canvas.stage.children.filter(child => child.name === 'anchorLine');
+  existingLines.forEach(line => line.destroy());
+};
+
+
+/**
+ * // a factory function that return a new object that contain all the relevant data required for depth sorting
+ * @param {*} sprite 
+ * @returns 
+ */
 
 function sortableSprite(sprite){
   // may seems overkill but passing the values directly sometimes cause weird "in between" value mutations that bricks sorting calculations
+  // also can prepare the data based on some conditions or states, for example the right offset of tiles might change if a tile is flipped or not
+
   const id = sprite.object.document.id;
   const type = sprite.object.document.documentName;
   const name = sprite.object.document.name? sprite.object.document.name : "no name";
-  let adjustedX = sprite.object.document.x;
-  let adjustedY = sprite.object.document.y;
+  const x = sprite.object.document.x;
+  const y = sprite.object.document.y;
+  let anchorX = sprite.object.document.x;
+  let anchorY = sprite.object.document.y;
+  const tileMirrorHorizontal = sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL)?sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL) : null;
+  const tileFlipped = sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tileFlipped')?sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID,'tileFlipped') : null;
+
+  // console.log("sprite isoAnchorX", sprite.object.document)
+
   if(sprite.object.document.documentName === "Tile"){
-    adjustedX = (sprite.object.document.x) - (sprite.object.document.width * 0.5);
-    adjustedY = (sprite.object.document.y) + (sprite.object.document.height * 0.25);
+    anchorX = (sprite.object.document.x) - (sprite.object.document.width * 0.5);
+    anchorY = (sprite.object.document.y) + (sprite.object.document.height * 0.5);
   }
+
   const height = sprite.object.document.height;
   const width = sprite.object.document.width;
   let newLinkedRegion = sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'regionLink');
   let newOccupiedRegion = sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion');
   if(!newLinkedRegion){newLinkedRegion = null};
   if(!newOccupiedRegion){newOccupiedRegion = null};
-  const tileMirrorHorizontal = sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL)?sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL) : null;
-  const tileFlipped = sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tileFlipped')?sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID,'tileFlipped') : null;
+  
 
   return {
     id:id,
     type:type,
     name: name,
-    x: adjustedX,
-    y: adjustedY,
+    x: x,
+    y: y,
+    anchorX: anchorX,
+    anchorY: anchorY,
     height:height,
     width:width,
     forceSortBelow: false,
@@ -371,11 +441,11 @@ export function debugCanvasLayer(spriteList){
     const data = []
 
     spriteList.map(sprite => {
-      let adjustedX = sprite.object.document.x;
-      let adjustedY = sprite.object.document.y;
+      let anchorX = sprite.object.document.x;
+      let anchorY = sprite.object.document.y;
       if(sprite.object.document.documentName === "Tile"){
-        adjustedX = (sprite.object.document.x) - (sprite.object.document.width * 0.5)
-        adjustedY = (sprite.object.document.y) + (sprite.object.document.height * 0.25)
+        anchorX = (sprite.object.document.x) - (sprite.object.document.width * 0.5)
+        anchorY = (sprite.object.document.y) + (sprite.object.document.height * 0.25)
       }
 
       let newLinkedRegion = sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'regionLink');
@@ -387,8 +457,8 @@ export function debugCanvasLayer(spriteList){
         // type: sprite.object.document.documentName,
         name: sprite.object.document.name? sprite.object.document.name : "no name",
         //sprite.documentName === "Tile"? (sprite.x) - (sprite.width *0.25) : sprite.x,
-        // x: adjustedX,
-        // y: adjustedY,
+        // x: anchorX,
+        // y: anchorY,
         // sortLayer: sprite.sortLayer, 
         sort: sprite.sort,
         linkedRegion:newLinkedRegion,

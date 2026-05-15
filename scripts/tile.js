@@ -1,6 +1,11 @@
 import { isometricModuleConfig } from './consts.js';
 import { applyIsometricTransformation } from './transform.js';
-import { adjustInputWithMouseDrag, parseNum, patchConfig, createAdjustableButton} from './utils.js';
+import { 
+  adjustInputWithMouseDrag, 
+  parseNum, 
+  patchConfig, 
+  createAdjustableButton,
+} from './utils.js';
 
 export async function createTileIsometricTab(app, html, data) {
 
@@ -66,13 +71,15 @@ export function initTileForm(app, html, context, options){
 
     Hooks.once('controlWall', async (wall) => {
       const selectedWallId = wall.id.toString();
-      const currentWallIds = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds') || [];
+      // const currentWallIds = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds') || [];
+      const flagIds = tile.document.getFlag("isometric-perspective", 'linkedWallIds') || [];
+      const currentWallIds = [].concat(flagIds);
       
       // Add the new ID only if it is not already in the list.
       if (!currentWallIds.includes(selectedWallId)) {
         const newWallIds = [...currentWallIds, selectedWallId];
         await app.document.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', newWallIds);
-        if (linkedWallsIdInput) linkedWallsIdInput.value = newWallIds.join(", ");
+        // if (linkedWallsIdInput) linkedWallsIdInput.value = newWallIds.join(", ");
       }
 
       // Returns the window to its original position and activates the TileLayer layer.
