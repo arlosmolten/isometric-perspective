@@ -87,7 +87,6 @@ export function initTileForm(app, html, context, options){
 
     Hooks.once('controlWall', async (wall) => {
       const selectedWallId = wall.id.toString();
-      // const currentWallIds = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds') || [];
       const flagIds = tile.document.getFlag("isometric-perspective", 'linkedWallIds') || [];
       const currentWallIds = [].concat(flagIds);
       
@@ -95,7 +94,6 @@ export function initTileForm(app, html, context, options){
       if (!currentWallIds.includes(selectedWallId)) {
         const newWallIds = [...currentWallIds, selectedWallId];
         await app.document.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', newWallIds);
-        // if (linkedWallsIdInput) linkedWallsIdInput.value = newWallIds.join(", ");
       }
 
       // Returns the window to its original position and activates the TileLayer layer.

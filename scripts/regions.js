@@ -25,16 +25,13 @@ export function initRegionForm(app, html, context, options){
   const isRegionDepthSortEnabled = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoRegionTilesAutoSortingEnabled');
   
   depthSortingCheckbox.addEventListener('change', (event) => {
-    console.log("ENABLED?: ", isRegionDepthSortEnabled);
     if (event.target.checked === true){
       app.document.setFlag(isometricModuleConfig.MODULE_ID, 'isoRegionTilesAutoSortingEnabled', true);
-      console.log("TRUE?")
     } else {
       app.document.setFlag(isometricModuleConfig.MODULE_ID, 'isoRegionTilesAutoSortingEnabled', false);
     }
   });
 
-  // const linkTilesBox = html.querySelector('.linked-tiles-container');
   if (isRegionDepthSortEnabled){
     linkTilesBox.classList.remove('hidden');
   } else {
@@ -60,16 +57,15 @@ export function initRegionForm(app, html, context, options){
 
     Hooks.once('controlTile', async (tile) => {
       const selectedTilesId = tile.id.toString();
-      const currentTilesIds = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'linkedTilesIds') || [];
+      const flagIds = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'linkedTilesIds') || [];
+      const currentTilesIds = [].concat(flagIds);
+
       // Add the new ID only if it is not already in the list.
       if (!currentTilesIds.includes(selectedTilesId)) {
         const newTilesIds = [...currentTilesIds, selectedTilesId];
         await app.document.setFlag(isometricModuleConfig.MODULE_ID, 'linkedTilesIds', newTilesIds);
-        if (linkedTilesIdInput) linkedTilesIdInput.value = newTilesIds.join(",");
         const canvasLayer = canvas.primary.children;
         const currentRegionId = context.document._id;
-        // console.log("tile.document.getFlag", tile.document.getFlag(isometricModuleConfig.MODULE_ID, 'regionLink'))
-        console.log("tile.document.getFlag", tile.document.flags, currentRegionId)
         tile.document.setFlag(isometricModuleConfig.MODULE_ID, 'regionLink', currentRegionId); // this flag aint set correctly
       }
       // Returns the window to its original position and activates the RegionLayer layer.
