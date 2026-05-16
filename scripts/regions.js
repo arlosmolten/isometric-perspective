@@ -86,7 +86,7 @@ export function initRegionForm(app, html, context, options){
     canvasLayer.filter(children => children.object?.document?.getFlag(isometricModuleConfig.MODULE_ID, 'regionLink'))
     .filter( tile => tile.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'regionLink') === app.document.id)
     .map( tile => {
-      tile.object.document.setFlag(isometricModuleConfig.MODULE_ID, 'regionLink', []);
+      tile.object.document.setFlag(isometricModuleConfig.MODULE_ID, 'regionLink', null);
     })
 
     await app.document.setFlag(isometricModuleConfig.MODULE_ID, 'linkedTilesIds', []);

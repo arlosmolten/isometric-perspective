@@ -1,6 +1,12 @@
 import { isometricModuleConfig } from './consts.js';
 import { applyIsometricTransformation } from './transform.js';
-import { adjustInputWithMouseDrag, parseNum, patchConfig, createAdjustableButton} from './utils.js';
+import { 
+  adjustInputWithMouseDrag, 
+  parseNum, 
+  patchConfig, 
+  createAdjustableButton,
+  toggleAnchorAxis,
+} from './utils.js';
 
 export async function createTileIsometricTab(app, html, data) {
 
@@ -38,11 +44,26 @@ export function initTileForm(app, html, context, options){
   const selectWallButton = html.querySelector('.select-wall');
   const clearWallButton = html.querySelector('.clear-wall');
   const linkedWallsIdInput = html.querySelector('input[name="flags.isometric-perspective.linkedWallIds"]');
+  const gizmoEnabledCheckbox = html.querySelector('input[name="flags.isometric-perspective.isoOffsetGizmoEnabled"]');
 
   // Initialize values
   const currentOffsetX = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetX');
   const currentOffsetY = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY');
   const currentScale = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'scale');
+
+
+  // Art offset
+  gizmoEnabledCheckbox.addEventListener('change', (event) => {
+    const tileDocument = context.document;
+    if(event.target.checked){
+      tileDocument.setFlag(isometricModuleConfig.MODULE_ID,"isoOffsetGizmoEnabled", true);
+      console.log("tileDocument", tileDocument)
+      toggleAnchorAxis(tileDocument,true);
+    } else {
+      tileDocument.setFlag(isometricModuleConfig.MODULE_ID,"isoOffsetGizmoEnabled", false);
+      toggleAnchorAxis(tileDocument,false);
+    }
+  }) 
 
   const inputOffsetX = html.querySelector('input[name="flags.isometric-perspective.offsetX"]');
   const inputOffsetY = html.querySelector('input[name="flags.isometric-perspective.offsetY"]');
@@ -66,13 +87,15 @@ export function initTileForm(app, html, context, options){
 
     Hooks.once('controlWall', async (wall) => {
       const selectedWallId = wall.id.toString();
-      const currentWallIds = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds') || [];
+      // const currentWallIds = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds') || [];
+      const flagIds = tile.document.getFlag("isometric-perspective", 'linkedWallIds') || [];
+      const currentWallIds = [].concat(flagIds);
       
       // Add the new ID only if it is not already in the list.
       if (!currentWallIds.includes(selectedWallId)) {
         const newWallIds = [...currentWallIds, selectedWallId];
         await app.document.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', newWallIds);
-        if (linkedWallsIdInput) linkedWallsIdInput.value = newWallIds.join(", ");
+        // if (linkedWallsIdInput) linkedWallsIdInput.value = newWallIds.join(", ");
       }
 
       // Returns the window to its original position and activates the TileLayer layer.
@@ -116,12 +139,20 @@ export function handleUpdateTile(tileDocument, updateData, options, userId) {
     requestAnimationFrame(() => applyIsometricTransformation(tile, isSceneIsometric));
   }
 
+  if (tileDocument.getFlag(isometricModuleConfig.MODULE_ID,"isoOffsetGizmoEnabled") === true){
+    toggleAnchorAxis(tileDocument,true);
+  }
+
 }
 
 export function handleRefreshTile(tile) {
   const scene = tile.scene;
   const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
   applyIsometricTransformation(tile, isSceneIsometric);
+
+  if (tile.document.getFlag(isometricModuleConfig.MODULE_ID,"isoOffsetGizmoEnabled") === true){
+    toggleAnchorAxis(tile.document,true);
+  }
 
 }
 
