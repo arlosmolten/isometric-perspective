@@ -75,7 +75,10 @@ function askReleaseInfo(callback) {
 // Principal
 console.log(`Iniciando release da versão ${version}...`);
 
-// 1. Atualiza versões nos arquivos
+// 1. Atualiza a URL de download no module.json e versões em outros arquivos
+console.log('Atualizando URL de download no module.json...');
+moduleJson.download = `https://github.com/arlosmolten/isometric-perspective/releases/download/v${version}/isometric-perspective.zip`;
+fs.writeFileSync(moduleJsonPath, JSON.stringify(moduleJson, null, 2));
 updateVersionInFiles();
 
 // 2. Deleta o arquivo ZIP antigo, se existir
