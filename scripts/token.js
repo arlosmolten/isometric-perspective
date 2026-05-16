@@ -7,34 +7,10 @@ import {
   patchConfig,
   isoToCartesian, 
   getFlagName,
-  comparePlaceablePosition,
-  // calculateTokenSortValue,
   createAdjustableButton
 } from './utils.js';
 
-/**
- * Patch Token.prototype._refreshSort to ensure isometric tokens always use
- * our custom depth sorting, even when selected.
- */
-function patchTokenSorting() {
-  const originalRefreshSort = foundry.canvas.placeables.Token.prototype._refreshSort;
-  foundry.canvas.placeables.Token.prototype._refreshSort = function() {
-    // If isometric is enabled for this scene, use our custom sort
-    const isSceneIsometric = this.scene?.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");
-    const autoSortEnabled = game.settings.get(isometricModuleConfig.MODULE_ID, "enableAutoSorting");
-    
-    if (isSceneIsometric && autoSortEnabled) {
-      
-      this.mesh.zIndex = comparePlaceablePosition(this);
-      if (this.controlled) this.mesh.zIndex += 0.1; // Minimal boost for selection visibility without breaking depth
-    } else {
-      return originalRefreshSort.apply(this);
-    }
-  };
-}
 
-// Execute patch
-patchTokenSorting();
 
 export async function createTokenIsometricTab(app, html, data) {
 
@@ -58,7 +34,7 @@ export async function createTokenIsometricTab(app, html, data) {
   if (PrototypeTokenConfig && PrototypeTokenConfig !== TokenConfig) {
     patchConfig(PrototypeTokenConfig,tokenTabConfig);
   }
-    
+
 }
 
 export function initTokenForm (app, html, context, options) {

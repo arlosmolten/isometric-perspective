@@ -19,6 +19,13 @@ import {
   addDepthSortControls
  } from './tile.js';
 
+ import {
+   createRegionIsometricTab,
+   initRegionForm,
+  //  handleUpdateRegion,
+  //  testRegionInteract
+ } from './regions.js'
+
 import { 
   handleRenderTokenHUD,
   handleRenderTileHUD,
@@ -26,8 +33,9 @@ import {
 } from './hud.js';
 
 import {
-  isoDepthSort,
-  isoDepthSortMixin
+  // isoDepthSort,
+  isoDepthSortTileMixin,
+  isoDepthSortTokenMixin
 } from './autosorting.js'
 
 import { registerDynamicTileConfig, increaseTilesOpacity, decreaseTilesOpacity } from './dynamictile.js';
@@ -38,7 +46,6 @@ import { ISOMETRIC_CONST } from './consts.js';
 import { 
   isoToCartesian, 
   cartesianToIso,
-  isIsometricAutosortingEnabledForPlaceable
 } from './utils.js';
 
 import { registerOcclusionConfig } from './occlusion.js';
@@ -229,8 +236,7 @@ Hooks.once("init", function() {
 });
 
 //HOOKS REGISTRATION 
-  // Verifica se deve mostrar a tela de boas-vindas
-  // Checks whether to show the welcome screen
+
 // WelcomeScreen
 Hooks.once('ready', addWelcomeScreen);
 //scene configuration
@@ -269,10 +275,14 @@ Hooks.on("getSceneControlButtons", controls => {
   addDepthSortControls(controls);
 });
 
+//region config 
+Hooks.on("ready", createRegionIsometricTab);
+Hooks.on("renderRegionConfig", initRegionForm);
+
 //autosorting
 Hooks.on("init", () => {
-  CONFIG.Token.objectClass = isoDepthSortMixin(CONFIG.Token.objectClass);
-  // CONFIG.Tile.objectClass = isoDepthSortMixin(CONFIG.Tile.objectClass); // will need probably its own type of mixin the logic is too different
+  CONFIG.Token.objectClass = isoDepthSortTokenMixin(CONFIG.Token.objectClass);
+  CONFIG.Tile.objectClass = isoDepthSortTileMixin(CONFIG.Tile.objectClass);
 });
 
 /**
