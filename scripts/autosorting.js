@@ -24,6 +24,8 @@ export function isoDepthSortTileMixin(Base){
       super._onUpdate(changed, options, userId);
       this.zIndex = 0;
       this.mesh.zIndex = 0;
+      const isTileSortable = this.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoTileAutoSortingEnabled');
+      if(isTileSortable){
       if ("y" in changed || "x" in changed) {
         const sortList = sortPlaceableByPosition(this);
         for (let i = 0; i < sortList.length; i++) {
@@ -32,8 +34,10 @@ export function isoDepthSortTileMixin(Base){
           currentSprite.sort = i;
         }
 
-        this.mesh.parent.sortDirty = true;
+          this.mesh.parent.sortDirty = true;
+        }
       }
+
     }
   }
 }
@@ -56,7 +60,6 @@ export function isoDepthSortTokenMixin(Base){
         const currentRegions = Array.from(this.document.regions).map(region => region);
         const currentRegion = currentRegions[0]?._id;
         if(currentRegion){
-          console.log("currentRegion",currentRegion)
           this.document.setFlag(isometricModuleConfig.MODULE_ID, 'currentRegion', currentRegion);
         } else {
           this.document.setFlag(isometricModuleConfig.MODULE_ID, 'currentRegion', null);

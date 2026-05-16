@@ -108,8 +108,6 @@ export function patchConfig(documentSheet, config, args) {
   }
 }
 
-
-
 /**
  * change placeables sort values based on its y value on the grid compared to its siblings.
  * @param {Placeable|PlaceableDocument} placeable - The placeable document used as a reference for the sortlayer.
@@ -189,15 +187,18 @@ function compareSpriteByPosition(sprite,sibling){
   return sortChange;
 }
 
+// ties in y still cause values cause flicker
+// multiples tokens canc ause the logic to break sometimes for some reason
+
 function sortByX(spriteA , spriteB){
   let result = 1;
-  if (spriteA.x > spriteB.x) { result = -1;}
+  if (spriteA.x >= spriteB.x) { result = -1;}
   return result;
 }
 
 function sortByY(spriteA , spriteB){
   let result = 1;
-  if (spriteA.y < spriteB.y) { result = -1;}
+  if (spriteA.y <= spriteB.y) { result = -1;}
   else {result = 1;}
   console.log("sprite", spriteA.name,spriteA.y, spriteB.name, spriteA.y,result)
   return result;
