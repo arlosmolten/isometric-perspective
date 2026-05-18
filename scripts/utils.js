@@ -119,7 +119,7 @@ export function sortPlaceableByPosition(placeable) {
     const currentSortLayer = placeable.mesh.parent
     return canvasLayer
     .filter( sprite => sprite.sortLayer === placeableMeshLayer)
-    .sort((sprite,sibling)=> compareSpriteByPosition(sprite,sibling));
+    .toSorted((sprite,sibling)=> compareSpriteByPosition(sprite,sibling));
   }
 }
 
@@ -128,10 +128,9 @@ export function sortPlaceableByRegion(placeable) {
     const placeableMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
     const canvasLayer = canvas.primary.children;
     const currentSortLayer = placeable.mesh.parent
-
-    const displayList = canvasLayer.filter( sprite => sprite.sortLayer === placeableMeshLayer);
-    
-    return displayList.toSorted((sprite,sibling)=> {
+    return canvasLayer
+    .filter( sprite => sprite.sortLayer === placeableMeshLayer)
+    .toSorted((sprite,sibling)=> {
       let compare = 0;
       if( sprite.object.document.documentName === "Token" || sibling.object.document.documentName === "Token" ) {
         if(sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion')){
@@ -192,12 +191,18 @@ function compareSpriteByPosition(sprite,sibling){
 
 function sortByX(spriteA , spriteB){
   let result = 1;
+  if ( spriteA.name === "orc fighter" || spriteB.name === "orc fighter") {
+    console.log("orc fighter sorted by X")
+  }
   if (spriteA.x >= spriteB.x) { result = -1;}
   return result;
 }
 
 function sortByY(spriteA , spriteB){
   let result = 1;
+  if ( spriteA.name === "orc fighter" || spriteB.name === "orc fighter") {
+    console.log("orc fighter sorted by Y")
+  }
   if (spriteA.y <= spriteB.y) { result = -1;}
   else {result = 1;}
   console.log("sprite", spriteA.name,spriteA.y, spriteB.name, spriteA.y,result)
@@ -206,9 +211,19 @@ function sortByY(spriteA , spriteB){
 
 function isRegionMatching (sprite, sibling){
   if(sprite.occupiedRegion !== null && sibling.linkedRegion !== null){
-    if(sprite.occupiedRegion === sibling.linkedRegion){return true}
+    if(sprite.occupiedRegion === sibling.linkedRegion){
+      if ( sprite.name === "orc fighter" || sibling.name === "orc fighter") {
+        console.log("orc fighter sorted by REGION")
+      }
+      return true
+    }
   } else if(sibling.occupiedRegion !== null && sprite.linkedRegion !== null){
-    if(sibling.occupiedRegion === sprite.linkedRegion){return true}
+    if(sibling.occupiedRegion === sprite.linkedRegion){
+      if ( sprite.name === "orc fighter" || sibling.name === "orc fighter") {
+        console.log("orc fighter sorted by REGION")
+      }
+      return true
+    }
   } else {
     return false;
   }

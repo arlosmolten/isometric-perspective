@@ -10,8 +10,10 @@ export function isoDepthSortTileMixin(Base){
     _refreshState() {
       super._refreshState();
       //prevent mesh flickering on hover or controlled
-      this.zIndex = 0;
-      this.mesh.zIndex = 0;
+      if(this.zIndex){
+        this.zIndex = 0;
+        this.mesh.zIndex = 0;
+      }
 
       const isTileSortable = this.document.flags[isometricModuleConfig.MODULE_ID]?.isoTileAutoSortingEnabled || false;
       if (isTileSortable){
