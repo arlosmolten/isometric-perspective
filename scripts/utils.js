@@ -162,25 +162,26 @@ function compareSpriteByPosition(sprite,sibling){
   const currentSprite = sortableSprite(sprite);
   const currentSibling = sortableSprite(sibling);
 
+  // if(currentSprite.type === "Tile" && currentSibling.type === "Tile"){
+  //   console.log("VERTICAL SORT:");
+  // }
+
+  // for cases with tiles linked to a region with region sort enabled.
   if(isRegionMatching(currentSprite,currentSibling)){
-    if(currentSprite.type === "Tile"){
-      sortChange = -1;
-    } else if (currentSibling.type === "Tile"){
-      sortChange = 1;
-    }
+    sortChange = sortByRegion(currentSprite,currentSibling);
   } else {
     //token and tile interaction is quite tricky because it change based on if the tile is flipped or not ...
-    if( currentSprite.type === "Token" && currentSibling.tileMirrorHorizontal || currentSibling.tileFlipped){
+    if( currentSprite.type === "Token" && currentSibling.tileMirrorHorizontal  === true  || currentSprite.type === "Token" && currentSibling.tileFlipped  === true ){
       sortChange = sortByY(currentSprite,currentSibling); // sort by Y axis if the tile is flipped
-    } else if( currentSibling.type === "Token" && currentSprite.tileMirrorHorizontal || currentSprite.tileFlipped){
+    } else if( currentSibling.type === "Token" && currentSprite.tileMirrorHorizontal  === true  || currentSibling.type === "Token" && currentSprite.tileFlipped  === true ){
       sortChange = sortByY(currentSprite,currentSibling); // sort by Y axis if the tile is flipped
-    } else if( currentSprite.type === "Token" && !currentSibling.tileMirrorHorizontal || !currentSibling.tileFlipped ){
+    } else if( currentSprite.type === "Token" && !currentSibling.tileMirrorHorizontal || currentSprite.type === "Token" && !currentSibling.tileFlipped ){
       sortChange = sortByX(currentSprite,currentSibling); // sort by X axis if the tile is not flipped
-    } else if( currentSibling.type === "Token" && !currentSprite.tileMirrorHorizontal || !currentSprite.tileFlipped ){
+    } else if( currentSibling.type === "Token" && !currentSprite.tileMirrorHorizontal || currentSibling.type === "Token" && !currentSprite.tileFlipped ){
       sortChange = sortByX(currentSprite,currentSibling); // sort by X axis if the tile is not flipped
     } else {
-      // cover the cases where its tile vs tile or token vs tokens
-      sortChange = sortByX(currentSprite,currentSibling); // sort by X axis if the tile is not flipped
+      // cover the cases where its tile vs tile or token vs tokens, in that case simply sort by vertical difference between both center points
+      sortChange = sortByVertical(currentSprite,currentSibling);
     }
   }
   return sortChange;
@@ -191,37 +192,40 @@ function compareSpriteByPosition(sprite,sibling){
 
 function sortByX(spriteA , spriteB){
   let result = 1;
-  // if ( spriteA.name === "orc fighter" || spriteB.name === "orc fighter") {
-  //   console.log("orc fighter sorted by X")
-  // }
   if (spriteA.x >= spriteB.x) { result = -1;}
   return result;
 }
 
 function sortByY(spriteA , spriteB){
   let result = 1;
-  // if ( spriteA.name === "orc fighter" || spriteB.name === "orc fighter") {
-  //   console.log("orc fighter sorted by Y")
-  // }
   if (spriteA.y <= spriteB.y) { result = -1;}
   else {result = 1;}
-  // console.log("sprite", spriteA.name,spriteA.y, spriteB.name, spriteA.y,result)
+  return result;
+}
+
+function sortByRegion(spriteA , spriteB){
+  if(spriteA.type === "Tile"){
+    return -1;
+  } else if (spriteB.type === "Tile"){
+    return 1;
+  }
+}
+
+function sortByVertical(spriteA , spriteB) {
+  let result = 1;
+    if(spriteA.x > spriteB.x && spriteA.y < spriteB.y){
+      result = -1;
+    }
   return result;
 }
 
 function isRegionMatching (sprite, sibling){
   if(sprite.occupiedRegion !== null && sibling.linkedRegion !== null){
     if(sprite.occupiedRegion === sibling.linkedRegion){
-      // if ( sprite.name === "orc fighter" || sibling.name === "orc fighter") {
-      //   console.log("orc fighter sorted by REGION")
-      // }
       return true
     }
   } else if(sibling.occupiedRegion !== null && sprite.linkedRegion !== null){
     if(sibling.occupiedRegion === sprite.linkedRegion){
-      // if ( sprite.name === "orc fighter" || sibling.name === "orc fighter") {
-      //   console.log("orc fighter sorted by REGION")
-      // }
       return true
     }
   } else {
@@ -470,15 +474,15 @@ export function debugCanvasLayer(spriteList){
         // type: sprite.object.document.documentName,
         // name: sprite.object.document.name? sprite.object.document.name : "no name",
         //sprite.documentName === "Tile"? (sprite.x) - (sprite.width *0.25) : sprite.x,
-        // x: anchorX,
-        // y: anchorY,
+        x: anchorX,
+        y: anchorY,
         // sortLayer: sprite.sortLayer, 
         // sort: sprite.sort,
         // linkedRegion:newLinkedRegion,
         // occupiedRegion: newOccupiedRegion,
         // occupiedRegion: sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion')? sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion') : "none",
-        // tileMirrorHorizontal: sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL)?sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL) : null,
-        // tileFlipped: sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tileFlipped')?sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID,'tileFlipped') : null,
+        tileMirrorHorizontal: sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL)?sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL) : null,
+        tileFlipped: sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tileFlipped')?sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID,'tileFlipped') : null,
       })
     });
     console.table(data)

@@ -59,8 +59,10 @@ export function isoDepthSortTokenMixin(Base){
     _refreshState() {
       super._refreshState();
       //prevent mesh flickering on hover or controlled
-      this.zIndex = 0;
-      this.mesh.zIndex = 0;
+      if(this.zIndex){
+        this.zIndex = 0;
+        this.mesh.zIndex = 0;
+      }
 
         const currentRegions = Array.from(this.document.regions).map(region => region);
         const currentRegion = currentRegions[0]?._id;
@@ -77,14 +79,16 @@ export function isoDepthSortTokenMixin(Base){
         currentSprite.object.document.sort = i;
         currentSprite.sort = i;
       }
-      // debugCanvasLayer(this.sortList)
+      // debugCanvasLayer(this.sortList) -------------------------------------------------------------------------- DEBUG!!!
       this.mesh.parent.sortDirty = true;
     }
 
     _onUpdate(changed, options, userId) {
       super._onUpdate(changed, options, userId);
-      this.zIndex = 0;
-      this.mesh.zIndex = 0;
+      if(this.zIndex){
+        // this.zIndex = 0;
+        // this.mesh.zIndex = 0;
+      }
       if ("y" in changed || "x" in changed) {
         // later use this to prevent unecessary updates
       }
