@@ -162,48 +162,71 @@ function compareSpriteByPosition(sprite,sibling){
   const currentSprite = sortableSprite(sprite);
   const currentSibling = sortableSprite(sibling);
 
-  // if(currentSprite.type === "Tile" && currentSibling.type === "Tile"){
-  //   console.log("VERTICAL SORT:");
-  // }
-
   // for cases with tiles linked to a region with region sort enabled.
   if(isRegionMatching(currentSprite,currentSibling)){
     sortChange = sortByRegion(currentSprite,currentSibling);
-  } else {
-    //token and tile interaction is quite tricky because it change based on if the tile is flipped or not ...
-    if( currentSprite.type === "Token" && currentSibling.tileMirrorHorizontal  === true  || currentSprite.type === "Token" && currentSibling.tileFlipped  === true ){
+  } else if (isTokenAndTile(currentSprite , currentSibling) ) {
+    if(isTileFlipped(currentSprite) || isTileFlipped(currentSibling)){
       sortChange = sortByY(currentSprite,currentSibling); // sort by Y axis if the tile is flipped
-    } else if( currentSibling.type === "Token" && currentSprite.tileMirrorHorizontal  === true  || currentSibling.type === "Token" && currentSprite.tileFlipped  === true ){
-      sortChange = sortByY(currentSprite,currentSibling); // sort by Y axis if the tile is flipped
-    } else if( currentSprite.type === "Token" && !currentSibling.tileMirrorHorizontal || currentSprite.type === "Token" && !currentSibling.tileFlipped ){
-      sortChange = sortByX(currentSprite,currentSibling); // sort by X axis if the tile is not flipped
-    } else if( currentSibling.type === "Token" && !currentSprite.tileMirrorHorizontal || currentSibling.type === "Token" && !currentSprite.tileFlipped ){
-      sortChange = sortByX(currentSprite,currentSibling); // sort by X axis if the tile is not flipped
     } else {
-      // cover the cases where its tile vs tile or token vs tokens, in that case simply sort by vertical difference between both center points
-      sortChange = sortByVertical(currentSprite,currentSibling);
+      sortChange = sortByX(currentSprite,currentSibling); // sort by X axis if the tile is not flipped
     }
+  } else {
+    sortChange = sortByVertical(currentSprite,currentSibling);
   }
   return sortChange;
+}
+
+// bit overkill but make code much more readable and avoid duplicate compar logic
+function isTokenAndTile(spriteA, spriteB){
+  let result = false;
+  if(spriteA.type ==="Token" && spriteB.type ==="Tile" || spriteA.type ==="Tile" && spriteB.type ==="Token"){
+    result = true;
+  }
+  return result;
+}
+
+function isBothTile(spriteA, spriteB){
+  let result = false;
+  if(spriteA.type ==="Tile" && spriteB.type ==="Tile"){
+    result = true;
+  }
+  return result;
+}
+
+function isTileFlipped(sprite){
+  let result = false;
+  if(sprite.tileMirrorHorizontal || sprite.tileFlipped){
+    result = true;
+  }
+  return result;
 }
 
 // ties in y still cause values cause flicker
 // multiples tokens canc ause the logic to break sometimes for some reason
 
-function sortByX(spriteA , spriteB){
+function sortByX(spriteA, spriteB){
   let result = 1;
   if (spriteA.x >= spriteB.x) { result = -1;}
   return result;
 }
 
-function sortByY(spriteA , spriteB){
+function sortByY(spriteA, spriteB){
+  if (spriteA.name === "glitched wall back" && spriteB.name === "glitched wall back"){
+    console.log("SORTED Y?")
+    console.log("A IS :", spriteA.name)
+    console.log("B IS:", spriteB.name)
+    console.log("IS TOKEN AND TILE?", isTokenAndTile(spriteA, spriteB))
+    console.log("IS BOTH TILES?", isBothTile(spriteA, spriteB))
+    console.log("IS A FLIPPED?", isTileFlipped(spriteA))
+    console.log("IS B FLIPPED?", isTileFlipped(spriteB))
+  }
   let result = 1;
   if (spriteA.y <= spriteB.y) { result = -1;}
-  else {result = 1;}
   return result;
 }
 
-function sortByRegion(spriteA , spriteB){
+function sortByRegion(spriteA, spriteB){
   if(spriteA.type === "Tile"){
     return -1;
   } else if (spriteB.type === "Tile"){
@@ -211,7 +234,16 @@ function sortByRegion(spriteA , spriteB){
   }
 }
 
-function sortByVertical(spriteA , spriteB) {
+function sortByVertical(spriteA, spriteB) {
+  if (spriteA.name === "glitched wall back" && spriteB.name === "glitched wall front"){
+    console.log("SORTED VERTICAL?")
+    console.log("A IS :", spriteA.name, "coords:", spriteA.x, spriteA.y)
+    console.log("B IS:", spriteB.name, "coords:", spriteB.x, spriteB.y)
+    console.log("IS TOKEN AND TILE?", isTokenAndTile(spriteA, spriteB))
+    console.log("IS BOTH TILES?", isBothTile(spriteA, spriteB))
+    console.log("IS A FLIPPED?", isTileFlipped(spriteA))
+    console.log("IS B FLIPPED?", isTileFlipped(spriteB))
+  }
   let result = 1;
     if(spriteA.x > spriteB.x && spriteA.y < spriteB.y){
       result = -1;
@@ -221,16 +253,10 @@ function sortByVertical(spriteA , spriteB) {
 
 function isRegionMatching (sprite, sibling){
   if(sprite.occupiedRegion !== null && sibling.linkedRegion !== null){
-    if(sprite.occupiedRegion === sibling.linkedRegion){
-      return true
-    }
+    if(sprite.occupiedRegion === sibling.linkedRegion){ return true }
   } else if(sibling.occupiedRegion !== null && sprite.linkedRegion !== null){
-    if(sibling.occupiedRegion === sprite.linkedRegion){
-      return true
-    }
-  } else {
-    return false;
-  }
+    if(sibling.occupiedRegion === sprite.linkedRegion){ return true }
+  } else { return false; }
 }
 
 
@@ -472,7 +498,7 @@ export function debugCanvasLayer(spriteList){
       data.push({
         // id: sprite.object.document.id,
         // type: sprite.object.document.documentName,
-        // name: sprite.object.document.name? sprite.object.document.name : "no name",
+        name: sprite.object.document.name? sprite.object.document.name : "no name",
         //sprite.documentName === "Tile"? (sprite.x) - (sprite.width *0.25) : sprite.x,
         x: anchorX,
         y: anchorY,

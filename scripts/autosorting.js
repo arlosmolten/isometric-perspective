@@ -79,7 +79,7 @@ export function isoDepthSortTokenMixin(Base){
         currentSprite.object.document.sort = i;
         currentSprite.sort = i;
       }
-      // debugCanvasLayer(this.sortList) -------------------------------------------------------------------------- DEBUG!!!
+      // debugCanvasLayer(this.sortList) //-------------------------------------------------------------------------- DEBUG!!!
       this.mesh.parent.sortDirty = true;
     }
 
