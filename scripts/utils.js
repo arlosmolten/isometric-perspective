@@ -191,37 +191,37 @@ function compareSpriteByPosition(sprite,sibling){
 
 function sortByX(spriteA , spriteB){
   let result = 1;
-  if ( spriteA.name === "orc fighter" || spriteB.name === "orc fighter") {
-    console.log("orc fighter sorted by X")
-  }
+  // if ( spriteA.name === "orc fighter" || spriteB.name === "orc fighter") {
+  //   console.log("orc fighter sorted by X")
+  // }
   if (spriteA.x >= spriteB.x) { result = -1;}
   return result;
 }
 
 function sortByY(spriteA , spriteB){
   let result = 1;
-  if ( spriteA.name === "orc fighter" || spriteB.name === "orc fighter") {
-    console.log("orc fighter sorted by Y")
-  }
+  // if ( spriteA.name === "orc fighter" || spriteB.name === "orc fighter") {
+  //   console.log("orc fighter sorted by Y")
+  // }
   if (spriteA.y <= spriteB.y) { result = -1;}
   else {result = 1;}
-  console.log("sprite", spriteA.name,spriteA.y, spriteB.name, spriteA.y,result)
+  // console.log("sprite", spriteA.name,spriteA.y, spriteB.name, spriteA.y,result)
   return result;
 }
 
 function isRegionMatching (sprite, sibling){
   if(sprite.occupiedRegion !== null && sibling.linkedRegion !== null){
     if(sprite.occupiedRegion === sibling.linkedRegion){
-      if ( sprite.name === "orc fighter" || sibling.name === "orc fighter") {
-        console.log("orc fighter sorted by REGION")
-      }
+      // if ( sprite.name === "orc fighter" || sibling.name === "orc fighter") {
+      //   console.log("orc fighter sorted by REGION")
+      // }
       return true
     }
   } else if(sibling.occupiedRegion !== null && sprite.linkedRegion !== null){
     if(sibling.occupiedRegion === sprite.linkedRegion){
-      if ( sprite.name === "orc fighter" || sibling.name === "orc fighter") {
-        console.log("orc fighter sorted by REGION")
-      }
+      // if ( sprite.name === "orc fighter" || sibling.name === "orc fighter") {
+      //   console.log("orc fighter sorted by REGION")
+      // }
       return true
     }
   } else {
