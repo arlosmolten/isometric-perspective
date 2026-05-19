@@ -24,8 +24,10 @@ export function isoDepthSortTileMixin(Base){
     }
     _onUpdate(changed, options, userId) {
       super._onUpdate(changed, options, userId);
-      this.zIndex = 0;
-      this.mesh.zIndex = 0;
+      if(this.zIndex){
+        this.zIndex = 0;
+        this.mesh.zIndex = 0;
+      }
       const isTileSortable = this.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoTileAutoSortingEnabled');
       if(isTileSortable){
       if ("y" in changed || "x" in changed) {
@@ -39,6 +41,7 @@ export function isoDepthSortTileMixin(Base){
           this.mesh.parent.sortDirty = true;
         }
       }
+      
 
     }
   }
@@ -74,7 +77,7 @@ export function isoDepthSortTokenMixin(Base){
         currentSprite.object.document.sort = i;
         currentSprite.sort = i;
       }
-      debugCanvasLayer(this.sortList)
+      // debugCanvasLayer(this.sortList)
       this.mesh.parent.sortDirty = true;
     }
 

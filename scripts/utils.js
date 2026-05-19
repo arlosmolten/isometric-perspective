@@ -418,14 +418,14 @@ function sortableSprite(sprite){
   const y = sprite.object.document.y;
   let anchorX = sprite.object.document.x;
   let anchorY = sprite.object.document.y;
-  const tileMirrorHorizontal = sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL)?sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL) : null;
+  let tileMirrorHorizontal = null;
+  
+  if (game.modules.get(fastFlipCompatiility.MODULE_ID)?.active){
+    tileMirrorHorizontal = sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL)
+  }
+
   const tileFlipped = sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tileFlipped')?sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID,'tileFlipped') : null;
-
-  // if(sprite.object.document.documentName === "Tile"){
-  //   anchorX = (sprite.object.document.x) - (sprite.object.document.width * 0.5);
-  //   anchorY = (sprite.object.document.y) + (sprite.object.document.height * 0.5);
-  // }
-
+  
   const height = sprite.object.document.height;
   const width = sprite.object.document.width;
   let newLinkedRegion = sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'regionLink');
@@ -460,10 +460,6 @@ export function debugCanvasLayer(spriteList){
     spriteList.map(sprite => {
       let anchorX = sprite.object.document.x;
       let anchorY = sprite.object.document.y;
-      // if(sprite.object.document.documentName === "Tile"){
-      //   anchorX = (sprite.object.document.x) - (sprite.object.document.width * 0.25)
-      //   anchorY = (sprite.object.document.y) + (sprite.object.document.height * 0.25)
-      // }
 
       let newLinkedRegion = sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'regionLink');
       let newOccupiedRegion = sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion');
@@ -472,16 +468,16 @@ export function debugCanvasLayer(spriteList){
       data.push({
         // id: sprite.object.document.id,
         // type: sprite.object.document.documentName,
-        name: sprite.object.document.name? sprite.object.document.name : "no name",
+        // name: sprite.object.document.name? sprite.object.document.name : "no name",
         //sprite.documentName === "Tile"? (sprite.x) - (sprite.width *0.25) : sprite.x,
-        x: anchorX,
-        y: anchorY,
+        // x: anchorX,
+        // y: anchorY,
         // sortLayer: sprite.sortLayer, 
-        sort: sprite.sort,
+        // sort: sprite.sort,
         // linkedRegion:newLinkedRegion,
         // occupiedRegion: newOccupiedRegion,
         // occupiedRegion: sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion')? sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion') : "none",
-        tileMirrorHorizontal: sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL)?sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL) : null,
+        // tileMirrorHorizontal: sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL)?sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL) : null,
         // tileFlipped: sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tileFlipped')?sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID,'tileFlipped') : null,
       })
     });
