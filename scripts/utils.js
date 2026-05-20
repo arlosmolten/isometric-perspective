@@ -165,14 +165,17 @@ function compareSpriteByPosition(sprite,sibling){
   // for cases with tiles linked to a region with region sort enabled.
   if(isRegionMatching(currentSprite,currentSibling)){
     sortChange = sortByRegion(currentSprite,currentSibling);
+  // for cases involving one token and one tile
   } else if (isTokenAndTile(currentSprite , currentSibling) ) {
+    // for cases where a tile is flipped
     if(isTileFlipped(currentSprite) || isTileFlipped(currentSibling)){
-      sortChange = sortByY(currentSprite,currentSibling); // sort by Y axis if the tile is flipped
-    } else {
       sortChange = sortByX(currentSprite,currentSibling); // sort by X axis if the tile is not flipped
+    } else {
+      sortChange = sortByY(currentSprite,currentSibling); // sort by Y axis if the tile is flipped
     }
-  } else {
-    sortChange = sortByVertical(currentSprite,currentSibling);
+  // for cases where both placables are of the same type and none of them are flipped
+  } else if(!isTileFlipped(currentSprite) || !isTileFlipped(currentSibling)){
+    sortChange = sortByDepth(currentSprite,currentSibling);
   }
   return sortChange;
 }
@@ -206,24 +209,17 @@ function isTileFlipped(sprite){
 // multiples tokens canc ause the logic to break sometimes for some reason
 
 function sortByX(spriteA, spriteB){
-  let result = 1;
-  if (spriteA.x >= spriteB.x) { result = -1;}
-  return result;
+  // if (spriteA.name === "human witch" || spriteA.name === "human witch"){
+  //   console.log("WITCH SORT BY X:", spriteA.name, spriteB.name, spriteA.x - spriteB.x)
+  // }
+  return spriteB.x - spriteA.x;
 }
 
 function sortByY(spriteA, spriteB){
-  if (spriteA.name === "glitched wall back" && spriteB.name === "glitched wall back"){
-    console.log("SORTED Y?")
-    console.log("A IS :", spriteA.name)
-    console.log("B IS:", spriteB.name)
-    console.log("IS TOKEN AND TILE?", isTokenAndTile(spriteA, spriteB))
-    console.log("IS BOTH TILES?", isBothTile(spriteA, spriteB))
-    console.log("IS A FLIPPED?", isTileFlipped(spriteA))
-    console.log("IS B FLIPPED?", isTileFlipped(spriteB))
-  }
-  let result = 1;
-  if (spriteA.y <= spriteB.y) { result = -1;}
-  return result;
+  // if (spriteA.name === "human witch" || spriteA.name === "human witch"){
+  //   console.log("WITCH SORT BY Y:", spriteA.name, spriteB.name, spriteA.y - spriteB.y)
+  // }
+  return spriteA.y - spriteB.y;
 }
 
 function sortByRegion(spriteA, spriteB){
@@ -234,21 +230,28 @@ function sortByRegion(spriteA, spriteB){
   }
 }
 
-function sortByVertical(spriteA, spriteB) {
-  if (spriteA.name === "glitched wall back" && spriteB.name === "glitched wall front"){
-    console.log("SORTED VERTICAL?")
-    console.log("A IS :", spriteA.name, "coords:", spriteA.x, spriteA.y)
-    console.log("B IS:", spriteB.name, "coords:", spriteB.x, spriteB.y)
-    console.log("IS TOKEN AND TILE?", isTokenAndTile(spriteA, spriteB))
-    console.log("IS BOTH TILES?", isBothTile(spriteA, spriteB))
-    console.log("IS A FLIPPED?", isTileFlipped(spriteA))
-    console.log("IS B FLIPPED?", isTileFlipped(spriteB))
-  }
-  let result = 1;
-    if(spriteA.x > spriteB.x && spriteA.y < spriteB.y){
-      result = -1;
+// i think further refinement is required here
+// like a tie breaker that either look on the X or Y axis difference if both are on the same vertical height , 
+// for example if a tile is flipped , compare with y axis , if not , compare with x axis 
+
+function sortByDepth(spriteA, spriteB) {
+  const depthA = spriteA.y - spriteA.x;
+  const depthB = spriteB.y - spriteB.x;
+
+  if (depthA === depthB) {
+    // tie breaker here
+    if(isBothTile(spriteA, spriteB)){
+      // at this point i need to add an UI element that will indicate from which axis a tile should be sorted based on its art
+      // if(isTileFlipped(spriteA)){
+      //   return 
+      // }
     }
-  return result;
+      return spriteA.y - spriteB.y;
+  }
+  if (spriteA.name === "human witch" || spriteA.name === "human witch"){
+    console.log("WITCH SORT DEPTH", depthA - depthB)
+  }
+  return depthA - depthB;
 }
 
 function isRegionMatching (sprite, sibling){
