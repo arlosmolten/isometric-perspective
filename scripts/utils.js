@@ -113,23 +113,6 @@ export function patchConfig(documentSheet, config, args) {
   }
 }
 
-/**
- * change placeables sort values based on its y value on the grid compared to its siblings.
- * @param {Placeable|PlaceableDocument} placeable - The placeable document used as a reference for the sortlayer.
- */
-export function sortPlaceableByPosition(placeable) {
-  if(placeable.mesh.sortLayer === foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS ){
-    const placeableMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
-    const canvasLayer = canvas.primary.children;
-    const currentSortLayer = placeable.mesh.parent
-    return canvasLayer
-    .filter( sprite => sprite.sortLayer === placeableMeshLayer)
-    .toSorted((sprite,sibling)=> compareSpriteByPosition(sprite,sibling));
-
-    // starting to think the sorting algorithm cause side effects 
-  }
-}
-
 export function sortPlaceableByRegion(placeable) {
   if(placeable.mesh.sortLayer === foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS ){
     const placeableMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
@@ -141,9 +124,9 @@ export function sortPlaceableByRegion(placeable) {
       let compare = 0;
       if( sprite.object.document.documentName === "Token" || sibling.object.document.documentName === "Token" ) {
         if(sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion')){
-          compare = compareSpriteByRegion(sprite,sibling);
+          compare = comparesiblingyRegion(sprite,sibling);
         } else if (sibling.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion')) {
-          compare = compareSpriteByRegion(sprite,sibling);
+          compare = comparesiblingyRegion(sprite,sibling);
         }
         return compare;
       }
@@ -151,6 +134,26 @@ export function sortPlaceableByRegion(placeable) {
 
   }
 }
+
+/**
+ * change placeables sort values based on its y value on the grid compared to its siblings.
+ * @param {Placeable|PlaceableDocument} placeable - The placeable document used as a reference for the sortlayer.
+ * 
+ * 
+ */
+export function sortPlaceableByPosition(placeable) {
+  if(placeable.mesh.sortLayer === foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS ){
+    const placeableMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
+    const canvasLayer = canvas.primary.children;
+    const currentSortLayer = placeable.mesh.parent
+    return canvasLayer.filter( sprite => sprite.sortLayer === placeableMeshLayer)
+    .sort((sprite,sibling)=> compareSiblingPosition(sprite,sibling))
+    .toSorted((sprite,sibling)=> compareSiblingPosition(sprite,sibling));
+
+    // starting to think the sorting algorithm cause side effects 
+  }
+}
+
 
 /**
  * compare two placeables by Y positions if one of the placable is a tile that is flipped
@@ -164,11 +167,10 @@ export function sortPlaceableByRegion(placeable) {
  * x-        y+
 */
 
-function compareSpriteByPosition(sprite,sibling){    
+function compareSiblingPosition(sprite,sibling){    
   let sortChange = 0;
   const currentSprite = sortableSprite(sprite);
   const currentSibling = sortableSprite(sibling);
-
   // for cases with tiles linked to a region with region sort enabled.
   if(isRegionMatching(currentSprite,currentSibling)){
     sortChange = sortByRegion(currentSprite,currentSibling);
@@ -178,24 +180,7 @@ function compareSpriteByPosition(sprite,sibling){
   return sortChange;
 }
 
-// bit overkill but make code much more readable and avoid duplicate compar logic
-// function isTokenAndTile(spriteA, spriteB){
-//   let result = false;
-//   if(spriteA.type ==="Token" && spriteB.type ==="Tile" || spriteA.type ==="Tile" && spriteB.type ==="Token"){
-//     result = true;
-//   }
-//   return result;
-// }
-
-// function isBothTile(spriteA, spriteB){
-//   let result = false;
-//   if(spriteA.type ==="Tile" && spriteB.type ==="Tile"){
-//     result = true;
-//   }
-//   return result;
-// }
-
-function isTileFlipped(sprite){
+function isTileFlipped (sprite){
   let result = false;
   if(sprite.tileMirrorHorizontal || sprite.tileFlipped){
     result = true;
@@ -203,92 +188,85 @@ function isTileFlipped(sprite){
   return result;
 }
 
+// return true or false based on if a tile sortRule is by X or by Y axis and invert the result if the tile is also flipped 
+// other result always return false because no axis check is needed and such tiles are always sorted by vertical depth.
+function isTileAxisFlipped(sprite){
+  if(sprite.sortRule === "X"){
+    return isTileFlipped(sprite)? true : false;
+  } else if (sprite.sortRule === "Y"){
+    return isTileFlipped(sprite)? true : false;
+  } else {
+    return false;
+  }
+}
+
+// compare cases where the placeable type is: 
+// token vs token
+// tile vs tile 
+// token vs tile
+// avoid cluttering getSortingRule() and improve code readability
+function comparePairings(sprite,sibling){
+  if(sprite.type === "Token" && sibling.type === "Token"){
+    return "Tokens"
+  } else if(sprite.type === "Tile" && sibling.type === "Tile"){
+    return "Tiles"
+  } else {
+    return "Mixed"
+  }
+}
+
 // compare a sprite and its sibling and return what sorting rule based if:
 // ... if the sibling is a token : sort by vertical depth --done 
 // ... if the sibling is a token inside a region with linked walls : sort the linked walls behind the token -- todo
-// ... if the sibling is a tile : compare depth based on their facing -- wip
+// ... if the sibling is a tile : compare depth based on their facing and if they are flipped -- wip
+//     ... if a sibling is not flipped , and its sortrule is "X" , sort by X
+//     ... if a sibling is not flipped , and its sortrule is "Y" , sort by Y
+//     ... if a sibling is flipped , and its sortrule is "X" , sort by Y instead of X because while its facing should be SW to NE , its art is flipped and so it appear facing SE to NW instead
+//     ... if a sibling is flipped , and its sortrule is "Y" , sort by X instead of Y because while its facing should be SE to NW , its art is flipped and so it appear facing SW to NE instead
 // 
 function getSortingRule(sprite,sibling){
-  // console.log("SPRITE SORTING RULES", sprite.sortRule, "SIBLING SORTING RULES", sibling.sortRule)
-  if(sibling.type === "Token"){
-    const depthA = sprite.y - sprite.x;
-    const depthB = sibling.y - sibling.x;
-    return depthA - depthB;
-  } else if(sibling.type === "Tile"){
-    // console.log("isTileFlipped(sprite)", isTileFlipped(sprite))
-    if(!isTileFlipped(sibling)){
-      if(sibling.sortRule === "X"){
-        if(sprite.name === "sw front" && sibling.name === "sw back"){
-          console.log("NOT FLIPPED SPRITE SORT BY X", isTileFlipped(sprite),isTileFlipped(sibling));
-        }
-        return sibling.x - sprite.x;
-      } else {
-        if(sprite.name === "sw front" && sibling.name === "sw back"){
-          console.log("NOT FLIPPED SPRITE SORT BY Y");
-        }
-        return sprite.y - sibling.y;
-      }
-    } else {
-      if(sibling.sortRule === "X"){
-        if(sprite.name === "nw front" && sibling.name === "nw back"){
-          console.log("FLIPPED SPRITE SORT BY X");
-        }
-        return sibling.x - sprite.x;
-      } else {
-        if(sprite.name === "nw front" && sibling.name === "nw back"){
-          console.log("FLIPPED SPRITE SORT BY Y",isTileFlipped(sprite),isTileFlipped(sibling), sprite.sortRule, sibling.sortRule);
-        }
-        return sprite.y - sibling.y;
-      }
+  if(sibling.id !== sprite.id){ // never compare an object against itself
+    switch(comparePairings(sprite,sibling)){
+      case "Tokens":
+        return sortByDepth(sprite,sibling)
+        break;
+      case "Tiles":
+        // return sort by Y or X based on the tile facing property and if the tile is flipped
+        return isTileAxisFlipped(sibling)? sortByY(sprite,sibling) : sortByX(sibling,sprite);
+        break;
+      case "Mixed":
+        return isTileAxisFlipped(sibling)? sortByX(sprite,sibling) : sortByY(sprite,sibling);
+      default:
+        return sortByDepth(sprite,sibling)
+        break;
     }
   }
 }
 
-// function sortByX(spriteA, spriteB){
-//   if(spriteA.name === "sw front"){
-//     console.log("sw front: sort by X")
-//   }
-//   return spriteB.x - spriteA.x;
-// }
+function sortByX(sprite, sibling){
+  return sprite.x - sibling.x;
+}
 
-// function sortByY(spriteA, spriteB){
-//   if(spriteA.name === "sw front"){
-//     console.log("sw front: sort by Y")
-//   }
-//   return spriteA.y - spriteB.y;
-// }
+function sortByY(sprite, sibling){
+  return sprite.y - sibling.y;
+}
 
-function sortByRegion(spriteA, spriteB){
-  if(spriteA.name === "sw front"){
+function sortByDepth(sprite,sibling){
+  const depthA = sprite.y - sprite.x;
+  const depthB = sibling.y - sibling.x;
+  return depthA - depthB;
+}
+
+function sortByRegion(sprite, sibling){
+  if(sprite.name === "sw front"){
     console.log("sw front: sort by region")
   }
-  // console.log("SORT BY REGION: ")
-  if(spriteA.type === "Tile"){
+  if(sprite.type === "Tile"){
     return -1;
-  } else if (spriteB.type === "Tile"){
+  } else if (sibling.type === "Tile"){
     return 1;
   }
 }
-
-// tokens are sorted by depth
-// tiles are sorted by X or Y depending on what facing they have and what is their facing rule
-
-// function sortByDepth(sprite, sibling) {
-//   const depthA = sprite.y - sprite.x;
-//   const depthB = sibling.y - sibling.x;
-
-//   if(sprite.name === "sw front" && sibling.name === "sw back"){
-//     console.log("sw front: sort by depth", depthA, depthB , "DIFF:", depthA - depthB , "WITH", sibling.name)
-//     if (depthA > depthB) {
-//       if(sibling)
-//       console.log("HIGHER")
-//       return getSortingRule(sprite, sibling);
-//     } else {
-//       console.log("LOWER")
-//     }
-//   }
-//   return getSortingRule(sprite, sibling)
-// }
 
 function isRegionMatching (sprite, sibling){
   if(sprite.occupiedRegion !== null && sibling.linkedRegion !== null){
@@ -491,12 +469,13 @@ function sortableSprite(sprite){
   let anchorY = sprite.object.document.y;
   let tileMirrorHorizontal = null;
   const tileFacing = sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tileFacing') ?? DEFAULT_TILE_FACING;
-  const sortRule = TILE_FACINGS.find( tile => tile.facing === tileFacing).sortingRule;
 
+  const sortRule = TILE_FACINGS.find( tile => tile.facing === tileFacing).sortingRule;
+  
   if (game.modules.get(fastFlipCompatiility.MODULE_ID)?.active){
     tileMirrorHorizontal = sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL)
   }
-
+  
   const tileFlipped = sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tileFlipped')?sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID,'tileFlipped') : null;
   
   const height = sprite.object.document.height;
@@ -506,6 +485,8 @@ function sortableSprite(sprite){
   if(!newLinkedRegion){newLinkedRegion = null};
   if(!newOccupiedRegion){newOccupiedRegion = null};
   
+  // console.log("TILE RULES: " , name , sortRule, tileFlipped , tileMirrorHorizontal);
+
   return {
     id:id,
     type:type,

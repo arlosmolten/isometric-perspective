@@ -61,16 +61,20 @@ export function initTileForm(app, html, context, options){
   const currentScale = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'scale');
 
   // Art offset
-  gizmoEnabledCheckbox.addEventListener('change', (event) => {
-    const tileDocument = context.document;
-    if(event.target.checked){
-      tileDocument.setFlag(isometricModuleConfig.MODULE_ID,"isoOffsetGizmoEnabled", true);
-      toggleAnchorAxis(tileDocument,true);
-    } else {
-      tileDocument.setFlag(isometricModuleConfig.MODULE_ID,"isoOffsetGizmoEnabled", false);
-      toggleAnchorAxis(tileDocument,false);
-    }
-  }) 
+  // since the introduction of placeable palettes tools , adding references to UI elements like this cause an error if there is no checker to see if the 
+  // ui element reference exist.
+  if(gizmoEnabledCheckbox){ 
+    gizmoEnabledCheckbox.addEventListener('change', (event) => {
+      const tileDocument = context.document;
+      if(event.target.checked){
+        tileDocument.setFlag(isometricModuleConfig.MODULE_ID,"isoOffsetGizmoEnabled", true);
+        toggleAnchorAxis(tileDocument,true);
+      } else {
+        tileDocument.setFlag(isometricModuleConfig.MODULE_ID,"isoOffsetGizmoEnabled", false);
+        toggleAnchorAxis(tileDocument,false);
+      }
+    }) 
+  }
 
   const inputOffsetX = html.querySelector('input[name="flags.isometric-perspective.offsetX"]');
   const inputOffsetY = html.querySelector('input[name="flags.isometric-perspective.offsetY"]');
@@ -113,8 +117,6 @@ export function initTileForm(app, html, context, options){
     await app.document.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', []);
     if (linkedWallsIdInput) linkedWallsIdInput.value = '';
   }
-
-  console.log("app.document",app.document)
 }
 
 export function closeConfig(app){

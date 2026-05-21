@@ -44,8 +44,8 @@ export function isoDepthSortTileMixin(Base){
       }
       
       if(this.controlled){
-        //show extra controls
         toggleAnchorAxis(this.document, true); 
+        //show extra controls
         // modify the toggle function to show an orientation control UI , like two diagonal arrow buttons to set the tile orientation
         // and one double arrow representing a flip function
         // change the lines of the gizmo so only the orientation axis is displayed
@@ -55,6 +55,9 @@ export function isoDepthSortTileMixin(Base){
         // also only the gm should be able to see it
       }
 
+      if(!this.controlled){
+        toggleAnchorAxis(this.document, false);
+      }
     }
   }
 }
