@@ -2,7 +2,8 @@ import { isometricModuleConfig } from './consts.js';
 import { 
   sortPlaceableByPosition,
   sortPlaceableByRegion,
-  debugCanvasLayer
+  debugCanvasLayer,
+  toggleAnchorAxis
 } from './utils.js';
 
 export function isoDepthSortTileMixin(Base){
@@ -30,18 +31,29 @@ export function isoDepthSortTileMixin(Base){
       }
       const isTileSortable = this.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoTileAutoSortingEnabled');
       if(isTileSortable){
-      if ("y" in changed || "x" in changed) {
-        const sortList = sortPlaceableByPosition(this);
-        for (let i = 0; i < sortList.length; i++) {
-          const currentSprite = sortList[i];
-          currentSprite.object.document.sort = i;
-          currentSprite.sort = i;
-        }
-
+        if ("y" in changed || "x" in changed) {
+          const sortList = sortPlaceableByPosition(this);
+          for (let i = 0; i < sortList.length; i++) {
+            const currentSprite = sortList[i];
+            currentSprite.object.document.sort = i;
+            currentSprite.sort = i;
+          }
+          // debugCanvasLayer(sortList) //-------------------------------------------------------------------------- DEBUG!!!
           this.mesh.parent.sortDirty = true;
         }
       }
       
+      if(this.controlled){
+        //show extra controls
+        toggleAnchorAxis(this.document, true); 
+        // modify the toggle function to show an orientation control UI , like two diagonal arrow buttons to set the tile orientation
+        // and one double arrow representing a flip function
+        // change the lines of the gizmo so only the orientation axis is displayed
+
+        // icons to use : https://fontawesome.com/icons/categories/classic/solid/arrows
+        // look into foundry's hud feature
+        // also only the gm should be able to see it
+      }
 
     }
   }

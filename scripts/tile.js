@@ -24,7 +24,7 @@ export async function createTileIsometricTab(app, html, data) {
   const DefaultTileConfig = Object.values(CONFIG.Tile.sheetClasses.base).find((d) => d.default)?.cls;
   const TileConfig = DefaultTileConfig?.prototype instanceof FoundryTileConfig ? DefaultTileConfig : FoundryTileConfig;
 
-  const tileFacings =  [...TILE_FACINGS];
+  const tileFacings =  TILE_FACINGS.map( obj => obj.facing);
   const currentTileFacing = TileConfig.object?.getFlag(isometricModuleConfig.MODULE_ID, 'tileFacing') ?? DEFAULT_TILE_FACING;
 
   const wallFacingConfig = {
@@ -113,6 +113,8 @@ export function initTileForm(app, html, context, options){
     await app.document.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', []);
     if (linkedWallsIdInput) linkedWallsIdInput.value = '';
   }
+
+  console.log("app.document",app.document)
 }
 
 export function closeConfig(app){

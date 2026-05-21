@@ -1,6 +1,7 @@
 import { 
   isometricModuleConfig,
   fastFlipCompatiility,
+  TILE_FACINGS,
   DEFAULT_TILE_FACING
 } from './consts.js';
 // Função auxiliar para converter coordenadas isométricas para cartesianas
@@ -124,6 +125,8 @@ export function sortPlaceableByPosition(placeable) {
     return canvasLayer
     .filter( sprite => sprite.sortLayer === placeableMeshLayer)
     .toSorted((sprite,sibling)=> compareSpriteByPosition(sprite,sibling));
+
+    // starting to think the sorting algorithm cause side effects 
   }
 }
 
@@ -169,37 +172,28 @@ function compareSpriteByPosition(sprite,sibling){
   // for cases with tiles linked to a region with region sort enabled.
   if(isRegionMatching(currentSprite,currentSibling)){
     sortChange = sortByRegion(currentSprite,currentSibling);
-  // for cases involving one token and one tile
-  } else if (isTokenAndTile(currentSprite , currentSibling) ) {
-    // for cases where a tile is flipped
-    if(isTileFlipped(currentSprite) || isTileFlipped(currentSibling)){
-      sortChange = sortByX(currentSprite,currentSibling); // sort by X axis if the tile is not flipped
-    } else {
-      sortChange = sortByY(currentSprite,currentSibling); // sort by Y axis if the tile is flipped
-    }
-  // for cases where both placables are of the same type and none of them are flipped
-  } else if(!isTileFlipped(currentSprite) || !isTileFlipped(currentSibling)){
-    sortChange = sortByDepth(currentSprite,currentSibling);
+  } else {
+    sortChange = getSortingRule(currentSprite,currentSibling);
   }
   return sortChange;
 }
 
 // bit overkill but make code much more readable and avoid duplicate compar logic
-function isTokenAndTile(spriteA, spriteB){
-  let result = false;
-  if(spriteA.type ==="Token" && spriteB.type ==="Tile" || spriteA.type ==="Tile" && spriteB.type ==="Token"){
-    result = true;
-  }
-  return result;
-}
+// function isTokenAndTile(spriteA, spriteB){
+//   let result = false;
+//   if(spriteA.type ==="Token" && spriteB.type ==="Tile" || spriteA.type ==="Tile" && spriteB.type ==="Token"){
+//     result = true;
+//   }
+//   return result;
+// }
 
-function isBothTile(spriteA, spriteB){
-  let result = false;
-  if(spriteA.type ==="Tile" && spriteB.type ==="Tile"){
-    result = true;
-  }
-  return result;
-}
+// function isBothTile(spriteA, spriteB){
+//   let result = false;
+//   if(spriteA.type ==="Tile" && spriteB.type ==="Tile"){
+//     result = true;
+//   }
+//   return result;
+// }
 
 function isTileFlipped(sprite){
   let result = false;
@@ -209,15 +203,65 @@ function isTileFlipped(sprite){
   return result;
 }
 
-function sortByX(spriteA, spriteB){
-  return spriteB.x - spriteA.x;
+// compare a sprite and its sibling and return what sorting rule based if:
+// ... if the sibling is a token : sort by vertical depth --done 
+// ... if the sibling is a token inside a region with linked walls : sort the linked walls behind the token -- todo
+// ... if the sibling is a tile : compare depth based on their facing -- wip
+// 
+function getSortingRule(sprite,sibling){
+  // console.log("SPRITE SORTING RULES", sprite.sortRule, "SIBLING SORTING RULES", sibling.sortRule)
+  if(sibling.type === "Token"){
+    const depthA = sprite.y - sprite.x;
+    const depthB = sibling.y - sibling.x;
+    return depthA - depthB;
+  } else if(sibling.type === "Tile"){
+    // console.log("isTileFlipped(sprite)", isTileFlipped(sprite))
+    if(!isTileFlipped(sibling)){
+      if(sibling.sortRule === "X"){
+        if(sprite.name === "sw front" && sibling.name === "sw back"){
+          console.log("NOT FLIPPED SPRITE SORT BY X", isTileFlipped(sprite),isTileFlipped(sibling));
+        }
+        return sibling.x - sprite.x;
+      } else {
+        if(sprite.name === "sw front" && sibling.name === "sw back"){
+          console.log("NOT FLIPPED SPRITE SORT BY Y");
+        }
+        return sprite.y - sibling.y;
+      }
+    } else {
+      if(sibling.sortRule === "X"){
+        if(sprite.name === "nw front" && sibling.name === "nw back"){
+          console.log("FLIPPED SPRITE SORT BY X");
+        }
+        return sibling.x - sprite.x;
+      } else {
+        if(sprite.name === "nw front" && sibling.name === "nw back"){
+          console.log("FLIPPED SPRITE SORT BY Y",isTileFlipped(sprite),isTileFlipped(sibling), sprite.sortRule, sibling.sortRule);
+        }
+        return sprite.y - sibling.y;
+      }
+    }
+  }
 }
 
-function sortByY(spriteA, spriteB){
-  return spriteA.y - spriteB.y;
-}
+// function sortByX(spriteA, spriteB){
+//   if(spriteA.name === "sw front"){
+//     console.log("sw front: sort by X")
+//   }
+//   return spriteB.x - spriteA.x;
+// }
+
+// function sortByY(spriteA, spriteB){
+//   if(spriteA.name === "sw front"){
+//     console.log("sw front: sort by Y")
+//   }
+//   return spriteA.y - spriteB.y;
+// }
 
 function sortByRegion(spriteA, spriteB){
+  if(spriteA.name === "sw front"){
+    console.log("sw front: sort by region")
+  }
   // console.log("SORT BY REGION: ")
   if(spriteA.type === "Tile"){
     return -1;
@@ -226,23 +270,25 @@ function sortByRegion(spriteA, spriteB){
   }
 }
 
-function sortByDepth(spriteA, spriteB) {
-  const depthA = spriteA.y - spriteA.x;
-  const depthB = spriteB.y - spriteB.x;
+// tokens are sorted by depth
+// tiles are sorted by X or Y depending on what facing they have and what is their facing rule
 
-  if (depthA === depthB) {
-    // tie breaker based on tile facing
-    if(isBothTile(spriteA, spriteB)){
-      if(spriteA.tileFacing === "south east to north west" && !isTileFlipped(spriteA)){
-        return sortByX(spriteA, spriteB)
-      } else {
-        return sortByY(spriteA, spriteB);
-      }
-    }
-    return spriteA.y - spriteB.y;
-  }
-  return depthA - depthB;
-}
+// function sortByDepth(sprite, sibling) {
+//   const depthA = sprite.y - sprite.x;
+//   const depthB = sibling.y - sibling.x;
+
+//   if(sprite.name === "sw front" && sibling.name === "sw back"){
+//     console.log("sw front: sort by depth", depthA, depthB , "DIFF:", depthA - depthB , "WITH", sibling.name)
+//     if (depthA > depthB) {
+//       if(sibling)
+//       console.log("HIGHER")
+//       return getSortingRule(sprite, sibling);
+//     } else {
+//       console.log("LOWER")
+//     }
+//   }
+//   return getSortingRule(sprite, sibling)
+// }
 
 function isRegionMatching (sprite, sibling){
   if(sprite.occupiedRegion !== null && sibling.linkedRegion !== null){
@@ -380,6 +426,8 @@ export function toggleAnchorAxis(object,toggle){
 }
 
 // used to debug visually a point on the tile selection box's footprint but its bugged, should fix later
+// IMPROVEMENT: draw the gizmo in a way to indicate which axis a tile is facing 
+// other improvement : instead of a drop down, two floating arrow buttons setting the facing that appear when the tile is controlled
 function drawTileAnchorLines(objectAnchor) {
   // Removes existing lines
   cleanupTileAnchorLines();
@@ -443,6 +491,7 @@ function sortableSprite(sprite){
   let anchorY = sprite.object.document.y;
   let tileMirrorHorizontal = null;
   const tileFacing = sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tileFacing') ?? DEFAULT_TILE_FACING;
+  const sortRule = TILE_FACINGS.find( tile => tile.facing === tileFacing).sortingRule;
 
   if (game.modules.get(fastFlipCompatiility.MODULE_ID)?.active){
     tileMirrorHorizontal = sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL)
@@ -473,6 +522,7 @@ function sortableSprite(sprite){
     occupiedRegion: newOccupiedRegion,
     tileMirrorHorizontal: tileMirrorHorizontal,
     tileFlipped: tileFlipped,
+    sortRule:sortRule,
   }
 }
 
@@ -481,9 +531,6 @@ export function debugCanvasLayer(spriteList){
     const data = []
 
     spriteList.map(sprite => {
-      let anchorX = sprite.object.document.x;
-      let anchorY = sprite.object.document.y;
-
       let newLinkedRegion = sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'regionLink');
       let newOccupiedRegion = sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion');
       if(!newLinkedRegion){newLinkedRegion = null;}
@@ -495,15 +542,15 @@ export function debugCanvasLayer(spriteList){
         // type: sprite.object.document.documentName,
         name: sprite.object.document.name? sprite.object.document.name : "no name",
         //sprite.documentName === "Tile"? (sprite.x) - (sprite.width *0.25) : sprite.x,
-        // x: anchorX,
-        // y: anchorY,
+        x: sprite.object.document.x,
+        y: sprite.object.document.y,
         // sortLayer: sprite.sortLayer, 
         // sort: sprite.sort,
         // linkedRegion:newLinkedRegion,
         // occupiedRegion: newOccupiedRegion,
         // occupiedRegion: sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion')? sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion') : "none",
-        // tileMirrorHorizontal: sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL)?sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL) : null,
-        // tileFlipped: sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tileFlipped')?sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID,'tileFlipped') : null,
+        tileMirrorHorizontal: sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL)?sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL) : null,
+        tileFlipped: sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tileFlipped')?sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID,'tileFlipped') : null,
         tileFacing: tileFacing
       })
     });
