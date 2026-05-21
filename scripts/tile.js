@@ -1,4 +1,4 @@
-import { isometricModuleConfig } from './consts.js';
+import { isometricModuleConfig, TILE_FACINGS, DEFAULT_TILE_FACING } from './consts.js';
 import { applyIsometricTransformation } from './transform.js';
 import { 
   adjustInputWithMouseDrag, 
@@ -23,7 +23,16 @@ export async function createTileIsometricTab(app, html, data) {
   const FoundryTileConfig = foundry.applications.sheets.TileConfig;
   const DefaultTileConfig = Object.values(CONFIG.Tile.sheetClasses.base).find((d) => d.default)?.cls;
   const TileConfig = DefaultTileConfig?.prototype instanceof FoundryTileConfig ? DefaultTileConfig : FoundryTileConfig;
-  patchConfig(TileConfig,tileTabConfig);
+
+  const tileFacings =  [...TILE_FACINGS];
+  const currentTileFacing = TileConfig.object?.getFlag(isometricModuleConfig.MODULE_ID, 'tileFacing') ?? DEFAULT_TILE_FACING;
+
+  const wallFacingConfig = {
+    tileFacing: tileFacings,
+    document: currentTileFacing
+  }
+
+  patchConfig(TileConfig,tileTabConfig,wallFacingConfig);
   
 }
 
@@ -51,13 +60,11 @@ export function initTileForm(app, html, context, options){
   const currentOffsetY = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'offsetY');
   const currentScale = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'scale');
 
-
   // Art offset
   gizmoEnabledCheckbox.addEventListener('change', (event) => {
     const tileDocument = context.document;
     if(event.target.checked){
       tileDocument.setFlag(isometricModuleConfig.MODULE_ID,"isoOffsetGizmoEnabled", true);
-      console.log("tileDocument", tileDocument)
       toggleAnchorAxis(tileDocument,true);
     } else {
       tileDocument.setFlag(isometricModuleConfig.MODULE_ID,"isoOffsetGizmoEnabled", false);
@@ -105,6 +112,14 @@ export function initTileForm(app, html, context, options){
   async function clearWall () {
     await app.document.setFlag(isometricModuleConfig.MODULE_ID, 'linkedWallIds', []);
     if (linkedWallsIdInput) linkedWallsIdInput.value = '';
+  }
+}
+
+export function closeConfig(app){
+  const tileDocument = app.options.document
+  if (tileDocument.getFlag(isometricModuleConfig.MODULE_ID,"isoOffsetGizmoEnabled") === true){
+    tileDocument.setFlag(isometricModuleConfig.MODULE_ID,"isoOffsetGizmoEnabled", false);
+    toggleAnchorAxis(tileDocument,false);
   }
 }
 

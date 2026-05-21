@@ -164,6 +164,13 @@ export const fastFlipCompatiility = {
   TILE_MIRROR_HORIZONTAL: "tileMirrorHorizontal"
 }
 
+export const TILE_FACINGS = [
+  'south west to north east',
+  'south east to north west'
+]
+
+export const DEFAULT_TILE_FACING = 'south east to north west'
+
 /*
 // values in degrees
 export let ISOMETRIC_CONST = {

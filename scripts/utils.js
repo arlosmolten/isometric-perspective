@@ -1,4 +1,8 @@
-import { isometricModuleConfig,fastFlipCompatiility } from './consts.js';
+import { 
+  isometricModuleConfig,
+  fastFlipCompatiility,
+  DEFAULT_TILE_FACING
+} from './consts.js';
 // Função auxiliar para converter coordenadas isométricas para cartesianas
 export function isoToCartesian(isoX, isoY) {
   const angle = Math.PI / 4; // 45 graus em radianos
@@ -205,24 +209,16 @@ function isTileFlipped(sprite){
   return result;
 }
 
-// ties in y still cause values cause flicker
-// multiples tokens canc ause the logic to break sometimes for some reason
-
 function sortByX(spriteA, spriteB){
-  // if (spriteA.name === "human witch" || spriteA.name === "human witch"){
-  //   console.log("WITCH SORT BY X:", spriteA.name, spriteB.name, spriteA.x - spriteB.x)
-  // }
   return spriteB.x - spriteA.x;
 }
 
 function sortByY(spriteA, spriteB){
-  // if (spriteA.name === "human witch" || spriteA.name === "human witch"){
-  //   console.log("WITCH SORT BY Y:", spriteA.name, spriteB.name, spriteA.y - spriteB.y)
-  // }
   return spriteA.y - spriteB.y;
 }
 
 function sortByRegion(spriteA, spriteB){
+  // console.log("SORT BY REGION: ")
   if(spriteA.type === "Tile"){
     return -1;
   } else if (spriteB.type === "Tile"){
@@ -230,26 +226,20 @@ function sortByRegion(spriteA, spriteB){
   }
 }
 
-// i think further refinement is required here
-// like a tie breaker that either look on the X or Y axis difference if both are on the same vertical height , 
-// for example if a tile is flipped , compare with y axis , if not , compare with x axis 
-
 function sortByDepth(spriteA, spriteB) {
   const depthA = spriteA.y - spriteA.x;
   const depthB = spriteB.y - spriteB.x;
 
   if (depthA === depthB) {
-    // tie breaker here
+    // tie breaker based on tile facing
     if(isBothTile(spriteA, spriteB)){
-      // at this point i need to add an UI element that will indicate from which axis a tile should be sorted based on its art
-      // if(isTileFlipped(spriteA)){
-      //   return 
-      // }
+      if(spriteA.tileFacing === "south east to north west" && !isTileFlipped(spriteA)){
+        return sortByX(spriteA, spriteB)
+      } else {
+        return sortByY(spriteA, spriteB);
+      }
     }
-      return spriteA.y - spriteB.y;
-  }
-  if (spriteA.name === "human witch" || spriteA.name === "human witch"){
-    console.log("WITCH SORT DEPTH", depthA - depthB)
+    return spriteA.y - spriteB.y;
   }
   return depthA - depthB;
 }
@@ -452,7 +442,8 @@ function sortableSprite(sprite){
   let anchorX = sprite.object.document.x;
   let anchorY = sprite.object.document.y;
   let tileMirrorHorizontal = null;
-  
+  const tileFacing = sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tileFacing') ?? DEFAULT_TILE_FACING;
+
   if (game.modules.get(fastFlipCompatiility.MODULE_ID)?.active){
     tileMirrorHorizontal = sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL)
   }
@@ -466,7 +457,6 @@ function sortableSprite(sprite){
   if(!newLinkedRegion){newLinkedRegion = null};
   if(!newOccupiedRegion){newOccupiedRegion = null};
   
-
   return {
     id:id,
     type:type,
@@ -498,20 +488,23 @@ export function debugCanvasLayer(spriteList){
       let newOccupiedRegion = sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion');
       if(!newLinkedRegion){newLinkedRegion = null;}
       if(!newOccupiedRegion){newOccupiedRegion = null;}
+      const tileFacing = sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tileFacing') ?? DEFAULT_TILE_FACING;
+
       data.push({
         // id: sprite.object.document.id,
         // type: sprite.object.document.documentName,
         name: sprite.object.document.name? sprite.object.document.name : "no name",
         //sprite.documentName === "Tile"? (sprite.x) - (sprite.width *0.25) : sprite.x,
-        x: anchorX,
-        y: anchorY,
+        // x: anchorX,
+        // y: anchorY,
         // sortLayer: sprite.sortLayer, 
         // sort: sprite.sort,
         // linkedRegion:newLinkedRegion,
         // occupiedRegion: newOccupiedRegion,
         // occupiedRegion: sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion')? sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion') : "none",
-        tileMirrorHorizontal: sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL)?sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL) : null,
-        tileFlipped: sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tileFlipped')?sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID,'tileFlipped') : null,
+        // tileMirrorHorizontal: sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL)?sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL) : null,
+        // tileFlipped: sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tileFlipped')?sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID,'tileFlipped') : null,
+        tileFacing: tileFacing
       })
     });
     console.table(data)

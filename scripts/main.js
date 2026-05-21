@@ -16,7 +16,8 @@ import {
   handleCreateTile,
   handleUpdateTile,
   handleRefreshTile,
-  addDepthSortControls
+  addDepthSortControls,
+  closeConfig
  } from './tile.js';
 
  import {
@@ -270,6 +271,7 @@ Hooks.on("ready", createTileIsometricTab);
 Hooks.on("renderTileConfig", initTileForm);
 Hooks.on("createTile", handleCreateTile);
 Hooks.on("updateTile", handleUpdateTile);
+Hooks.on("closeTileConfig", closeConfig);
 Hooks.on("refreshTile", handleRefreshTile);
 Hooks.on("getSceneControlButtons", controls => {
   addDepthSortControls(controls);
