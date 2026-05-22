@@ -63,6 +63,8 @@
     "isometric-perspective.tile_enableIsometric_hint": "Disable isometric transformation on this tile.",
     "isometric-perspective.tile_enableIsometric_sorting_name": "Enable tile depth sorting",
     "isometric-perspective.tile_enableIsometric_sorting_hint": "Enable tile depth sorting on this tile.",
+    "isometric-perspective.tile_set_tile_facing": "Set tile facing",
+    "isometric-perspective.tile_set_tile_facing_hint": "Some tiles , for examples tiles representing a wall, may need additional data for the depth sorting feature to know how to properly sort them.",
     "isometric-perspective.tile_artOffset_name": "Art Offset",
     "isometric-perspective.tile_artOffset_hint": "Offset the tile art position in pixels.",
     "isometric-perspective.tile_enableIsometric_anchor_gizmo": "Enable art offset gizmo",

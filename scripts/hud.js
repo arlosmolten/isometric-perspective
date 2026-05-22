@@ -25,9 +25,6 @@ export function handleRenderTileHUD(hud, html, data) {
   }
 }
 
-
-
-
 export function handleRenderDrawingHUD(hud, html, data) {
   const scene = game.scenes.current;
   const isSceneIsometric = scene.getFlag(isometricModuleConfig.MODULE_ID, "isometricEnabled");

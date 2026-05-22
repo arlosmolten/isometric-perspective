@@ -63,6 +63,8 @@
     "isometric-perspective.tile_enableIsometric_hint": "Desabilita a transformação isométrica neste tile.",
     "isometric-perspective.tile_enableIsometric_sorting_name": "Ativar classificação por profundidade de mosaico",
     "isometric-perspective.tile_enableIsometric_sorting_hint": "Ative a classificação por profundidade de mosaico neste mosaico.",
+    "isometric-perspective.tile_set_tile_facing": "Definir revestimento de Tile",
+    "isometric-perspective.tile_set_tile_facing_hint": "Algumas Tiles, por exemplo, peças que representam uma parede, podem precisar de dados adicionais para que o recurso de classificação por profundidade saiba como classificá-las corretamente.",
     "isometric-perspective.tile_artOffset_name": "Deslocamento da Arte",
     "isometric-perspective.tile_artOffset_hint": "Desloca a posição da arte do tile no número de pixels indicado.",
     "isometric-perspective.tile_enableIsometric_anchor_gizmo": "Ativar gizmo de deslocamento de arte",
