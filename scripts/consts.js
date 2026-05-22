@@ -166,24 +166,24 @@ export const fastFlipCompatiility = {
 
 export const TILE_FACINGS = [
   {
-    facing:'south west to north east',
+    facing:'south west',
     sortingRule: "X" //  -> / x axis direction
   },
   {
-    facing:'south east to north west',
+    facing:'south east',
     sortingRule: "Y" //  -> \ y axis direction
   },
   {
-    facing:'horizontal',
+    facing:'south',
     sortingRule: "Depth" //
   },
   {
-    facing:'vertical',
+    facing:'side',
     sortingRule: "Depth" //  
   },
 ]
 
-export const DEFAULT_TILE_FACING = 'south west to north east'
+export const DEFAULT_TILE_FACING = 'south west'
 
 /*
 // values in degrees
