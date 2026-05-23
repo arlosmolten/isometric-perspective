@@ -138,20 +138,14 @@ export function sortPlaceableByRegion(placeable) {
 /**
  * change placeables sort values based on its y value on the grid compared to its siblings.
  * @param {Placeable|PlaceableDocument} placeable - The placeable document used as a reference for the sortlayer.
- * 
- * 
  */
-export function sortPlaceableByPosition(placeable) {
-  if(placeable.mesh.sortLayer === foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS ){
-    const placeableMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
-    const canvasLayer = canvas.primary.children;
-    const currentSortLayer = placeable.mesh.parent
-    return canvasLayer.filter( sprite => sprite.sortLayer === placeableMeshLayer)
-    .sort((sprite,sibling)=> compareSiblingPosition(sprite,sibling))
-    .toSorted((sprite,sibling)=> compareSiblingPosition(sprite,sibling));
-
-    // starting to think the sorting algorithm cause side effects 
-  }
+export function sortPlaceableByPosition() {
+  const placeableMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
+  const canvasLayer = canvas.primary.children;
+  const currentSortLayer = canvas.primary;
+  return canvasLayer.filter( sprite => sprite.sortLayer === placeableMeshLayer)
+  .sort((sprite,sibling)=> compareSiblingPosition(sprite,sibling))
+  .toSorted((sprite,sibling)=> compareSiblingPosition(sprite,sibling));
 }
 
 /**
@@ -211,6 +205,8 @@ function sortByFacing(spriteToSort, siblingToCompare){
         return spriteToSort.isoDepth - siblingToCompare.isoDepth; // other cases dont need complex rules, simply compare by vertical position on the screen
         break;
       case "Tile-Tile":
+      case "Tile-Token":
+      case "Token-Tile":
         // tiles have a bit more complex logic , especially if they have a large width, so tiles are compared by a perpendicular X axis or Y axis
         // this take in account a tile facing and if its flipped , 
         switch(getFacing(siblingToCompare)){ 
@@ -224,50 +220,9 @@ function sortByFacing(spriteToSort, siblingToCompare){
             return spriteToSort.isoDepth - siblingToCompare.isoDepth; 
         }
         break;
-        // Tile vs Token , where spriteToSort is the tile and siblingToCompare is the token
-        case "Tile-Token":
-        switch(getFacing(spriteToSort)){ 
-          case 'south west':
-            return siblingToCompare.x - spriteToSort.x 
-            break;
-          case 'south east':
-            return spriteToSort.y - siblingToCompare.y 
-            break;
-          default:
-            return spriteToSort.isoDepth - siblingToCompare.isoDepth; 
-        }  
-          break;
-        // Token vs Tile , where siblingToCompare is the tile and spriteToSort is the token // 
-        case "Token-Tile":
-          switch(getFacing(siblingToCompare)){  // ---
-            case 'south west':
-              return siblingToCompare.x - spriteToSort.x 
-              break;
-            case 'south east':
-              return spriteToSort.y - siblingToCompare.y 
-              break;
-            default:
-              return spriteToSort.isoDepth - siblingToCompare.isoDepth; 
-          }  
-          break;
       default:
         return spriteToSort.isoDepth - siblingToCompare.isoDepth; 
         break;
-    }
-    if(isTile(siblingToCompare) && isToken(spriteToSort)){ // if the sibling is a tile, it need to be compared based on which way its facing
-      // a tile with a diagonal facing ( south east / south west ) is compared on the axis perpendicular to its visual length on an isometric plane.
-      switch(getFacing(siblingToCompare)){ 
-        case 'south west':
-          return siblingToCompare.x - spriteToSort.x // compare with the x axis if the sibling is facing southwest
-          break;
-        case 'south east':
-          return siblingToCompare.y - spriteToSort.y // compare with the x axis if the sibling is facing southeast
-          break;
-        default:
-          return spriteToSort.isoDepth - siblingToCompare.isoDepth; // other cases dont need complex rules, simply compare by vertical position on the screen
-      }
-    } else {
-      return spriteToSort.isoDepth - siblingToCompare.isoDepth; // other cases dont need complex rules, simply compare by vertical position on the screen
     }
   }
 }
@@ -601,7 +556,7 @@ export function debugCanvasLayer(spriteList){
         x: sprite.object.document.x,
         y: sprite.object.document.y,
         // sortLayer: sprite.sortLayer, 
-        // sort: sprite.sort,
+        sort: sprite.sort,
         // linkedRegion:newLinkedRegion,
         // occupiedRegion: newOccupiedRegion,
         // occupiedRegion: sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion')? sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion') : "none",

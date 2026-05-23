@@ -23,8 +23,6 @@ import {
  import {
    createRegionIsometricTab,
    initRegionForm,
-  //  handleUpdateRegion,
-  //  testRegionInteract
  } from './regions.js'
 
 import { 
@@ -34,9 +32,9 @@ import {
 } from './hud.js';
 
 import {
-  // isoDepthSort,
   isoDepthSortTileMixin,
-  isoDepthSortTokenMixin
+  isoDepthSortTokenMixin,
+  applyDepthSort
 } from './autosorting.js'
 
 import { registerDynamicTileConfig, increaseTilesOpacity, decreaseTilesOpacity } from './dynamictile.js';
@@ -286,6 +284,7 @@ Hooks.on("init", () => {
   CONFIG.Token.objectClass = isoDepthSortTokenMixin(CONFIG.Token.objectClass);
   CONFIG.Tile.objectClass = isoDepthSortTileMixin(CONFIG.Tile.objectClass);
 });
+Hooks.on("ready", applyDepthSort);
 
 /**
  * @param {----- TESTING AREA / ÁREA DE TESTES -----}
