@@ -139,13 +139,30 @@ export function sortPlaceableByRegion(placeable) {
  * change placeables sort values based on its y value on the grid compared to its siblings.
  * @param {Placeable|PlaceableDocument} placeable - The placeable document used as a reference for the sortlayer.
  */
-export function sortPlaceableByPosition() {
+export function sortPlaceableByPosition(placeable) {
   const placeableMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
   const canvasLayer = canvas.primary.children;
   const currentSortLayer = canvas.primary;
-  return canvasLayer.filter( sprite => sprite.sortLayer === placeableMeshLayer)
-  .sort((sprite,sibling)=> compareSiblingPosition(sprite,sibling))
-  .toSorted((sprite,sibling)=> compareSiblingPosition(sprite,sibling));
+
+  const sortList = [];
+  const filteredLayer = canvasLayer.filter( sprite => sprite.sortLayer === placeableMeshLayer)
+  // .map( sprite => {
+  for (let i = 0; i < filteredLayer.length; i++) {
+    if(placeable){
+      const currentSprite = sortableSprite(placeable.mesh);
+      const currentSibling = sortableSprite(filteredLayer[i]);
+      const sortScore = getSortScore(currentSprite,currentSibling);
+      console.log("sortScore", currentSibling.name, sortScore)
+      sortList.push({sibling:sprite, sortScore:sortScore});
+    }
+  }
+
+  // so now i got two depth score and i must sort the array by taking in account first the isoDepth
+  // then the perpendicularDepth if its not 0
+  // a depth score that is positive mean sorted above, negative means sorted below
+
+  // probably mean i got to sort twice ... 
+
 }
 
 /**
@@ -159,90 +176,101 @@ export function sortPlaceableByPosition() {
  *    x-  y+
  * x-        y+
 */
-
-function compareSiblingPosition(sprite,sibling){    
-  let sortChange = 0;
-  const currentSprite = sortableSprite(sprite);
-  const currentSibling = sortableSprite(sibling);
-  // for cases with tiles linked to a region with region sort enabled.
-  if(isRegionMatching(currentSprite,currentSibling)){
-    sortChange = sortByRegion(currentSprite,currentSibling);
-  } else {
-    // debugSort(currentSprite,currentSibling)
-    sortChange = sortByFacing(currentSprite,currentSibling);
+// compare a sprite and its sibling and return the right sorting score based on:
+// ... if both are tokens : sort by vertical depth
+// ... if both are tiles : sort by facing but the order dosent matter.
+// ... if one is a tile and the other a token sort by facing but the tile always go first
+// ... if the token and the tiles share a region ID , region override the sortscore and always put the tiles behind the token.
+function getSortScore(sprite, sibling){
+  const token = isToken(sprite)? sprite : sibling;
+  const tile = isTile(sprite)? sprite : sibling;
+  if(isDifferentId(sprite,sibling)){ // never compare an object against itself
+    switch(comparePairings(sprite,sibling)){
+      case "Token-Token": // order dosent matter.
+      case "Tile-Tile": // order dosent matter, but the facing does.
+        return sortByFacing(sprite,sibling);
+        break;
+      case "Tile-Token": // specific case requiring to pass the right type in the right order : Tile-Token
+        return sortByFacing(tile,token);
+        break;
+      case "Token-Tile": // specific case requiring to pass the right type in the right order : Tile-Token
+        return sortByFacing(tile,token);
+        break;
+      case "Region-Sort": // regions override sorting on their linked itles
+        return isTile(sprite)? -100: 100; 
+        break;
+      default:
+        return sortByFacing(sprite,sibling);
+        break;
+    }
   }
-  return sortChange;
+}
+
+function sortByFacing(sprite,sibling){
+  let depthScore = {
+    isoDepth:0,
+    perpendicularDepth:0,
+  };
+  switch(getFacing(sprite)){ // evaluates cases based on which way the tile is facing
+    case 'south west':
+    depthScore.perpendicularDepth = sibling.x - sprite.x;
+    depthScore.isoDepth =  sprite.isoDepth - sibling.isoDepth;
+    break;
+  case 'south east': 
+    depthScore.perpendicularDepth = sprite.y - sibling.y;
+    depthScore.isoDepth =  sprite.isoDepth - sibling.isoDepth;
+    break;
+  default:
+    depthScore.perpendicularDepth = 0;
+    depthScore.isoDepth =  sprite.isoDepth - sibling.isoDepth;
+  }
+  return depthScore;
+}
+
+function isRegionMatching (sprite, sibling){
+  if(isDifferentId(sprite,sibling)){ // never compare an object against itself
+    if(isRegionValid(sprite) && isRegionValid(sibling) || isRegionValid(sibling) && isRegionValid(sprite)){
+      if(sprite.occupiedRegion === sibling.linkedRegion || sibling.occupiedRegion === sprite.linkedRegion){ return true; }
+    } else { return false;}
+  }
+}
+
+function isDifferentId(spriteA,spriteB){
+  return !(spriteA.id === spriteB.id)
+}
+
+// because javascript ... also help code readability.
+function isRegionValid(sprite){
+  let regionIsValid = true;
+  if(isToken(sprite)){
+    if(sprite.occupiedRegion === null || sprite.occupiedRegion === undefined || sprite.occupiedRegion === ""){ isValid = false};
+  }
+  if(isTile(sprite)){
+    if(sprite.linkedRegion === null || sprite.linkedRegion === undefined || sprite.linkedRegion === ""){ isValid = false};
+  }
+  return regionIsValid;
 }
 
 // compare cases where the placeable type is: 
-// token vs token
-// tile vs tile 
-// token vs tile
-// avoid cluttering getSortingRule() and improve code readability
 function comparePairings(sprite,sibling){
   if(isToken(sprite) && isToken(sibling)){
     return "Token-Token";
   } else if(isTile(sprite) && isTile(sibling)){
     return "Tile-Tile";
   } else if(isTile(sprite) && isToken(sibling)){
-    return "Tile-Token";
+    if(isRegionMatching(sprite,sibling)){
+      return "Region-Sort";
+    } else {
+      return "Tile-Token";
+    }
   } else if(isToken(sprite) && isTile(sibling)){
-    return "Token-Tile";
-  }
-}
-
-// compare a sprite and its sibling and return the right sorting rule based on:
-// ... if the sibling is a token : sort by vertical depth --done 
-// ... if the sibling is a token inside a region with linked walls : sort the linked walls behind the token -- todo
-// ... if the sibling is a tile : compare depth based on their facing and if they are flipped -- wip
-//     ... if a sibling is  a tile and is facing south west , sort on the y axis
-//     ... if a sibling is  a tile and is facing south east , sort on the x axis
-function sortByFacing(spriteToSort, siblingToCompare){
-  if(spriteToSort.id !== siblingToCompare.id){ // never compare an object against itself
-    switch(comparePairings(spriteToSort,siblingToCompare)){
-      case "Token-Token":
-        // tokens are always sorted by x/y depth against each others
-        return spriteToSort.isoDepth - siblingToCompare.isoDepth; // other cases dont need complex rules, simply compare by vertical position on the screen
-        break;
-      case "Tile-Tile":
-      case "Tile-Token":
-      case "Token-Tile":
-        // tiles have a bit more complex logic , especially if they have a large width, so tiles are compared by a perpendicular X axis or Y axis
-        // this take in account a tile facing and if its flipped , 
-        switch(getFacing(siblingToCompare)){ 
-          case 'south west':
-            return siblingToCompare.x - spriteToSort.x 
-            break;
-          case 'south east':
-            return spriteToSort.y - siblingToCompare.y 
-            break;
-          default:
-            return spriteToSort.isoDepth - siblingToCompare.isoDepth; 
-        }
-        break;
-      default:
-        return spriteToSort.isoDepth - siblingToCompare.isoDepth; 
-        break;
+    if(isRegionMatching(sprite,sibling)){
+      return "Region-Sort";
+    } else {
+      return "Token-Tile";
     }
   }
 }
-
-function sortByRegion(sprite, sibling){
-  if(isTile(sprite)){
-    return -1;
-  } else if (isTile(sibling)){
-    return 1;
-  }
-}
-
-function isRegionMatching (sprite, sibling){
-  if(sprite.occupiedRegion !== null && sibling.linkedRegion !== null){
-    if(sprite.occupiedRegion === sibling.linkedRegion){ return true }
-  } else if(sibling.occupiedRegion !== null && sprite.linkedRegion !== null){
-    if(sibling.occupiedRegion === sprite.linkedRegion){ return true }
-  } else { return false; }
-}
-
 
 // Generic function to create adjustable buttons with drag functionality
 export function createAdjustableButton(options) {
@@ -416,7 +444,6 @@ function cleanupTileAnchorLines() {
   existingLines.forEach(line => line.destroy());
 };
 
-
 function isTile(sprite){
   return sprite.type == "Tile";
 }
@@ -483,8 +510,6 @@ function sortableSprite(sprite){
   const width = sprite.object.document.width;
   let newLinkedRegion = sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'regionLink');
   let newOccupiedRegion = sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion');
-  if(!newLinkedRegion){newLinkedRegion = null};
-  if(!newOccupiedRegion){newOccupiedRegion = null};
 
   return {
     id:id,
@@ -553,17 +578,16 @@ export function debugCanvasLayer(spriteList){
         // type: sprite.object.document.documentName,
         name: sprite.object.document.name? sprite.object.document.name : "no name",
         //sprite.documentName === "Tile"? (sprite.x) - (sprite.width *0.25) : sprite.x,
-        x: sprite.object.document.x,
-        y: sprite.object.document.y,
+        // x: sprite.object.document.x,
+        // y: sprite.object.document.y,
         // sortLayer: sprite.sortLayer, 
-        sort: sprite.sort,
+        // sort: sprite.sort,
         // linkedRegion:newLinkedRegion,
         // occupiedRegion: newOccupiedRegion,
-        // occupiedRegion: sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion')? sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion') : "none",
         // tileMirrorHorizontal: sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL)?sprite.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL) : null,
         // tileFlipped: sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tileFlipped')?sprite.object.document.getFlag(isometricModuleConfig.MODULE_ID,'tileFlipped') : null,
         // tileFacing: tileFacing,
-        trueFacing : trueFacing
+        // trueFacing : trueFacing
       })
     });
     console.table(data)

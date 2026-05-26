@@ -11,47 +11,34 @@ export function isoDepthSortTileMixin(Base){
 
     _refreshState() {
       super._refreshState();
-      
       const isTileSortable = this.document.flags[isometricModuleConfig.MODULE_ID]?.isoTileAutoSortingEnabled || false;
       if (isTileSortable){
         this.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS; 
       } else { 
         this.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES; 
       }
+      // applyDepthSort(this);
     }
     _onUpdate(changed, options, userId) {
       super._onUpdate(changed, options, userId);
-      if(this.zIndex){
-        this.zIndex = 0;
-        this.mesh.zIndex = 0;
-      }
       const isTileSortable = this.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoTileAutoSortingEnabled');
       if(isTileSortable){
-        if ("y" in changed || "x" in changed) {
-          applyDepthSort();
-        }
-      }
-      
-      // if(this.controlled){ // show gizmo on selected
-      //   toggleAnchorAxis(this.document, true); 
-      // }
+        // if(this.controlled){ // show gizmo on selected WIP
+        //   toggleAnchorAxis(this.document, true); 
+        // }
 
-      // if(!this.controlled){ // hide gizmo on unselected
-      //   toggleAnchorAxis(this.document, false);
-      // }
+        // if(!this.controlled){ // hide gizmo on unselected WIP
+        //   toggleAnchorAxis(this.document, false);
+        // }
+        applyDepthSort(this);
+      }      
+      
     }
   }
 }
 
 export function isoDepthSortTokenMixin(Base){  
   return class DepthSortPlaceable extends Base{
-
-    /** 
-     * note: a single token move by one square trigger _refreshState() up to 5 times , 
-     * and a lot of other _onUpdate() can fire in between, _onUpdate() is usually one step behind _refreshState()
-     * _onUpdate()  and _refreshState() should never get mutual triggering code execution , otherwhise this cause an endless loop
-     * be warned! this will make your pc fan scream in pain!
-    */
 
     _refreshState() {
       super._refreshState();
@@ -62,24 +49,32 @@ export function isoDepthSortTokenMixin(Base){
       } else {
         this.document.setFlag(isometricModuleConfig.MODULE_ID, 'currentRegion', null);
       }
+      // applyDepthSort(this);
     }
 
     _onUpdate(changed, options, userId) {
       super._onUpdate(changed, options, userId);
-      if ("y" in changed || "x" in changed) {
-        applyDepthSort();
-      }
+      applyDepthSort(this);
     }
   }
 }
 
-export function applyDepthSort(){
-  const sortList = sortPlaceableByPosition();
+export function applyDepthSort(placeable){
+  const sortList = sortPlaceableByPosition(placeable);
   for (let i = 0; i < sortList.length; i++) {
-    const currentSprite = sortList[i];
-    currentSprite.object.document.sort = i;
-    currentSprite.sort = i;
+    const currentSprite = sortList[i].sprite;
+    
+    if(currentSprite.sort !== i){
+      console.log("sort changed:", currentSprite.object.document.name, "OLD:", currentSprite.sort,"NEW:", i)
+    }
+
+    currentSprite.sort = i; // if this is commented, tokens render above all tiles
+    currentSprite.object.document.sort = i; // if this is commented, tokens render above SW tiles but under se tiles 
+    currentSprite.zIndex = i;
+    currentSprite.object.zIndex = i;
+
+    // console.log("currentSprite", currentSprite.object.document.name,currentSprite.sort)
   }
-  debugCanvasLayer(sortList) //-------------------------------------------------------------------------- DEBUG!!!
-  canvas.primary.sortDirty = true;
+
+  // debugCanvasLayer(sortList) //-------------------------------------------------------------------------- DEBUG!!!
 }
