@@ -1,8 +1,7 @@
 import { isometricModuleConfig } from './consts.js';
 import { 
   sortPlaceableByPosition,
-  sortPlaceableByRegion,
-  debugCanvasLayer,
+  // debugCanvasLayer,
   toggleAnchorAxis
 } from './utils.js';
 
@@ -49,32 +48,31 @@ export function isoDepthSortTokenMixin(Base){
       } else {
         this.document.setFlag(isometricModuleConfig.MODULE_ID, 'currentRegion', null);
       }
-      // applyDepthSort(this);
     }
+    
+    _refreshPosition(){
+      super._refreshPosition();
+      // console.log("done moving?")
+      applyDepthSort(this);
+     }
 
     _onUpdate(changed, options, userId) {
       super._onUpdate(changed, options, userId);
-      applyDepthSort(this);
+      // applyDepthSort(this);
     }
   }
 }
 
 export function applyDepthSort(placeable){
-  const sortList = sortPlaceableByPosition(placeable);
+  const sortList = sortPlaceableByPosition(placeable) //.map(({sprite}) => sprite);
+  // console.log("SORTLIST?", sortList)
   for (let i = 0; i < sortList.length; i++) {
-    const currentSprite = sortList[i].sprite;
+    const currentSprite = sortList[i].object;
     
-    if(currentSprite.sort !== i){
-      console.log("sort changed:", currentSprite.object.document.name, "OLD:", currentSprite.sort,"NEW:", i)
-    }
+    currentSprite.mesh.sort = i; // if this is commented, tokens render above all tiles
+    currentSprite.document.sort = i; // if this is commented, tokens render above SW tiles but under se tiles 
+    // currentSprite.mesh.zIndex = i;
 
-    currentSprite.sort = i; // if this is commented, tokens render above all tiles
-    currentSprite.object.document.sort = i; // if this is commented, tokens render above SW tiles but under se tiles 
-    currentSprite.zIndex = i;
-    currentSprite.object.zIndex = i;
-
-    // console.log("currentSprite", currentSprite.object.document.name,currentSprite.sort)
+    // console.log("currentSprite:", currentSprite.document.name,"sort:",currentSprite.document.sort,"X",currentSprite.document.x,"Y",currentSprite.document.y,"iso Depth",currentSprite.document.x - currentSprite.document.y )
   }
-
-  // debugCanvasLayer(sortList) //-------------------------------------------------------------------------- DEBUG!!!
 }
