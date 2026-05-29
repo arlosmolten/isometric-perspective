@@ -1,8 +1,7 @@
 import { isometricModuleConfig } from './consts.js';
 import { 
   sortPlaceableByPosition,
-  sortPlaceableByRegion,
-  debugCanvasLayer,
+  // debugCanvasLayer,
   toggleAnchorAxis
 } from './utils.js';
 
@@ -11,7 +10,6 @@ export function isoDepthSortTileMixin(Base){
 
     _refreshState() {
       super._refreshState();
-      
       const isTileSortable = this.document.flags[isometricModuleConfig.MODULE_ID]?.isoTileAutoSortingEnabled || false;
       if (isTileSortable){
         this.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS; 
@@ -21,37 +19,24 @@ export function isoDepthSortTileMixin(Base){
     }
     _onUpdate(changed, options, userId) {
       super._onUpdate(changed, options, userId);
-      if(this.zIndex){
-        this.zIndex = 0;
-        this.mesh.zIndex = 0;
-      }
       const isTileSortable = this.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoTileAutoSortingEnabled');
       if(isTileSortable){
-        if ("y" in changed || "x" in changed) {
-          applyDepthSort();
-        }
-      }
-      
-      // if(this.controlled){ // show gizmo on selected
-      //   toggleAnchorAxis(this.document, true); 
-      // }
+        // if(this.controlled){ // show gizmo on selected WIP
+        //   toggleAnchorAxis(this.document, true); 
+        // }
 
-      // if(!this.controlled){ // hide gizmo on unselected
-      //   toggleAnchorAxis(this.document, false);
-      // }
+        // if(!this.controlled){ // hide gizmo on unselected WIP
+        //   toggleAnchorAxis(this.document, false);
+        // }
+        applyDepthSort();
+      }      
+      
     }
   }
 }
 
 export function isoDepthSortTokenMixin(Base){  
   return class DepthSortPlaceable extends Base{
-
-    /** 
-     * note: a single token move by one square trigger _refreshState() up to 5 times , 
-     * and a lot of other _onUpdate() can fire in between, _onUpdate() is usually one step behind _refreshState()
-     * _onUpdate()  and _refreshState() should never get mutual triggering code execution , otherwhise this cause an endless loop
-     * be warned! this will make your pc fan scream in pain!
-    */
 
     _refreshState() {
       super._refreshState();
@@ -63,23 +48,34 @@ export function isoDepthSortTokenMixin(Base){
         this.document.setFlag(isometricModuleConfig.MODULE_ID, 'currentRegion', null);
       }
     }
-
-    _onUpdate(changed, options, userId) {
-      super._onUpdate(changed, options, userId);
-      if ("y" in changed || "x" in changed) {
+    
+    _onAnimationUpdate(changed, context){
+      super._onAnimationUpdate(changed, context);
+      if(changed.x || changed.y){
         applyDepthSort();
       }
     }
+
+    // keeping for now 
+    // _refreshPosition(){
+    //   super._refreshPosition();
+    //   // applyDepthSort();
+    //  }
+
+    // _onUpdate(changed, options, userId) {
+    //   super._onUpdate(changed, options, userId);
+    //   // applyDepthSort();
+    // }
   }
 }
 
 export function applyDepthSort(){
-  const sortList = sortPlaceableByPosition();
-  for (let i = 0; i < sortList.length; i++) {
-    const currentSprite = sortList[i];
-    currentSprite.object.document.sort = i;
-    currentSprite.sort = i;
+  const sortList = sortPlaceableByPosition() //.map(({sprite}) => sprite);
+  // console.log("SORTLIST?", sortList)
+  for (let i = 0; i < sortList.length ; i++) {
+    const currentSprite = sortList[i].object;
+    currentSprite.mesh.sort = i; // if this is commented, tokens render above all tiles
+    currentSprite.document.sort = i; // if this is commented, tokens render above SW tiles but under se tiles 
+    // currentSprite.mesh.zIndex = i;
   }
-  debugCanvasLayer(sortList) //-------------------------------------------------------------------------- DEBUG!!!
-  canvas.primary.sortDirty = true;
 }
