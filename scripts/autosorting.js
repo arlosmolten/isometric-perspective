@@ -16,7 +16,6 @@ export function isoDepthSortTileMixin(Base){
       } else { 
         this.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES; 
       }
-      // applyDepthSort(this);
     }
     _onUpdate(changed, options, userId) {
       super._onUpdate(changed, options, userId);
@@ -29,7 +28,7 @@ export function isoDepthSortTileMixin(Base){
         // if(!this.controlled){ // hide gizmo on unselected WIP
         //   toggleAnchorAxis(this.document, false);
         // }
-        applyDepthSort(this);
+        applyDepthSort();
       }      
       
     }
@@ -50,29 +49,33 @@ export function isoDepthSortTokenMixin(Base){
       }
     }
     
-    _refreshPosition(){
-      super._refreshPosition();
-      // console.log("done moving?")
-      applyDepthSort(this);
-     }
-
-    _onUpdate(changed, options, userId) {
-      super._onUpdate(changed, options, userId);
-      // applyDepthSort(this);
+    _onAnimationUpdate(changed, context){
+      super._onAnimationUpdate(changed, context);
+      if(changed.x || changed.y){
+        applyDepthSort();
+      }
     }
+
+    // keeping for now 
+    // _refreshPosition(){
+    //   super._refreshPosition();
+    //   // applyDepthSort();
+    //  }
+
+    // _onUpdate(changed, options, userId) {
+    //   super._onUpdate(changed, options, userId);
+    //   // applyDepthSort();
+    // }
   }
 }
 
-export function applyDepthSort(placeable){
-  const sortList = sortPlaceableByPosition(placeable) //.map(({sprite}) => sprite);
+export function applyDepthSort(){
+  const sortList = sortPlaceableByPosition() //.map(({sprite}) => sprite);
   // console.log("SORTLIST?", sortList)
-  for (let i = 0; i < sortList.length; i++) {
+  for (let i = 0; i < sortList.length ; i++) {
     const currentSprite = sortList[i].object;
-    
     currentSprite.mesh.sort = i; // if this is commented, tokens render above all tiles
     currentSprite.document.sort = i; // if this is commented, tokens render above SW tiles but under se tiles 
     // currentSprite.mesh.zIndex = i;
-
-    // console.log("currentSprite:", currentSprite.document.name,"sort:",currentSprite.document.sort,"X",currentSprite.document.x,"Y",currentSprite.document.y,"iso Depth",currentSprite.document.x - currentSprite.document.y )
   }
 }

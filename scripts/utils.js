@@ -114,33 +114,27 @@ export function patchConfig(documentSheet, config, args) {
 }
 
 // filter the sort layer into a new array of sortables, copy that array , sort the copy and return the result.
-export function sortPlaceableByPosition(placeable) { // might not need palceable later
-  console.clear()
+export function sortPlaceableByPosition() { // might not need palceable later
   const placeableMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
   const canvasLayer = canvas.primary.children;
 
   const filteredLayer = canvasLayer.filter( sprite => {
-    return sprite.sortLayer === placeableMeshLayer && sprite.object.previewType === null;
+    return sprite.sortLayer === placeableMeshLayer;
   }); // only need DepthSortPlaceables
-  // let layerToSort = filteredLayer.map(item => Object.assign({}, item));
-  let layerToSort = filteredLayer.map(item => Object.assign({}, item)).reverse();
+  let layerToSort = filteredLayer.map(item => Object.assign({}, item)) //.reverse();
 
-  layerToSort = layerToSort.toSorted((sprite,sibling) => {
+  layerToSort.sort((sprite,sibling) => {
     const currentSprite = new SortableSprite(sprite);
     const currentSibling = new SortableSprite(sibling);
     return currentSprite.getSortOrder(currentSibling)
-  });
+  }).reverse();
 
-  // might delete later
-  // for(let i = 0; i < layerToSort.length; i++){
-  //   const current = new SortableSprite(layerToSort[i]);
-  //   const next = new SortableSprite(layerToSort[i+1]);
-  //   if(current.isToken() && next.isNotNull()){
-  //     const sortScore = sortByFacing(next,current);
-  //     // console.log("IS TOKEN?", current.name , next.name , sortScore)
-  //   }
-  // }
-  
+  // keep for debugging later
+  // layerToSort.map(sprite => {
+  //   const currentSprite = new SortableSprite(sprite);
+  //   currentSprite.getDebugData(["name","sort","facing"])
+  // })
+
   return layerToSort;
 }
 
@@ -174,6 +168,7 @@ export class SortableSprite {
       this.occupiedRegion = placeable.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion');
       this.linkedRegion = placeable.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'regionLink');
       this.tileMirrorHorizontal = null;  
+      this.preview = placeable.object.previewType;
       if (game.modules.get(fastFlipCompatiility.MODULE_ID)?.active){
         this.tileMirrorHorizontal = placeable.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL);
       }
@@ -207,7 +202,7 @@ export class SortableSprite {
   isTile(){return this.type === "Tile";}
   isToken(){return this.type === "Token";}
   isNotNull(){return !this.isNull;}
-
+  isPreview(){return this.preview !== null}
   isFlipped(){
     let result = false;
     if(this.tileMirrorHorizontal || this.tileFlipped){
@@ -229,21 +224,28 @@ export class SortableSprite {
   // sorting
   getSortOrder(sibling){
     let depthScore = 0;
-    if(this.isTile){
+    // need to find a way to write this in a easier to read fashion , and find a way to make the sorting do exactly what its meant to
+    // the flicker is happening because at some other point in the sort loop , the same operation is reverted back
+    // need to find why
+    if(this.isTile && sibling.isToken()){
       switch(this.isFacing()){ // evaluates cases based on which way the tile is facing in case its facing in a diagonal way
         case 'south west':
-        depthScore = sibling.x - this.x;
-        break;
-      case 'south east': 
-        depthScore = sibling.y - this.y;
-        break;
-      default:
-        depthScore = Math.floor(( sibling.isoDepth - this.isoDepth ) * 0.5);
+          depthScore = sibling.x - this.x;
+          break;
+        case 'south east':
+          depthScore = this.y - sibling.y;
+          break;
+        default:
+          // depthScore = Math.floor(( this.isoDepth - sibling.isoDepth ) * 0.5);
+          depthScore = Math.floor(( sibling.isoDepth - this.isoDepth ) * 0.5);
+          break;
       }
-    } else { // tokens dont care about facing
-      depthScore = Math.floor(( sibling.isoDepth - this.isoDepth ) * 0.5);
+    } else if(this.isToken() && sibling.isTile()){ // letting the tile sibling deal with the sorting the same way seems to prevent result asymmetry 
+      depthScore = sibling.getSortOrder(this);// but also make sure its always the tile who does the sorting the same way in all cases
+    } else {
+      // depthScore = Math.floor((this.isoDepth - sibling.isoDepth ) * 0.5);
+      depthScore = Math.floor((sibling.isoDepth - this.isoDepth ) * 0.5);
     }
-    console.log(this.name, "sibling: " , sibling.name , depthScore)
     return depthScore;
   }
   // debug
@@ -456,116 +458,3 @@ function cleanupTileAnchorLines() {
   const existingLines = canvas.stage.children.filter(child => child.name === 'anchorLine');
   existingLines.forEach(line => line.destroy());
 };
-
-// function isTile(sprite){
-//   return sprite.type == "Tile";
-// }
-
-// function isToken(sprite){
-//   return sprite.type == "Token";
-// }
-
-// function isTileFlipped (sprite){
-//   let result = false;
-//   if(sprite.tileMirrorHorizontal || sprite.tileFlipped){
-//     result = true;
-//   }
-//   return result;
-// }
-
-
-// // compare cases where the placeable type is: 
-// function comparePairings(sprite,sibling){
-//   if(isToken(sprite) && isToken(sibling)){
-//     return "Token-Token";
-//   } else if(isTile(sprite) && isTile(sibling)){
-//     return "Tile-Tile";
-//   } else if(isTile(sprite) && isToken(sibling)){
-//     if(isRegionMatching(sprite,sibling)){
-//       return "Region-Sort";
-//     } else {
-//       return "Tile-Token";
-//     }
-//   } else if(isToken(sprite) && isTile(sibling)){
-//     if(isRegionMatching(sprite,sibling)){
-//       return "Region-Sort";
-//     } else {
-//       return "Token-Tile";
-//     }
-//   }
-// }
-
-/**
- * compare two placeables by Y positions if one of the placable is a tile that is flipped
- * otherwise compare them by x positions.
- * this is due to the X axis being a diagonal from bottom left to top right ( acending)
- * an y being a diagonal from bottom riight to top left ( descending)
- *  y-      +x
- *    y-  x+
- *      o
- *    x-  y+
- * x-        y+
-*/
-// compare a sprite and its sibling and return the right sorting score based on:
-// ... if both are tokens : sort by vertical depth
-// ... if both are tiles : sort by facing but the order dosent matter.
-// ... if one is a tile and the other a token sort by facing but the tile always go first
-// ... if the token and the tiles share a region ID , region override the sortscore and always put the tiles behind the token.
-// function getSortScore(sprite, sibling){
-//   // const token = isToken(sprite)? sprite : sibling;
-//   // const tile = isTile(sprite)? sprite : sibling;
-//   if(isDifferentId(sprite,sibling)){ // never compare an object against itself
-//     switch(comparePairings(sprite,sibling)){
-//       case "Token-Token": // order dosent matter.
-//       case "Tile-Tile": // order dosent matter, but the facing does.
-//       case "Tile-Token":
-//       case "Token-Tile":
-//         return sortByFacing(sprite,sibling);
-//         break;
-//       // case "Tile-Token": // specific case requiring to pass the right type in the right order : Tile-Token
-//       //   return sortByFacing(tile,token);
-//       //   break;
-//       // case "Token-Tile": // specific case requiring to pass the right type in the right order : Tile-Token
-//       //   return sortByFacing(tile,token);
-//       //   break;
-//       case "Region-Sort": // regions override sorting on their linked itles
-//         return isTile(sprite)? -100: 100; // need to change that to sort by region! 
-//         break;
-//       default:
-//         return sortByFacing(sprite,sibling);
-//         break;
-//     }
-//   }
-// }
-
-// token moving from front to behind its tile sibling will make perpendicularDepth go from - to +
-// tile moving from front to behind its tile sibling will make perpendicularDepth go from - to + but only for the sibling
-
-// function sortByFacing(sprite,sibling){
-//   let depthScore = {
-//     isoDepth:0,
-//     perpendicularDepth:0,
-//   };
-
-//   switch(sprite.isFacing()){ // evaluates cases based on which way the tile is facing
-//     case 'south west':
-//     depthScore.perpendicularDepth = sprite.x - sibling.x;
-//     depthScore.isoDepth =  Math.floor(( sprite.isoDepth - sibling.isoDepth ) * 0.5); // token moving from front to behind go from - to + but positive should mean in front while negative should mean behind
-//     break;
-//   case 'south east': 
-//     depthScore.perpendicularDepth = sprite.y - sibling.y;
-//     depthScore.isoDepth =  Math.floor(( sprite.isoDepth - sibling.isoDepth ) * 0.5); // token moving from front to behind go from - to + but positive should mean in front while negative should mean behind
-//     break;
-//   default:
-//     depthScore.perpendicularDepth = 0;
-//     depthScore.isoDepth = Math.floor(( sprite.isoDepth - sibling.isoDepth ) * 0.5);
-//   }
-
-//   return depthScore;
-// }
-
-
-// // cant figure out if this priority order is correct or not, the distribution of placeables is correct but their ordering is still incorrect
-// function sortLayerByDepth(sprite,sibling){ 
-//   return sprite.isoDepth - sibling.isoDepth;
-// }
