@@ -24,18 +24,24 @@ export function initRegionForm(app, html, context, options){
   const linkTilesBox = html.querySelector('.linked-tiles-container');
   const isRegionDepthSortEnabled = app.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoRegionTilesAutoSortingEnabled');
   
-  depthSortingCheckbox.addEventListener('change', (event) => {
-    if (event.target.checked === true){
-      app.document.setFlag(isometricModuleConfig.MODULE_ID, 'isoRegionTilesAutoSortingEnabled', true);
-    } else {
-      app.document.setFlag(isometricModuleConfig.MODULE_ID, 'isoRegionTilesAutoSortingEnabled', false);
-    }
-  });
+  // since the introduction of placeable palettes tools , adding references to UI elements like this cause an error if there is no checker to see if the 
+  // ui element reference exist.
+  if(depthSortingCheckbox){
+    depthSortingCheckbox.addEventListener('change', (event) => {
+      if (event.target.checked === true){
+        app.document.setFlag(isometricModuleConfig.MODULE_ID, 'isoRegionTilesAutoSortingEnabled', true);
+      } else {
+        app.document.setFlag(isometricModuleConfig.MODULE_ID, 'isoRegionTilesAutoSortingEnabled', false);
+      }
+    });
+  }
 
-  if (isRegionDepthSortEnabled){
-    linkTilesBox.classList.remove('hidden');
-  } else {
-    linkTilesBox.classList.add('hidden');
+  if(linkTilesBox){
+    if (isRegionDepthSortEnabled){
+      linkTilesBox.classList.remove('hidden');
+    } else {
+      linkTilesBox.classList.add('hidden');
+    }
   }
 
 // Region room tiles linking

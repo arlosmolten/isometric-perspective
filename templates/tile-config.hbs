@@ -10,6 +10,19 @@
         <input id="{{rootId}}-isometric-perspective-enable-tile-isometrics-tile-sorting" type="checkbox" name="flags.isometric-perspective.isoTileAutoSortingEnabled" {{checked document.flags.isometric-perspective.isoTileAutoSortingEnabled}}>
     </div>
 
+    <!-- Tile facing-->
+    <div class="form-group">
+        <label>{{localize 'isometric-perspective.tile_set_tile_facing'}}</label>
+        <div class="form-fields">
+        <select id="{{rootId}}-isometric-perspective-tile-facing" name="flags.isometric-perspective.tileFacing">
+            {{#each tileFacing}}
+                <option value="{{this}}" {{#if (eq this ../document.flags.isometric-perspective.tileFacing)}}selected{{/if}}>{{this}}</option>
+            {{/each}}
+            </select>
+        </div>
+        <p class="hint">{{localize 'isometric-perspective.tile_set_tile_facing_hint'}}</p>          
+    </div>
+
     <div class="form-group">
         <label for="{{rootId}}-isometric-perspective-enable-offset-gizmo">{{localize 'isometric-perspective.tile_enableIsometric_anchor_gizmo'}}</label>
         <input id="{{rootId}}-isometric-perspective-enable-offset-gizmo" type="checkbox" name="flags.isometric-perspective.isoOffsetGizmoEnabled" {{checked document.flags.isometric-perspective.isoOffsetGizmoEnabled}}>

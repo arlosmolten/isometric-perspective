@@ -16,14 +16,13 @@ import {
   handleCreateTile,
   handleUpdateTile,
   handleRefreshTile,
-  addDepthSortControls
+  addDepthSortControls,
+  closeConfig
  } from './tile.js';
 
  import {
    createRegionIsometricTab,
    initRegionForm,
-  //  handleUpdateRegion,
-  //  testRegionInteract
  } from './regions.js'
 
 import { 
@@ -33,9 +32,9 @@ import {
 } from './hud.js';
 
 import {
-  // isoDepthSort,
   isoDepthSortTileMixin,
-  isoDepthSortTokenMixin
+  isoDepthSortTokenMixin,
+  applyDepthSort
 } from './autosorting.js'
 
 import { registerDynamicTileConfig, increaseTilesOpacity, decreaseTilesOpacity } from './dynamictile.js';
@@ -270,6 +269,7 @@ Hooks.on("ready", createTileIsometricTab);
 Hooks.on("renderTileConfig", initTileForm);
 Hooks.on("createTile", handleCreateTile);
 Hooks.on("updateTile", handleUpdateTile);
+Hooks.on("closeTileConfig", closeConfig);
 Hooks.on("refreshTile", handleRefreshTile);
 Hooks.on("getSceneControlButtons", controls => {
   addDepthSortControls(controls);

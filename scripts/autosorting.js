@@ -1,20 +1,15 @@
 import { isometricModuleConfig } from './consts.js';
 import { 
   sortPlaceableByPosition,
-  sortPlaceableByRegion,
-  debugCanvasLayer
+  // debugCanvasLayer,
+  toggleAnchorAxis
 } from './utils.js';
 
 export function isoDepthSortTileMixin(Base){
   return class DepthSortTile extends (Base){
+
     _refreshState() {
       super._refreshState();
-      //prevent mesh flickering on hover or controlled
-      if(this.zIndex){
-        this.zIndex = 0;
-        this.mesh.zIndex = 0;
-      }
-
       const isTileSortable = this.document.flags[isometricModuleConfig.MODULE_ID]?.isoTileAutoSortingEnabled || false;
       if (isTileSortable){
         this.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS; 
@@ -24,70 +19,63 @@ export function isoDepthSortTileMixin(Base){
     }
     _onUpdate(changed, options, userId) {
       super._onUpdate(changed, options, userId);
-      if(this.zIndex){
-        this.zIndex = 0;
-        this.mesh.zIndex = 0;
-      }
       const isTileSortable = this.document.getFlag(isometricModuleConfig.MODULE_ID, 'isoTileAutoSortingEnabled');
       if(isTileSortable){
-      if ("y" in changed || "x" in changed) {
-        const sortList = sortPlaceableByPosition(this);
-        for (let i = 0; i < sortList.length; i++) {
-          const currentSprite = sortList[i];
-          currentSprite.object.document.sort = i;
-          currentSprite.sort = i;
-        }
+        // if(this.controlled){ // show gizmo on selected WIP
+        //   toggleAnchorAxis(this.document, true); 
+        // }
 
-          this.mesh.parent.sortDirty = true;
-        }
-      }
+        // if(!this.controlled){ // hide gizmo on unselected WIP
+        //   toggleAnchorAxis(this.document, false);
+        // }
+        applyDepthSort();
+      }      
       
-
     }
   }
 }
 
 export function isoDepthSortTokenMixin(Base){  
   return class DepthSortPlaceable extends Base{
-    sortList = [];
-    /** 
-     * note: a single token move by one square trigger _refreshState() up to 5 times , 
-     * and a lot of other _onUpdate() can fire in between, _onUpdate() is usually one step behind _refreshState()
-     * _onUpdate()  and _refreshState() should never get mutual triggering code execution , otherwhise this cause an endless loop
-     * be warned! this will make your pc fan scream in pain!
-    */
+
     _refreshState() {
       super._refreshState();
-      //prevent mesh flickering on hover or controlled
-      this.zIndex = 0;
-      this.mesh.zIndex = 0;
-
-        const currentRegions = Array.from(this.document.regions).map(region => region);
-        const currentRegion = currentRegions[0]?._id;
-        if(currentRegion){
-          this.document.setFlag(isometricModuleConfig.MODULE_ID, 'currentRegion', currentRegion);
-        } else {
-          this.document.setFlag(isometricModuleConfig.MODULE_ID, 'currentRegion', null);
-        }
-
-      this.sortList = sortPlaceableByPosition(this);
-
-      for (let i = 0; i < this.sortList.length; i++) {
-        const currentSprite = this.sortList[i];
-        currentSprite.object.document.sort = i;
-        currentSprite.sort = i;
-      }
-      // debugCanvasLayer(this.sortList)
-      this.mesh.parent.sortDirty = true;
-    }
-
-    _onUpdate(changed, options, userId) {
-      super._onUpdate(changed, options, userId);
-      this.zIndex = 0;
-      this.mesh.zIndex = 0;
-      if ("y" in changed || "x" in changed) {
-        // later use this to prevent unecessary updates
+      const currentRegions = Array.from(this.document.regions).map(region => region);
+      const currentRegion = currentRegions[0]?._id;
+      if(currentRegion){
+        this.document.setFlag(isometricModuleConfig.MODULE_ID, 'currentRegion', currentRegion);
+      } else {
+        this.document.setFlag(isometricModuleConfig.MODULE_ID, 'currentRegion', null);
       }
     }
+    
+    _onAnimationUpdate(changed, context){
+      super._onAnimationUpdate(changed, context);
+      if(changed.x || changed.y){
+        applyDepthSort();
+      }
+    }
+
+    // keeping for now 
+    // _refreshPosition(){
+    //   super._refreshPosition();
+    //   // applyDepthSort();
+    //  }
+
+    // _onUpdate(changed, options, userId) {
+    //   super._onUpdate(changed, options, userId);
+    //   // applyDepthSort();
+    // }
+  }
+}
+
+export function applyDepthSort(){
+  const sortList = sortPlaceableByPosition() //.map(({sprite}) => sprite);
+  // console.log("SORTLIST?", sortList)
+  for (let i = 0; i < sortList.length ; i++) {
+    const currentSprite = sortList[i].object;
+    currentSprite.mesh.sort = i; // if this is commented, tokens render above all tiles
+    currentSprite.document.sort = i; // if this is commented, tokens render above SW tiles but under se tiles 
+    // currentSprite.mesh.zIndex = i;
   }
 }
