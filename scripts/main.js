@@ -285,6 +285,8 @@ Hooks.on("init", () => {
   CONFIG.Tile.objectClass = isoDepthSortTileMixin(CONFIG.Tile.objectClass);
 });
 
+// Hook.on("ready",applyDepthSort)
+
 /**
  * @param {----- TESTING AREA / ÁREA DE TESTES -----}
 */
