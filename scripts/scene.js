@@ -54,7 +54,6 @@ export function initSceneForm (app, html, context, options){
 }
 
 export function handleUpdateScene(scene, changes) {
-
   if (scene.id !== canvas.scene?.id) return;
 
   if (
