@@ -184,7 +184,6 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
     let isoOffsets = cartesianToIso(offsetX, offsetY);
 
     // Set tile's position
-
     //v13 compatibility
     if (game.release.generation < 14) {
       object.mesh.position.set(
@@ -198,9 +197,7 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
       );
     }
   }
-  
 }
-
 
 // Function to transform the scene background.
 export function applyBackgroundTransformation(scene, isSceneIsometric, shouldTransform) {
@@ -230,22 +227,22 @@ export function applyBackgroundTransformation(scene, isSceneIsometric, shouldTra
     if (game.release.generation < 14) {
       isoScene = canvas.background; // for v13 and under
     } else {
-      isoScene = canvas.level; // scene.background was deprecated in v14
+      isoScene = canvas.scene; // for v14 and up
     }
     const padding = isoScene.padding;
     const paddingX = isoScene.width * padding;
     const paddingY = isoScene.height * padding;
-      
     // Account for background offset settings
-    const offsetX = isoScene.background.offsetX || 0; /// scene.background is deprecated since v14 , Level.background and or Level texture instead
-    const offsetY = isoScene.background.offsetY || 0;
-    
+    const offsetX = isoScene.offsetX || 0; 
+    const offsetY = isoScene.offsetY || 0;
     // Set position considering padding and offset
-    background.position.set(
-      (isoScene.width / 2) + paddingX + offsetX,
-      (isoScene.height / 2) + paddingY + offsetY
-    );
-    
+    if (game.release.generation < 14) {
+      background.position.set(
+        (isoScene.dimensions.width / 2) + paddingX + offsetX,
+        (isoScene.dimensions.height / 2) + paddingY + offsetY
+      );
+    }
+
     // Handle foreground if it exists
     /*if (canvas.environment.primary.foreground) {
       const foreground = canvas.environment.primary.foreground;
