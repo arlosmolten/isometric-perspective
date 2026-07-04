@@ -1,15 +1,15 @@
-import { 
+import {
   isometricModuleConfig,
   fastFlipCompatiility,
   TILE_FACINGS,
-  DEFAULT_TILE_FACING
-} from './consts.js';
+  DEFAULT_TILE_FACING,
+} from "./consts.js";
 // Função auxiliar para converter coordenadas isométricas para cartesianas
 export function isoToCartesian(isoX, isoY) {
   const angle = Math.PI / 4; // 45 graus em radianos
   return {
-    x: (isoX * Math.cos(angle) - isoY * Math.sin(angle)),
-    y: (isoX * Math.sin(angle) + isoY * Math.cos(angle))
+    x: isoX * Math.cos(angle) - isoY * Math.sin(angle),
+    y: isoX * Math.sin(angle) + isoY * Math.cos(angle),
   };
 }
 
@@ -17,8 +17,8 @@ export function isoToCartesian(isoX, isoY) {
 export function cartesianToIso(isoX, isoY) {
   const angle = Math.PI / 4; // 45 graus em radianos
   return {
-    x: (isoX * Math.cos(-angle) - isoY * Math.sin(-angle)),
-    y: (isoX * Math.sin(-angle) + isoY * Math.cos(-angle))
+    x: isoX * Math.cos(-angle) - isoY * Math.sin(-angle),
+    y: isoX * Math.sin(-angle) + isoY * Math.cos(-angle),
   };
 }
 
@@ -32,57 +32,69 @@ export function calculateIsometricVerticalDistance(width, height) {
 // a simple utility function that can pop the last part of a "." separated string and retrieve the last part of it
 // used to get "offsetX" from "flags.isometric-perspective.offsetX"
 export function getFlagName(str) {
-  const parts = str.split('.');
+  const parts = str.split(".");
   return parts.pop();
 }
 
 // adjust the input values in real time when the mosue is moving
-export function adjustInputWithMouseDrag(event,config){
-  if(config.isDragging){
+export function adjustInputWithMouseDrag(event, config) {
+  if (config.isDragging) {
     event.preventDefault();
     const deltaX = event.clientX - config.dragStartX;
     const deltaY = event.clientY - config.dragStartY;
-    const finalValueX = roundToPrecision((config.originalX - (deltaY * config.adjustmentX) ) , getDecimalPrecision(config.adjustmentX));
-    const finalValueY = roundToPrecision((config.originalY +  (deltaX * config.adjustmentY) ) , getDecimalPrecision(config.adjustmentY));
+    const finalValueX = roundToPrecision(
+      config.originalX - deltaY * config.adjustmentX,
+      getDecimalPrecision(config.adjustmentX),
+    );
+    const finalValueY = roundToPrecision(
+      config.originalY + deltaX * config.adjustmentY,
+      getDecimalPrecision(config.adjustmentY),
+    );
     config.inputX.value = finalValueX;
     config.inputY.value = finalValueY;
-    config.inputX.dispatchEvent(new Event('change', { bubbles: true }));
-    config.inputY.dispatchEvent(new Event('change', { bubbles: true }));
+    config.inputX.dispatchEvent(new Event("change", { bubbles: true }));
+    config.inputY.dispatchEvent(new Event("change", { bubbles: true }));
   }
 }
 
-export function parseNum (input) { 
+export function parseNum(input) {
   return parseFloat(input.value) || 0;
-} 
+}
 
-export function roundToPrecision(num,precision){
+export function roundToPrecision(num, precision) {
   if (precision <= 0) {
-        return Math.round(num);
-    }
-    const factor = Math.pow(10, precision);
-    return Math.round(num * factor) / factor;
+    return Math.round(num);
+  }
+  const factor = Math.pow(10, precision);
+  return Math.round(num * factor) / factor;
 }
 
 function getDecimalPrecision(step) {
-    if (step === 0 || step === 1) return 0;
-    const stepStr = step.toString();
-    if (stepStr.includes('.')) {
-        return stepStr.split('.')[1].length;
-    }
-    return 0;
+  if (step === 0 || step === 1) return 0;
+  const stepStr = step.toString();
+  if (stepStr.includes(".")) {
+    return stepStr.split(".")[1].length;
+  }
+  return 0;
 }
 
 export function patchConfig(documentSheet, config, args) {
   if (!documentSheet) return;
   // Check if already patched
-  if (documentSheet.TABS?.sheet?.tabs?.some(tab => tab.id === config.tabId)) return;
+  if (documentSheet.TABS?.sheet?.tabs?.some((tab) => tab.id === config.tabId))
+    return;
   // Adding the isometric tab data to the config parts
   if (documentSheet.TABS?.sheet?.tabs) {
-    documentSheet.TABS.sheet.tabs.push({ id: config.tabId, group: config.tabGroup, label:config.label, icon: config.icon });
+    documentSheet.TABS.sheet.tabs.push({
+      id: config.tabId,
+      group: config.tabGroup,
+      label: config.label,
+      icon: config.icon,
+    });
   }
   // Adding the part template
   if (documentSheet.PARTS) {
-    documentSheet.PARTS.isometric = {template: config.templatePath};
+    documentSheet.PARTS.isometric = { template: config.templatePath };
     // Re-order footer to be last
     if (documentSheet.PARTS.footer) {
       const footerPart = documentSheet.PARTS.footer;
@@ -93,7 +105,11 @@ export function patchConfig(documentSheet, config, args) {
 
   // Override part context to include the config data
   const defaultRenderPartContext = documentSheet.prototype._preparePartContext;
-  documentSheet.prototype._preparePartContext = async function(partId, context, options) {
+  documentSheet.prototype._preparePartContext = async function (
+    partId,
+    context,
+    options,
+  ) {
     if (partId === "isometric") {
       // Handle both 'document' and 'token' properties for compatibility
       const doc = this.document || this.token;
@@ -107,91 +123,124 @@ export function patchConfig(documentSheet, config, args) {
         ...args,
         document: doc,
         tab: context.tabs?.[partId],
-      }
+      };
     }
     return defaultRenderPartContext?.call(this, partId, context, options) || {};
-  }
+  };
 }
 
 // filter the sort layer into a new array of sortables, copy that array , sort the copy and return the result.
-export function sortPlaceableByPosition() { // might not need palceable later
-  const placeableMeshLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
+export function sortPlaceableByPosition() {
+  const placeableMeshLayer =
+    foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
   const canvasLayer = canvas.primary.children;
 
-  const filteredLayer = canvasLayer.filter( sprite => {
+  const filteredLayer = canvasLayer.filter((sprite) => {
     return sprite.sortLayer === placeableMeshLayer;
   }); // only need DepthSortPlaceables
-  let layerToSort = filteredLayer.map(item => Object.assign({}, item)) //.reverse();
+  let layerToSort = filteredLayer.map((item) => Object.assign({}, item)); //.reverse();
 
-  layerToSort.sort((sprite,sibling) => {
+  layerToSort.sort((sprite, sibling) => {
     const currentSprite = new SortableSprite(sprite);
     const currentSibling = new SortableSprite(sibling);
-    return currentSprite.getSortOrder(currentSibling)
-  }).reverse();
+    return currentSprite.sortByDepth(currentSibling);
+  });
+
+  layerToSort.sort((sprite, sibling) => {
+    const currentSprite = new SortableSprite(sprite);
+    const currentSibling = new SortableSprite(sibling);
+    return currentSprite.getSortByFacing(currentSibling);
+  });
 
   // keep for debugging later
-  // layerToSort.map(sprite => {
+  // console.clear();
+  // layerToSort.map((sprite) => {
   //   const currentSprite = new SortableSprite(sprite);
-  //   currentSprite.getDebugData(["name","sort","facing"])
-  // })
+  //   currentSprite.getDebugData(["name", "sort"]);
+  // });
 
   return layerToSort;
 }
 
-// SortableSprite is a data class with some utility methods to avoid long chains of sprite.object.document.someValue in the code and overall make the 
+// SortableSprite is a data class with some utility methods to avoid long chains of sprite.object.document.someValue in the code and overall make the
 // sorting code a bit more readable. Also help isolate cases and avoid endless nesting comparaison, the utility methods always check for validiy as well.
 // isFacing() if its a tile, return the right facing state, taking in account if its flipped for SW and SE facings.
 // isTile() return true if its a tile, a bit shorter than doing a full comparaison everytime its needed.
 // isToken() return true if its a token, a bit shorter than doing a full comparaison everytime its needed.
 // isFlipped() return true if the tile is either flipped via the tileFlipped flag or if fast flip is installed , based on tileMirrorHorizontal in that case.
-// isRegionValid() because javascript will consider that null === null or undefined === undefined or "" === "" is as valid as if two region id match ... 
-// isNotNull() in case an invalid object is passed in the constructor, dosent break but marked as null , used when during the token sort correction when traversing the 
+// isRegionValid() because javascript will consider that null === null or undefined === undefined or "" === "" is as valid as if two region id match ...
+// isNotNull() in case an invalid object is passed in the constructor, dosent break but marked as null , used when during the token sort correction when traversing the
 // layerToSort if the token is at index 0 or at index layerToSort.length , again, used to make code a bit more readable and to rely less on "===" checks clutters everywhere.
 // getDebugData([args,...]) display SortableSprite props in a nice table for debugging purpose
-// getSortOrder(sibling) take another adjacent SortableSprite and compare their x , y or iso depth based on facing rules and return a positive or negative value to determine sort order:
-// a negative value indicate that the sibling should be sorted below 
+// getSortByFacing(sibling) take another adjacent SortableSprite and compare their x , y or iso depth based on facing rules and return a positive or negative value to determine sort order:
+// a negative value indicate that the sibling should be sorted below
 // a positive value indicate that the sibling should be sorted above
 // zero or NaN indicate a tie , no changes need to happen.
-// 
+//
 export class SortableSprite {
-  constructor(placeable){
-    if(placeable){
+  constructor(placeable) {
+    if (placeable) {
       this.id = placeable.object.document.id;
       this.type = placeable.object.document.documentName;
-      this.name = placeable.object.document.name? placeable.object.document.name : "no name";
+      this.name = placeable.object.document.name
+        ? placeable.object.document.name
+        : "no name";
       this.x = placeable.object.document.x;
       this.y = placeable.object.document.y;
-      this.isoDepth = this.y - this.x;
-      this.facing = placeable.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tileFacing') ?? DEFAULT_TILE_FACING;
+      this.width = placeable.object.mesh.width ?? 0;
+      this.height = placeable.object.mesh.height ?? 0;
+      this.isoDepth = (this.y - this.x) * 0.5;
+      this.facing =
+        placeable.object.document.getFlag(
+          isometricModuleConfig.MODULE_ID,
+          "tileFacing",
+        ) ?? DEFAULT_TILE_FACING;
       this.sort = placeable.object.document.sort;
-      this.tileFlipped = placeable.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'tileFlipped')?placeable.object.document.getFlag(isometricModuleConfig.MODULE_ID,'tileFlipped') : null;
-      this.occupiedRegion = placeable.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'currentRegion');
-      this.linkedRegion = placeable.object.document.getFlag(isometricModuleConfig.MODULE_ID, 'regionLink');
-      this.tileMirrorHorizontal = null;  
+      this.tileFlipped = placeable.object.document.getFlag(
+        isometricModuleConfig.MODULE_ID,
+        "tileFlipped",
+      )
+        ? placeable.object.document.getFlag(
+            isometricModuleConfig.MODULE_ID,
+            "tileFlipped",
+          )
+        : null;
+      this.occupiedRegion = placeable.object.document.getFlag(
+        isometricModuleConfig.MODULE_ID,
+        "currentRegion",
+      );
+      this.linkedRegion = placeable.object.document.getFlag(
+        isometricModuleConfig.MODULE_ID,
+        "regionLink",
+      );
+      this.tileMirrorHorizontal = null;
       this.preview = placeable.object.previewType;
-      if (game.modules.get(fastFlipCompatiility.MODULE_ID)?.active){
-        this.tileMirrorHorizontal = placeable.object.document.getFlag(fastFlipCompatiility.MODULE_ID, fastFlipCompatiility.TILE_MIRROR_HORIZONTAL);
+      if (game.modules.get(fastFlipCompatiility.MODULE_ID)?.active) {
+        this.tileMirrorHorizontal = placeable.object.document.getFlag(
+          fastFlipCompatiility.MODULE_ID,
+          fastFlipCompatiility.TILE_MIRROR_HORIZONTAL,
+        );
       }
     } else {
       this.isNull = true;
     }
   }
   // status checks
-  isFacing(){
+  isFacing() {
     let currentFacing = null;
-    if(this.type !== "Tile") return null;
-      switch(this.facing){
-      case 'south west':
-        currentFacing = this.isFlipped()? 'south east' : 'south west';
+    if (this.type !== "Tile") return null;
+    switch (this.facing) {
+      case "south west":
+        currentFacing = this.isFlipped() ? "south east" : "south west";
         break;
-      case 'south east':
-        currentFacing = this.isFlipped()? 'south west' : 'south east';
+      case "south east":
+        currentFacing = this.isFlipped() ? "south west" : "south east";
         break;
-      case 'south':
-        currentFacing = 'south';
+      case "south":
+        currentFacing = "south";
         break;
-      case 'side':
-        currentFacing = 'side';
+      case "side":
+        currentFacing = "side";
         break;
       default:
         currentFacing = null;
@@ -199,116 +248,167 @@ export class SortableSprite {
     return currentFacing;
   }
 
-  isTile(){return this.type === "Tile";}
-  isToken(){return this.type === "Token";}
-  isNotNull(){return !this.isNull;}
-  isPreview(){return this.preview !== null}
-  isFlipped(){
+  isTile() {
+    return this.type === "Tile";
+  }
+  isToken() {
+    return this.type === "Token";
+  }
+  isNotNull() {
+    return !this.isNull;
+  }
+  isPreview() {
+    return this.preview !== null;
+  }
+  isFlipped() {
     let result = false;
-    if(this.tileMirrorHorizontal || this.tileFlipped){
+    if (this.tileMirrorHorizontal || this.tileFlipped) {
       result = true;
     }
     return result;
   }
 
-  isRegionValid(){
+  isRegionValid() {
     let regionIsValid = true;
-    if(this.isToken()){
-      if(this.occupiedRegion === null || this.occupiedRegion === undefined || this.occupiedRegion === ""){ regionIsValid = false};
+    if (this.isToken()) {
+      if (
+        this.occupiedRegion === null ||
+        this.occupiedRegion === undefined ||
+        this.occupiedRegion === ""
+      ) {
+        regionIsValid = false;
+      }
     }
-    if(this.isTile()){
-      if(this.linkedRegion === null || this.linkedRegion === undefined || this.linkedRegion === ""){ regionIsValid = false};
+    if (this.isTile()) {
+      if (
+        this.linkedRegion === null ||
+        this.linkedRegion === undefined ||
+        this.linkedRegion === ""
+      ) {
+        regionIsValid = false;
+      }
     }
     return regionIsValid;
   }
+
+  isWithinYBounds(sibling) {
+    const boundaryOffset = this.height * 0.5;
+    const isWithinYBounds =
+      sibling.y >= this.y - boundaryOffset &&
+      sibling.y <= this.y + boundaryOffset;
+    return isWithinYBounds;
+  }
+  isWithinXBounds(sibling) {
+    const boundaryOffset = this.height * 0.5;
+    const isWithinYXBounds =
+      sibling.x >= this.x - boundaryOffset &&
+      sibling.x <= this.x + boundaryOffset;
+    return isWithinYXBounds;
+  }
+
   // sorting
-  getSortOrder(sibling){
+  sortByDepth(sibling) {
+    return Math.floor(sibling.isoDepth - this.isoDepth);
+  }
+
+  getSortByFacing(sibling) {
     let depthScore = 0;
-    // need to find a way to write this in a easier to read fashion , and find a way to make the sorting do exactly what its meant to
-    // the flicker is happening because at some other point in the sort loop , the same operation is reverted back
-    // need to find why
-    if(this.isTile && sibling.isToken()){
-      switch(this.isFacing()){ // evaluates cases based on which way the tile is facing in case its facing in a diagonal way
-        case 'south west':
-          depthScore = sibling.x - this.x;
-          break;
-        case 'south east':
-          depthScore = this.y - sibling.y;
-          break;
-        default:
-          // depthScore = Math.floor(( this.isoDepth - sibling.isoDepth ) * 0.5);
-          depthScore = Math.floor(( sibling.isoDepth - this.isoDepth ) * 0.5);
-          break;
+    if (this.isWithinXBounds(sibling) && this.isWithinYBounds(sibling))
+      if (this.isTile() && sibling.isToken()) {
+        switch (
+          this.isFacing() //evaluates cases based on which way the tile is facing in case its facing in a diagonal way
+        ) {
+          case "south west":
+            if (this.isWithinXBounds(sibling)) {
+              depthScore = this.x - sibling.x;
+              break;
+            }
+          case "south east":
+            if (this.isWithinYBounds(sibling)) {
+              depthScore = sibling.y - this.y;
+              break;
+            }
+          default:
+            break;
+        }
+      } else if (this.isToken() && sibling.isTile()) {
+        // letting the tile sibling deal with the sorting the same way seems to prevent result asymmetry in the parent sort function
+        depthScore = -sibling.getSortByFacing(this); // but also make sure its always the tile who does the sorting the same way in all cases
       }
-    } else if(this.isToken() && sibling.isTile()){ // letting the tile sibling deal with the sorting the same way seems to prevent result asymmetry 
-      depthScore = sibling.getSortOrder(this);// but also make sure its always the tile who does the sorting the same way in all cases
-    } else {
-      // depthScore = Math.floor((this.isoDepth - sibling.isoDepth ) * 0.5);
-      depthScore = Math.floor((sibling.isoDepth - this.isoDepth ) * 0.5);
-    }
+
     return depthScore;
   }
   // debug
-  getDebugData(data){
-    const debugData = {}
+  getDebugData(data) {
+    const debugData = {};
     for (const [key, value] of Object.entries(this)) {
-      data.map(entry => {
-        if(entry === key){
+      data.map((entry) => {
+        if (entry === key) {
           debugData[key] = value;
         }
-      })
+      });
     }
     console.table(debugData);
   }
 }
-
 ///*** SortableSprite end *///
 
 // if needed can be moved in SortableSprite
-function switchPlaceablePositions(filteredLayer,sortScore){
+function switchPlaceablePositions(filteredLayer, sortScore) {
   const sprite = filteredLayer[sortScore.spriteIndex];
   const sibling = filteredLayer[sortScore.siblingIndex];
   filteredLayer[sortScore.spriteIndex] = sibling;
   filteredLayer[sortScore.siblingIndex] = sprite;
 }
 
-// should be moved in SortableSprite
-function isRegionMatching (sprite, sibling){
-  if(isDifferentId(sprite,sibling)){ // never compare an object against itself
-    if(isRegionValid(sprite) && isRegionValid(sibling) || isRegionValid(sibling) && isRegionValid(sprite)){
-      if(sprite.occupiedRegion === sibling.linkedRegion || sibling.occupiedRegion === sprite.linkedRegion){ return true; }
-    } else { return false;}
-  }
-}
+// no longer used but kept in case region sort become necessary again
+// function isRegionMatching(sprite, sibling) {
+//   if (isDifferentId(sprite, sibling)) {
+//     // never compare an object against itself
+//     if (
+//       (isRegionValid(sprite) && isRegionValid(sibling)) ||
+//       (isRegionValid(sibling) && isRegionValid(sprite))
+//     ) {
+//       if (
+//         sprite.occupiedRegion === sibling.linkedRegion ||
+//         sibling.occupiedRegion === sprite.linkedRegion
+//       ) {
+//         return true;
+//       }
+//     } else {
+//       return false;
+//     }
+//   }
+// }
 
 // could be moved in SortableSprite if needed
-function isDifferentId(spriteA,spriteB){
-  return !(spriteA.id === spriteB.id)
+function isDifferentId(spriteA, spriteB) {
+  return !(spriteA.id === spriteB.id);
 }
 
 // Generic function to create adjustable buttons with drag functionality
 export function createAdjustableButton(options) {
   // Destructure configuration options with default values
   const {
-      buttonElement,            // Button element to attach listener to
-      inputs,                   // Array of input elements to update [InputX, InputY]
-      adjustmentScale = 0.1,    // Scale factor or Function returning [scaleX, scaleY]
-      valueConstraints = null,  // Optional min/max constraints {min, max}
-      roundingPrecision = 0,    // Number of decimal places
-      onInputCallback = null,   // Optional callback after input update
-      onDragStart = null,       // Optional callback on drag start
-      onDragEnd = null          // Optional callback on drag end
+    buttonElement, // Button element to attach listener to
+    inputs, // Array of input elements to update [InputX, InputY]
+    adjustmentScale = 0.1, // Scale factor or Function returning [scaleX, scaleY]
+    valueConstraints = null, // Optional min/max constraints {min, max}
+    roundingPrecision = 0, // Number of decimal places
+    onInputCallback = null, // Optional callback after input update
+    onDragStart = null, // Optional callback on drag start
+    onDragEnd = null, // Optional callback on drag end
   } = options;
 
   if (!buttonElement) return;
 
   // Apply basic styling if needed
-  buttonElement.style.cursor = 'pointer';
+  buttonElement.style.cursor = "pointer";
 
   // Apply derived step attribute
   const step = Math.pow(10, -roundingPrecision);
-  inputs.forEach(input => {
-      if (input) input.step = step;
+  inputs.forEach((input) => {
+    if (input) input.step = step;
   });
 
   // State variables
@@ -318,143 +418,152 @@ export function createAdjustableButton(options) {
   let originalValues = [0, 0];
 
   const applyAdjustment = (e) => {
-      if (!isAdjusting) return;
+    if (!isAdjusting) return;
 
-      // Isometric Logic:
-      // Mouse Vertical (DeltaY) affects Input X (index 0)
-      // Mouse Horizontal (DeltaX) affects Input Y (index 1)
-      const moveY = e.clientY; 
-      const moveX = e.clientX;
-      
-      const deltaScreenX = moveX - startX;
-      const deltaScreenY = moveY - startY;
+    // Isometric Logic:
+    // Mouse Vertical (DeltaY) affects Input X (index 0)
+    // Mouse Horizontal (DeltaX) affects Input Y (index 1)
+    const moveY = e.clientY;
+    const moveX = e.clientX;
 
-      // Determine current scales
-      let scales = [0.1, 0.1];
-      if (typeof adjustmentScale === 'function') {
-          scales = adjustmentScale(); // Expects [scaleX, scaleY]
-      } else if (Array.isArray(adjustmentScale)) {
-          scales = adjustmentScale;
-      } else {
-          scales = [adjustmentScale, adjustmentScale];
+    const deltaScreenX = moveX - startX;
+    const deltaScreenY = moveY - startY;
+
+    // Determine current scales
+    let scales = [0.1, 0.1];
+    if (typeof adjustmentScale === "function") {
+      scales = adjustmentScale(); // Expects [scaleX, scaleY]
+    } else if (Array.isArray(adjustmentScale)) {
+      scales = adjustmentScale;
+    } else {
+      scales = [adjustmentScale, adjustmentScale];
+    }
+
+    // Axis Swap for Isometric:
+    // Input 0 (X) <--- Screen Y (Inverted: Up adds, Down subtracts for originalX logic? No, check original logic)
+    // Original logic: finalValueX = originalX - (deltaY * adj). DeltaY = clientY - startY. (Drag Down = Pos Delta).
+    // So Drag Down (Pos Delta) -> Subtracts X. Drag UP (Neg Delta) -> Adds X.
+    // My code below use -deltaScreenY. If Drag Down (Pos), -Pos is Neg. Adds negative -> Subtracts. Correct.
+
+    const adjustments = [-deltaScreenY * scales[0], deltaScreenX * scales[1]];
+
+    // Update inputs
+    inputs.forEach((input, index) => {
+      if (!input) return;
+
+      let newValue = originalValues[index] + adjustments[index];
+
+      // Constraints
+      if (valueConstraints) {
+        newValue = Math.max(
+          valueConstraints.min,
+          Math.min(valueConstraints.max, newValue),
+        );
       }
 
-      // Axis Swap for Isometric:
-      // Input 0 (X) <--- Screen Y (Inverted: Up adds, Down subtracts for originalX logic? No, check original logic)
-      // Original logic: finalValueX = originalX - (deltaY * adj). DeltaY = clientY - startY. (Drag Down = Pos Delta).
-      // So Drag Down (Pos Delta) -> Subtracts X. Drag UP (Neg Delta) -> Adds X.
-      // My code below use -deltaScreenY. If Drag Down (Pos), -Pos is Neg. Adds negative -> Subtracts. Correct.
-      
-      const adjustments = [
-          -(deltaScreenY) * scales[0], 
-          deltaScreenX * scales[1]     
-      ];
+      // Rounding
+      const factor = Math.pow(10, roundingPrecision);
+      newValue = Math.round(newValue * factor) / factor;
 
-      // Update inputs
-      inputs.forEach((input, index) => {
-          if (!input) return;
-          
-          let newValue = originalValues[index] + adjustments[index];
+      input.value = newValue;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    });
 
-          // Constraints
-          if (valueConstraints) {
-              newValue = Math.max(valueConstraints.min, Math.min(valueConstraints.max, newValue));
-          }
-
-          // Rounding
-          const factor = Math.pow(10, roundingPrecision);
-          newValue = Math.round(newValue * factor) / factor;
-
-          input.value = newValue; 
-          input.dispatchEvent(new Event('input', { bubbles: true }));
-          input.dispatchEvent(new Event('change', { bubbles: true }));
-      });
-      
-      if (onInputCallback) onInputCallback();
+    if (onInputCallback) onInputCallback();
   };
 
   const onMouseDown = (e) => {
-      e.preventDefault();
-      isAdjusting = true;
-      startX = e.clientX;
-      startY = e.clientY;
+    e.preventDefault();
+    isAdjusting = true;
+    startX = e.clientX;
+    startY = e.clientY;
 
-      // Capture original values
-      originalValues = inputs.map(input => input ? (parseFloat(input.value) || 0) : 0);
+    // Capture original values
+    originalValues = inputs.map((input) =>
+      input ? parseFloat(input.value) || 0 : 0,
+    );
 
-      if (onDragStart) onDragStart();
+    if (onDragStart) onDragStart();
 
-      window.addEventListener('mousemove', applyAdjustment);
-      window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener("mousemove", applyAdjustment);
+    window.addEventListener("mouseup", onMouseUp);
   };
 
   const onMouseUp = (e) => {
-      isAdjusting = false;
-      window.removeEventListener('mousemove', applyAdjustment);
-      window.removeEventListener('mouseup', onMouseUp);
-      
-      if (onDragEnd) onDragEnd();
+    isAdjusting = false;
+    window.removeEventListener("mousemove", applyAdjustment);
+    window.removeEventListener("mouseup", onMouseUp);
+
+    if (onDragEnd) onDragEnd();
   };
 
-  buttonElement.addEventListener('mousedown', onMouseDown);
-  
+  buttonElement.addEventListener("mousedown", onMouseDown);
+
   // Prevent form submission on click
-  buttonElement.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+  buttonElement.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
   });
 }
 
-export function toggleAnchorAxis(object,toggle){
-  cleanupTileAnchorLines()
-  if(toggle){
-    drawTileAnchorLines(object)
+export function toggleAnchorAxis(object, toggle) {
+  cleanupTileAnchorLines();
+  if (toggle) {
+    drawTileAnchorLines(object);
   }
 }
 
 // dont know yet if should be moved in SortableSprite , keeping it external for now
 // used to debug visually a point on the tile selection box's footprint but its bugged, should fix later
-// IMPROVEMENT: draw the gizmo in a way to indicate which axis a tile is facing 
+// IMPROVEMENT: draw the gizmo in a way to indicate which axis a tile is facing
 // other improvement : instead of a drop down, two floating arrow buttons setting the facing that appear when the tile is controlled
 function drawTileAnchorLines(objectAnchor) {
   // Removes existing lines
   cleanupTileAnchorLines();
-  
+
   // Create container for the lines
   const xAxisLine = new PIXI.Graphics();
-  xAxisLine.name = 'anchorLine';
-  xAxisLine.lineStyle(2, 0x0000FF, 0.75); // line width, color, opacity
+  xAxisLine.name = "anchorLine";
+  xAxisLine.lineStyle(2, 0x0000ff, 0.75); // line width, color, opacity
 
   const yAxisLine = new PIXI.Graphics();
-  yAxisLine.name = 'anchorLine';
-  yAxisLine.lineStyle(2, 0xFF0000, 0.75); // line width, color, opacity
+  yAxisLine.name = "anchorLine";
+  yAxisLine.lineStyle(2, 0xff0000, 0.75); // line width, color, opacity
 
   const zAxisLine = new PIXI.Graphics();
-  zAxisLine.name = 'anchorLine';
-  zAxisLine.lineStyle(2, 0x00FF00, 0.75); // line width, color, opacity
+  zAxisLine.name = "anchorLine";
+  zAxisLine.lineStyle(2, 0x00ff00, 0.75); // line width, color, opacity
 
   // Calculate diagonal length
   const canvasWidth = canvas.dimensions.width;
   const canvasHeight = canvas.dimensions.height;
-  const diagonalLength = Math.sqrt(Math.pow(canvasWidth, 2) + Math.pow(canvasHeight, 2));
+  const diagonalLength = Math.sqrt(
+    Math.pow(canvasWidth, 2) + Math.pow(canvasHeight, 2),
+  );
 
   //horizontal lines
   xAxisLine.moveTo(objectAnchor.x, objectAnchor.y - diagonalLength / 2);
   xAxisLine.lineTo(objectAnchor.x, objectAnchor.y + diagonalLength / 2);
   yAxisLine.moveTo(objectAnchor.x - diagonalLength / 2, objectAnchor.y);
   yAxisLine.lineTo(objectAnchor.x + diagonalLength / 2, objectAnchor.y);
-  
+
   // vertical line
   zAxisLine.moveTo(objectAnchor.x, objectAnchor.y);
-  zAxisLine.lineTo(objectAnchor.x + diagonalLength / 2, objectAnchor.y - diagonalLength / 2);
+  zAxisLine.lineTo(
+    objectAnchor.x + diagonalLength / 2,
+    objectAnchor.y - diagonalLength / 2,
+  );
 
   // Add on canvas
   canvas.stage.addChild(xAxisLine);
   canvas.stage.addChild(yAxisLine);
   canvas.stage.addChild(zAxisLine);
-};
+}
 
 function cleanupTileAnchorLines() {
-  const existingLines = canvas.stage.children.filter(child => child.name === 'anchorLine');
-  existingLines.forEach(line => line.destroy());
-};
+  const existingLines = canvas.stage.children.filter(
+    (child) => child.name === "anchorLine",
+  );
+  existingLines.forEach((line) => line.destroy());
+}

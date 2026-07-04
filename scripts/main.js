@@ -20,11 +20,6 @@ import {
   closeConfig
  } from './tile.js';
 
- import {
-   createRegionIsometricTab,
-   initRegionForm,
- } from './regions.js'
-
 import { 
   handleRenderTokenHUD,
   handleRenderTileHUD,
@@ -274,10 +269,6 @@ Hooks.on("refreshTile", handleRefreshTile);
 Hooks.on("getSceneControlButtons", controls => {
   addDepthSortControls(controls);
 });
-
-//region config 
-Hooks.on("ready", createRegionIsometricTab);
-Hooks.on("renderRegionConfig", initRegionForm);
 
 //autosorting
 Hooks.on("init", () => {
