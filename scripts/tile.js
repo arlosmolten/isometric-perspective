@@ -44,7 +44,8 @@ export async function createTileIsometricTab(app, html, data) {
 
   patchConfig(TileConfig, tileTabConfig, wallFacingConfig);
 
-  // console.log("TileConfig" , FoundryTileConfig)
+  // set the depht sort settings to false by default on game ready ( prevent the toggled state to remain active on reload )
+  game.settings.set(isometricModuleConfig.MODULE_ID,"depthSortActiveFlag",false);
 }
 
 export function initTileForm(app, html, context, options) {
@@ -203,11 +204,14 @@ export function handleCreateTile(tileDocument) {
     applyIsometricTransformation(tile, isSceneIsometric),
   );
 
-  const isDepthSortToggled = game.settings.get(
+  const isDepthSortEnabled = game.settings.get(
     isometricModuleConfig.MODULE_ID,
     "depthSortActiveFlag",
   );
-  if (isDepthSortToggled) {
+
+  console.log("isDepthSortEnabled", isDepthSortEnabled);
+
+  if (isDepthSortEnabled) {
     tile.document.setFlag(
       isometricModuleConfig.MODULE_ID,
       "isoTileAutoSortingEnabled",
@@ -290,12 +294,10 @@ export function addDepthSortControls(controls) {
 }
 
 export function createTileIsometricPaletteConfig(app, html, data){
-  // const tilePalette = html.querySelector("#tile-palette");
   
-  const videoSection = html.querySelector('details[data-sync="details-video"]');
-
   const doc = app.document;
   const scope = isometricModuleConfig.MODULE_ID;
+  const videoSection = html.querySelector('details[data-sync="details-video"]');
   
   // offsetX input config
   const offsetXInputLabel = document.createElement("label");
@@ -306,6 +308,7 @@ export function createTileIsometricPaletteConfig(app, html, data){
     value:doc.getFlag(scope, "offsetY") ?? 0 
   });
 
+  // offsetY input config
   const offsetYInputLabel = document.createElement("label");
   offsetYInputLabel.innerHTML = '<label>Y</label>'
 
@@ -314,6 +317,7 @@ export function createTileIsometricPaletteConfig(app, html, data){
     value:doc.getFlag(scope, "offsetX") ?? 0 
   });
 
+  // tileFacing input config
   const tileFacings = TILE_FACINGS.map((obj) => obj.facing);
   const tileFacingsOptions = [];
   tileFacings.map( facing => {
@@ -330,6 +334,7 @@ export function createTileIsometricPaletteConfig(app, html, data){
     blank: ""
   });
 
+  // form groups
   const offsetGroup = foundry.applications.fields.createFormGroup({ 
     input:[offsetYInputLabel,offsetXInput,offsetXInputLabel,offsetYInput,], 
     label: "isometric-perspective.tile_artOffset_name", 
