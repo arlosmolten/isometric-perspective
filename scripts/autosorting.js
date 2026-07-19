@@ -69,17 +69,6 @@ export function isoDepthSortTokenMixin(Base) {
         applyDepthSort();
       }
     }
-
-    // keeping for now
-    // _refreshPosition(){
-    //   super._refreshPosition();
-    //   // applyDepthSort();
-    //  }
-
-    // _onUpdate(changed, options, userId) {
-    //   super._onUpdate(changed, options, userId);
-    //   // applyDepthSort();
-    // }
   };
 }
 
