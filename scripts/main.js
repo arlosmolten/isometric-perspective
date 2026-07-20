@@ -284,15 +284,18 @@ Hooks.once("init", function () {
   else isometricModuleConfig.WORLD_ISO_FLAG = false;
 
   isometricModuleConfig.CONST = parseInt(game.version.split(".")[0]); // Extrai a versão principal
-  registerRuler();
+  // registerRuler(); // testing registering the ruler in the setup hook instead , keeping this in case if a revert is needed
 });
 
 //HOOKS REGISTRATION
 
+// Ruler
+Hooks.on("setup",registerRuler);
 // WelcomeScreen
 Hooks.once("ready", addWelcomeScreen);
 //scene configuration
 Hooks.on("ready", createSceneIsometricTab);
+Hooks.on("ready", applyDepthSort);
 
 //scene management
 Hooks.on("renderSceneConfig", initSceneForm);
@@ -334,8 +337,6 @@ Hooks.on("getSceneControlButtons", (controls) => {
 Hooks.on("init", () => {
   CONFIG.Token.objectClass = isoDepthSortTokenMixin(CONFIG.Token.objectClass);
   CONFIG.Tile.objectClass = isoDepthSortTileMixin(CONFIG.Tile.objectClass);
-  // console.log("CONFIG.Tile", CONFIG)
-  // CONFIG.TileConfig.objectClass = isoTilePaletteMixin(CONFIG.TileConfig.objectClass);
 });
 
 /**

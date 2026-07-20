@@ -209,8 +209,6 @@ export function handleCreateTile(tileDocument) {
     "depthSortActiveFlag",
   );
 
-  console.log("isDepthSortEnabled", isDepthSortEnabled);
-
   if (isDepthSortEnabled) {
     tile.document.setFlag(
       isometricModuleConfig.MODULE_ID,
@@ -334,10 +332,21 @@ export function createTileIsometricPaletteConfig(app, html, data){
     blank: ""
   });
 
+  const enableDepthSortCheckbox = foundry.applications.fields.createCheckboxInput({
+    name: `flags.${scope}.isoTileAutoSortingEnabled`,
+    value: doc.getFlag(scope, "isoTileAutoSortingEnabled" ?? false),
+  });
+
   // form groups
   const offsetGroup = foundry.applications.fields.createFormGroup({ 
     input:[offsetYInputLabel,offsetXInput,offsetXInputLabel,offsetYInput,], 
     label: "isometric-perspective.tile_artOffset_name", 
+    localize: true
+  });
+
+  const depthSortGroup = foundry.applications.fields.createFormGroup({ 
+    input:[enableDepthSortCheckbox], 
+    label: "isometric-perspective.tile_enableIsometric_sorting_name", 
     localize: true
   });
 
@@ -348,6 +357,7 @@ export function createTileIsometricPaletteConfig(app, html, data){
   });
 
   videoSection.insertAdjacentElement("afterend", facingGroup);
+  videoSection.insertAdjacentElement("afterend", depthSortGroup);
   videoSection.insertAdjacentElement("afterend", offsetGroup);
   
 }
