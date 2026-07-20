@@ -185,10 +185,17 @@ export class SortableSprite {
       this.name = placeable.object.document.name
         ? placeable.object.document.name
         : "no name";
-      this.x = placeable.object.document.x;
-      this.y = placeable.object.document.y;
+        
       this.width = placeable.object.mesh.width ?? 0;
       this.height = placeable.object.mesh.height ?? 0;
+      this.x = placeable.object.document.x;
+      this.y = placeable.object.document.y;
+
+      // if (game.release.generation < 14) {
+      //   this.x = this.x - (this.height * 0.5);
+      //   this.y = this.y - (this.width * 0.5);
+      // }
+
       this.isoDepth = (this.y - this.x) * 0.5;
       this.facing =
         placeable.object.document.getFlag(
