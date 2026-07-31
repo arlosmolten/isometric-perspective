@@ -301,8 +301,8 @@ export function createTileIsometricPaletteConfig(app, html, data){
   const offsetXInputLabel = document.createElement("label");
   offsetXInputLabel.innerHTML = '<label>X</label>'
   
-  const offsetXInput = foundry.applications.fields.createNumberInput({
-    name: `flags.${scope}."offsetY"`, 
+  const offsetYInput = foundry.applications.fields.createNumberInput({
+    name: `flags.${scope}.offsetY`, 
     value:doc.getFlag(scope, "offsetY") ?? 0 
   });
 
@@ -310,10 +310,12 @@ export function createTileIsometricPaletteConfig(app, html, data){
   const offsetYInputLabel = document.createElement("label");
   offsetYInputLabel.innerHTML = '<label>Y</label>'
 
-  const offsetYInput = foundry.applications.fields.createNumberInput({
-    name:`flags.${scope}.offsetX`, 
+  const offsetXInput = foundry.applications.fields.createNumberInput({
+    name:`flags.${scope}.offsetX`,
     value:doc.getFlag(scope, "offsetX") ?? 0 
   });
+
+  console.log("offsetY", doc.getFlag(scope, "offsetY"))
 
   // tileFacing input config
   const tileFacings = TILE_FACINGS.map((obj) => obj.facing);
@@ -357,7 +359,7 @@ export function createTileIsometricPaletteConfig(app, html, data){
   });
 
   videoSection.insertAdjacentElement("afterend", facingGroup);
-  videoSection.insertAdjacentElement("afterend", depthSortGroup);
   videoSection.insertAdjacentElement("afterend", offsetGroup);
+  videoSection.insertAdjacentElement("afterend", depthSortGroup);
   
 }
