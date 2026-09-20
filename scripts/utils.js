@@ -168,7 +168,6 @@ export function sortPlaceableByPosition() {
 // isTile() return true if its a tile, a bit shorter than doing a full comparaison everytime its needed.
 // isToken() return true if its a token, a bit shorter than doing a full comparaison everytime its needed.
 // isFlipped() return true if the tile is either flipped via the tileFlipped flag or if fast flip is installed , based on tileMirrorHorizontal in that case.
-// isRegionValid() because javascript will consider that null === null or undefined === undefined or "" === "" is as valid as if two region id match ...
 // isNotNull() in case an invalid object is passed in the constructor, dosent break but marked as null , used when during the token sort correction when traversing the
 // layerToSort if the token is at index 0 or at index layerToSort.length , again, used to make code a bit more readable and to rely less on "===" checks clutters everywhere.
 // getDebugData([args,...]) display SortableSprite props in a nice table for debugging purpose
@@ -212,14 +211,7 @@ export class SortableSprite {
             "tileFlipped",
           )
         : null;
-      this.occupiedRegion = placeable.object.document.getFlag(
-        isometricModuleConfig.MODULE_ID,
-        "currentRegion",
-      );
-      this.linkedRegion = placeable.object.document.getFlag(
-        isometricModuleConfig.MODULE_ID,
-        "regionLink",
-      );
+
       this.tileMirrorHorizontal = null;
       this.preview = placeable.object.previewType;
       if (game.modules.get(fastFlipCompatiility.MODULE_ID)?.active) {
@@ -273,29 +265,6 @@ export class SortableSprite {
       result = true;
     }
     return result;
-  }
-
-  isRegionValid() {
-    let regionIsValid = true;
-    if (this.isToken()) {
-      if (
-        this.occupiedRegion === null ||
-        this.occupiedRegion === undefined ||
-        this.occupiedRegion === ""
-      ) {
-        regionIsValid = false;
-      }
-    }
-    if (this.isTile()) {
-      if (
-        this.linkedRegion === null ||
-        this.linkedRegion === undefined ||
-        this.linkedRegion === ""
-      ) {
-        regionIsValid = false;
-      }
-    }
-    return regionIsValid;
   }
 
   isWithinYBounds(sibling) {
@@ -367,26 +336,6 @@ function switchPlaceablePositions(filteredLayer, sortScore) {
   filteredLayer[sortScore.spriteIndex] = sibling;
   filteredLayer[sortScore.siblingIndex] = sprite;
 }
-
-// no longer used but kept in case region sort become necessary again
-// function isRegionMatching(sprite, sibling) {
-//   if (isDifferentId(sprite, sibling)) {
-//     // never compare an object against itself
-//     if (
-//       (isRegionValid(sprite) && isRegionValid(sibling)) ||
-//       (isRegionValid(sibling) && isRegionValid(sprite))
-//     ) {
-//       if (
-//         sprite.occupiedRegion === sibling.linkedRegion ||
-//         sibling.occupiedRegion === sprite.linkedRegion
-//       ) {
-//         return true;
-//       }
-//     } else {
-//       return false;
-//     }
-//   }
-// }
 
 // could be moved in SortableSprite if needed
 function isDifferentId(spriteA, spriteB) {

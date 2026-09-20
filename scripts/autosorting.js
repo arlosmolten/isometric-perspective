@@ -47,23 +47,7 @@ export function isoDepthSortTokenMixin(Base) {
   return class DepthSortPlaceable extends Base {
     _refreshState() {
       super._refreshState();
-      const currentRegions = Array.from(this.document.regions).map(
-        (region) => region,
-      );
-      const currentRegion = currentRegions[0]?._id;
-      if (currentRegion) {
-        this.document.setFlag(
-          isometricModuleConfig.MODULE_ID,
-          "currentRegion",
-          currentRegion,
-        );
-      } else {
-        this.document.setFlag(
-          isometricModuleConfig.MODULE_ID,
-          "currentRegion",
-          null,
-        );
-      }
+      applyDepthSort();
     }
 
     _onAnimationUpdate(changed, context) {
@@ -72,6 +56,7 @@ export function isoDepthSortTokenMixin(Base) {
         applyDepthSort();
       }
     }
+
   };
 }
 
