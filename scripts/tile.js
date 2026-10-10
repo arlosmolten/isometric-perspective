@@ -10,6 +10,8 @@ import {
   patchConfig,
   createAdjustableButton,
   toggleAnchorAxis,
+  alignWallTileBottomAnchor,
+  isoToCartesian
 } from "./utils.js";
 
 export async function createTileIsometricTab(app, html, data) {
@@ -200,13 +202,14 @@ export function handleCreateTile(tileDocument) {
     isometricModuleConfig.MODULE_ID,
     "isometricEnabled",
   );
-  requestAnimationFrame(() =>
-    applyIsometricTransformation(tile, isSceneIsometric),
-  );
 
   const isDepthSortEnabled = game.settings.get(
     isometricModuleConfig.MODULE_ID,
     "depthSortActiveFlag",
+  );
+
+  requestAnimationFrame(() =>
+    applyIsometricTransformation(tile, isSceneIsometric),
   );
 
   if (isDepthSortEnabled) {
@@ -215,12 +218,39 @@ export function handleCreateTile(tileDocument) {
       "isoTileAutoSortingEnabled",
       true,
     );
+
+  requestAnimationFrame(async () => {
+    const geometry = getTileGeometry(tile.document);
+    const anchorPoint = geometry.anchorPoint;
+
+    // the point sorting judges this tile from:
+    // the anchor on v14, the document's stored corner on v13
+    const targetPoint = game.release.generation < 14
+      ? { x: tile.document.x, y: tile.document.y }
+      : anchorPoint;
+
+    const autoOffset = alignWallTileBottomAnchor(tile, targetPoint, { x: 0, y: 0 });
+
+    // the function measured its answer starting from the target point,
+    // but the transform adds the offset flags starting from the anchor
+    // point — so count the same distance over from the anchor instead
+    const offsetFromAnchor = {
+      x: autoOffset.offsetX + (targetPoint.x - anchorPoint.x),
+      y: autoOffset.offsetY + (targetPoint.y - anchorPoint.y)
+    };
+
+    const offsetToSave = isoToCartesian(offsetFromAnchor.x, offsetFromAnchor.y);
+
+    await tile.document.update({
+      "flags.isometric-perspective.offsetX": offsetToSave.x,
+      "flags.isometric-perspective.offsetY": offsetToSave.y,
+      "flags.isometric-perspective.isoTileAutoOffsetEnabled": true,
+    });
+  });
+  
+
   } else {
-    tile.document.setFlag(
-      isometricModuleConfig.MODULE_ID,
-      "isoTileAutoSortingEnabled",
-      false,
-    );
+    tile.document.setFlag( isometricModuleConfig.MODULE_ID, "isoTileAutoSortingEnabled",false,);
   }
 }
 
@@ -276,7 +306,7 @@ export function handleRefreshTile(tile) {
 export function addDepthSortControls(controls) {
   controls.tiles.tools.toggleDephtSort = {
     name: "toggleDephtSort",
-    title: "Toggle depth sort",
+    title: "Toggle depth sort and auto offset for wall tiles",
     icon: "fa-solid fa-sort",
     order: Object.keys(controls.tiles.tools).length,
     toggle: true,
@@ -314,8 +344,6 @@ export function createTileIsometricPaletteConfig(app, html, data){
     name:`flags.${scope}.offsetX`,
     value:doc.getFlag(scope, "offsetX") ?? 0 
   });
-
-  console.log("offsetY", doc.getFlag(scope, "offsetY"))
 
   // tileFacing input config
   const tileFacings = TILE_FACINGS.map((obj) => obj.facing);
