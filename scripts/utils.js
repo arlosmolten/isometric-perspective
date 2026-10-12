@@ -191,11 +191,6 @@ export class SortableSprite {
       this.x = placeable.object.document.x;
       this.y = placeable.object.document.y;
 
-      // if (game.release.generation < 14) {
-      //   this.x = this.x - (this.height * 0.5);
-      //   this.y = this.y - (this.width * 0.5);
-      // }
-
       this.isoDepth = (this.y - this.x) * 0.5;
       this.facing =
         placeable.object.document.getFlag(
@@ -593,22 +588,3 @@ export function alignWallTileBottomAnchor(object, anchorPoint, isoOffsets) {
   };
 
 }
-
-
-// /// ONLY USED FOR TESTING' REMOVE WHEN NO LONGER NEEDED!!!
-
-
-// window.getTileGeometry = getTileGeometry;
-// window.alignWallTileBottomAnchor = alignWallTileBottomAnchor;
-
-
-// /*//
-
-// const tile = canvas.tiles.controlled[0];
-// const anchorPoint = getTileGeometry(tile.document).anchorPoint;
-// alignWallTileBottomAnchor(tile, anchorPoint, { x: 0, y: 0 });
-
-// const tile = canvas.tiles.controlled[0];
-// alignWallTileBottomAnchor(tile, { x: tile.document.x, y: tile.document.y }, { x: 0, y: 0 });
-
-// */

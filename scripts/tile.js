@@ -11,6 +11,7 @@ import {
   createAdjustableButton,
   toggleAnchorAxis,
   alignWallTileBottomAnchor,
+  getTileGeometry,
   isoToCartesian
 } from "./utils.js";
 
@@ -220,8 +221,8 @@ export function handleCreateTile(tileDocument) {
     );
 
   requestAnimationFrame(async () => {
-    const geometry = getTileGeometry(tile.document);
-    const anchorPoint = geometry.anchorPoint;
+    
+    const anchorPoint = getTileGeometry(tile.document).anchorPoint;
 
     // the point sorting judges this tile from:
     // the anchor on v14, the document's stored corner on v13
