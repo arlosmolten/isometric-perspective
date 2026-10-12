@@ -1,4 +1,7 @@
-import { isometricModuleConfig } from "./consts.js";
+import { 
+  isometricModuleConfig,
+  OCCLUSION_ELEVATION_OFFSET
+} from "./consts.js";
 import {
   sortPlaceableByPosition,
   // debugCanvasLayer,
@@ -9,17 +12,18 @@ export function isoDepthSortTileMixin(Base) {
   return class DepthSortTile extends Base {
     _refreshState() {
       super._refreshState();
-      const isTileSortable =
-        this.document.flags[isometricModuleConfig.MODULE_ID]
-          ?.isoTileAutoSortingEnabled || false;
+      if (!this.mesh) return;      
+      const isTileSortable = this.document.flags[isometricModuleConfig.MODULE_ID]?.isoTileAutoSortingEnabled || false;
+
       if (isTileSortable) {
-        this.mesh.sortLayer =
-          foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
-          applyDepthSort();
+        applyDepthSort();
+        this.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
+        // this.mesh.elevation = this.mesh.occlusionMode !== 0? this.document.elevation + OCCLUSION_ELEVATION_OFFSET: this.document.elevation;
+
       } else {
         if(this.mesh){
-          this.mesh.sortLayer =
-            foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES;
+          this.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES;
+          // this.mesh.elevation = this.document.elevation;
         }
       }
     }
@@ -30,13 +34,6 @@ export function isoDepthSortTileMixin(Base) {
         "isoTileAutoSortingEnabled",
       );
       if (isTileSortable) {
-        // if(this.controlled){ // show gizmo on selected WIP
-        //   toggleAnchorAxis(this.document, true);
-        // }
-
-        // if(!this.controlled){ // hide gizmo on unselected WIP
-        //   toggleAnchorAxis(this.document, false);
-        // }
         applyDepthSort();
       }
     }
@@ -67,7 +64,35 @@ export function applyDepthSort() {
     const currentSprite = sortList[i].object;
     currentSprite.mesh.sort = i; // if this is commented, tokens render above all tiles
     currentSprite.document.sort = i; // if this is commented, tokens render above SW tiles but under se tiles
+    if (currentSprite.document.documentName === "Tile" && currentSprite.mesh){
+      // this tricks the tile mesh to act as if it was a bit higher then the token and trigger occlusion from wrapTileTestOcclusion().
+      currentSprite.mesh.elevation = currentSprite.mesh.occlusionMode !== 0? currentSprite.document.elevation + OCCLUSION_ELEVATION_OFFSET: currentSprite.document.elevation;
+    }
   }
 
   canvas.primary.sortDirty = true;
+}
+
+export function wrapTileTestOcclusion() {
+  const PrimarySpriteMesh = foundry.canvas.primary.PrimarySpriteMesh;
+  const originalTestOcclusion = PrimarySpriteMesh.prototype.testOcclusion;
+
+PrimarySpriteMesh.prototype.testOcclusion = function (token, options) {
+  const tileDocument = this.object?.document;
+  const isSortableTile =
+    tileDocument instanceof CONFIG.Tile.documentClass &&
+    this.occlusionMode !== 0 &&
+    tileDocument.getFlag(
+      isometricModuleConfig.MODULE_ID,
+      "isoTileAutoSortingEnabled",
+    );
+
+    if (!isSortableTile) {
+      return originalTestOcclusion.call(this, token, options);
+    }
+    // add extra trigger conditions to tiles with occlusion modes when a token is currently selected is sorted "behind the tile"
+    if (!token.controlled || !token.mesh) return false;
+    if (token.mesh.sort >= this.sort) return false;
+    return originalTestOcclusion.call(this, token, options);
+  };
 }

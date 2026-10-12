@@ -185,6 +185,8 @@ export const TILE_FACINGS = [
 
 export const DEFAULT_TILE_FACING = 'south west'
 
+export const OCCLUSION_ELEVATION_OFFSET = 1;
+
 /*
 // values in degrees
 export let ISOMETRIC_CONST = {
