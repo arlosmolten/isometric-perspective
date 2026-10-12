@@ -28,7 +28,7 @@
     }
   ],
   "compatibility": {
-    "minimum": "14",
+    "minimum": "13",
     "verified": "14"
   },
   "url": "https://github.com/arlosmolten/isometric-perspective",

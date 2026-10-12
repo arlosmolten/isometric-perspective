@@ -30,6 +30,7 @@ import {
   isoDepthSortTileMixin,
   isoDepthSortTokenMixin,
   applyDepthSort,
+  wrapTileTestOcclusion,
 } from "./autosorting.js";
 
 import {
@@ -337,6 +338,7 @@ Hooks.on("getSceneControlButtons", (controls) => {
 Hooks.on("init", () => {
   CONFIG.Token.objectClass = isoDepthSortTokenMixin(CONFIG.Token.objectClass);
   CONFIG.Tile.objectClass = isoDepthSortTileMixin(CONFIG.Tile.objectClass);
+  wrapTileTestOcclusion();
 });
 
 /**

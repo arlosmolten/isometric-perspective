@@ -3,6 +3,7 @@ import {
   fastFlipCompatiility,
   TILE_FACINGS,
   DEFAULT_TILE_FACING,
+  ISOMETRIC_CONST
 } from "./consts.js";
 // Função auxiliar para converter coordenadas isométricas para cartesianas
 export function isoToCartesian(isoX, isoY) {
@@ -189,11 +190,6 @@ export class SortableSprite {
       this.height = placeable.object.mesh.height ?? 0;
       this.x = placeable.object.document.x;
       this.y = placeable.object.document.y;
-
-      // if (game.release.generation < 14) {
-      //   this.x = this.x - (this.height * 0.5);
-      //   this.y = this.y - (this.width * 0.5);
-      // }
 
       this.isoDepth = (this.y - this.x) * 0.5;
       this.facing =
@@ -522,4 +518,73 @@ function cleanupTileAnchorLines() {
     (child) => child.name === "anchorLine",
   );
   existingLines.forEach((line) => line.destroy());
+}
+
+
+export function getTileGeometry(tileDocument) {
+  const width = tileDocument.width;
+  const height = tileDocument.height;
+
+  let anchorPoint; // the canvas point that document.x/y refers to
+  let anchor;      // anchor fractions, 0..1 (0.5/0.5 = middle)
+
+  if (tileDocument.shape) {
+    // v14: foundry added a shape property to the tileDocument model, if that property exist then the world at least exist on v14+
+    anchorPoint = { x: tileDocument.shape.x, y: tileDocument.shape.y };
+    anchor = { x: tileDocument.shape.anchorX ?? 0.5, y: tileDocument.shape.anchorY ?? 0.5 };
+  } else {
+    // v13: x/y is the top-left corner. The anchor point is that corner plus the anchor fraction of the tile's size.
+    anchor = { x: tileDocument.texture?.anchorX ?? 0.5, y: tileDocument.texture?.anchorY ?? 0.5 };
+    anchorPoint = { x: tileDocument.x + anchor.x * width, y: tileDocument.y + anchor.y * height };
+  }
+
+  const topLeft = { x: anchorPoint.x - anchor.x * width, y: anchorPoint.y - anchor.y * height };
+  const center  = { x: topLeft.x + width / 2, y: topLeft.y + height / 2 };
+  return { anchorPoint, anchor, width, height, topLeft, center, rotation: tileDocument.rotation ?? 0 };
+}
+
+// used to auto adjust a tile offset to its anchor point, this is very approximative
+export function alignWallTileBottomAnchor(object, anchorPoint, isoOffsets) {
+  
+  const texture = object.texture;
+  const mesh = object.mesh;
+  const slopeDrop = texture.width / ISOMETRIC_CONST.ratio;
+
+  // find the approximative bottom middle point of a tile 
+  const basePointInImage = {
+    x: texture.width / 2,
+    y: texture.height - slopeDrop / 2
+  };
+
+  const basePointFromAnchor = new PIXI.Point(
+    basePointInImage.x - mesh.anchor.x * texture.width,
+    basePointInImage.y - mesh.anchor.y * texture.height
+  );
+
+  // weird PIXI magic happens here ... mostly used to avoid rewriting math functions again ( and apparently its faster! )
+  // see more at : https://pixijs.download/v7.x/docs/PIXI.Matrix.html#setTransform
+  const meshMatrix = new PIXI.Matrix();
+  meshMatrix.setTransform(
+    0, 0, 0, 0,
+    mesh.scale.x, mesh.scale.y,
+    mesh.rotation, mesh.skew.x, mesh.skew.y
+  );
+
+  // see more at : https://pixijs.download/v7.x/docs/PIXI.Matrix.html#apply
+  const baseOffsetFromMeshPosition = meshMatrix.apply(basePointFromAnchor);
+
+  object.mesh.position.set(
+    anchorPoint.x - baseOffsetFromMeshPosition.x,
+    anchorPoint.y - baseOffsetFromMeshPosition.y
+  );
+
+  // preview the changes but does not save them
+  object.mesh.position.x += isoOffsets.x;
+  object.mesh.position.y += isoOffsets.y;
+
+  return {
+    offsetX: isoOffsets.x - baseOffsetFromMeshPosition.x,
+    offsetY: isoOffsets.y - baseOffsetFromMeshPosition.y
+  };
+
 }

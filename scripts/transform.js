@@ -1,5 +1,8 @@
 import { isometricModuleConfig } from './consts.js';
-import { cartesianToIso } from './utils.js';
+import { 
+  cartesianToIso,
+  getTileGeometry
+} from './utils.js';
 import { ISOMETRIC_CONST } from './consts.js';
 
 
@@ -183,19 +186,10 @@ export function applyIsometricTransformation(object, isSceneIsometric) {
     // Defines the manual offset to center the tile
     let isoOffsets = cartesianToIso(offsetX, offsetY);
 
-    // Set tile's position
-    //v13 compatibility
-    if (game.release.generation < 14) {
-      object.mesh.position.set(
-        object.document.x + (scaleX / 2) + isoOffsets.x,
-        object.document.y + (scaleY / 2) + isoOffsets.y
-      );
-    } else {
-      object.mesh.position.set(
-        object.document.x + isoOffsets.x,
-        object.document.y + isoOffsets.y
-      );
-    }
+    // Set tile's position - with v13 compatibility
+    const geometry = getTileGeometry(object.document);
+    object.mesh.anchor.set(geometry.anchor.x, geometry.anchor.y);
+    object.mesh.position.set(geometry.anchorPoint.x + isoOffsets.x,geometry.anchorPoint.y + isoOffsets.y);
   }
 }
 
