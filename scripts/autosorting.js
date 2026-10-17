@@ -60,14 +60,19 @@ export function isoDepthSortTokenMixin(Base) {
 export function applyDepthSort() {
   const sortList = sortPlaceableByPosition(); //.map(({sprite}) => sprite);
   sortList.reverse();
+
+  const anyTokenControlled = canvas.tokens.controlled.length > 0;
+
   for (let i = 0; i < sortList.length; i++) {
     const currentSprite = sortList[i].object;
     currentSprite.mesh.sort = i; // if this is commented, tokens render above all tiles
     currentSprite.document.sort = i; // if this is commented, tokens render above SW tiles but under se tiles
     if (currentSprite.document.documentName === "Tile" && currentSprite.mesh){
-      // this tricks the tile mesh to act as if it was a bit higher then the token and trigger occlusion from wrapTileTestOcclusion().
+      // this tricks the tile mesh to act as if it was a bit higher then the t
       currentSprite.mesh.elevation = currentSprite.mesh.occlusionMode !== 0? currentSprite.document.elevation + OCCLUSION_ELEVATION_OFFSET: currentSprite.document.elevation;
     }
+    // fix the texture elevation bump when a token is controlled , keeping tile sort order uniform so occlusion can trigger without causing visual glitches.
+    currentSprite.mesh.elevation = anyTokenControlled? currentSprite.document.elevation + OCCLUSION_ELEVATION_OFFSET: currentSprite.document.elevation;
   }
 
   canvas.primary.sortDirty = true;
@@ -77,9 +82,9 @@ export function wrapTileTestOcclusion() {
   const PrimarySpriteMesh = foundry.canvas.primary.PrimarySpriteMesh;
   const originalTestOcclusion = PrimarySpriteMesh.prototype.testOcclusion;
 
-PrimarySpriteMesh.prototype.testOcclusion = function (token, options) {
-  const tileDocument = this.object?.document;
-  const isSortableTile =
+  PrimarySpriteMesh.prototype.testOcclusion = function (token, options) {
+    const tileDocument = this.object?.document;
+    const isSortableTile =
     tileDocument instanceof CONFIG.Tile.documentClass &&
     this.occlusionMode !== 0 &&
     tileDocument.getFlag(

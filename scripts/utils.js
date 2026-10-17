@@ -139,7 +139,7 @@ export function sortPlaceableByPosition() {
   const filteredLayer = canvasLayer.filter((sprite) => {
     return sprite.sortLayer === placeableMeshLayer;
   }); // only need DepthSortPlaceables
-  let layerToSort = filteredLayer.map((item) => Object.assign({}, item)); //.reverse();
+  let layerToSort = filteredLayer.map((item) => Object.assign({}, item));
 
   layerToSort.sort((sprite, sibling) => {
     const currentSprite = new SortableSprite(sprite);
