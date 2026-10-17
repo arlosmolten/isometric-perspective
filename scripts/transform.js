@@ -216,38 +216,11 @@ export function applyBackgroundTransformation(scene, isSceneIsometric, shouldTra
       scale,
       scale * ISOMETRIC_CONST.ratio // Math.sqrt(3)
     );
-    let isoScene = null;
-    // Calculate scene dimensions and padding
-    if (game.release.generation < 14) {
-      isoScene = canvas.background; // for v13 and under
-    } else {
-      isoScene = canvas.scene; // for v14 and up
-    }
-    const padding = isoScene.padding;
-    const paddingX = isoScene.width * padding;
-    const paddingY = isoScene.height * padding;
-    // Account for background offset settings
-    const offsetX = isoScene.offsetX || 0; 
-    const offsetY = isoScene.offsetY || 0;
-    // Set position considering padding and offset
-    if (game.release.generation < 14) {
-      background.position.set(
-        (isoScene.dimensions.width / 2) + paddingX + offsetX,
-        (isoScene.dimensions.height / 2) + paddingY + offsetY
-      );
-    }
 
-    // Handle foreground if it exists
-    /*if (canvas.environment.primary.foreground) {
-      const foreground = canvas.environment.primary.foreground;
-      foreground.anchor.set(0.5, 0.5);
-      foreground.transform.scale.set(1, 1);
-      foreground.transform.setFromMatrix(canvas.stage.transform.worldTransform.invert());
-      foreground.position.set(
-        (s.width / 2) + paddingX + (s.foreground?.offsetX || 0),
-        (s.height / 2) + paddingY + (s.foreground?.offsetY || 0)
-      );
-    }*/
+    const dimensions = scene.dimensions;
+    const offsetX = scene.background.offsetX ?? 0;
+    const offsetY = scene.background.offsetY ?? 0;
+    background.position.set((dimensions.width / 2) + offsetX,(dimensions.height / 2) + offsetY);
 
   } else {
     // Reset transformations
@@ -257,8 +230,6 @@ export function applyBackgroundTransformation(scene, isSceneIsometric, shouldTra
     if (isometricModuleConfig.DEBUG_PRINT) console.log("applyBackgroundTransformation RESET")
   }
 }
-
-
 
 // ----------------- Elevation -----------------
 
