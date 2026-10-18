@@ -12,27 +12,22 @@ export function isoDepthSortTileMixin(Base) {
   return class DepthSortTile extends Base {
     _refreshState() {
       super._refreshState();
-      if (!this.mesh) return;      
+      if (!this.mesh) return;
       const isTileSortable = this.document.flags[isometricModuleConfig.MODULE_ID]?.isoTileAutoSortingEnabled || false;
 
       if (isTileSortable) {
         applyDepthSort();
         this.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
-        // this.mesh.elevation = this.mesh.occlusionMode !== 0? this.document.elevation + OCCLUSION_ELEVATION_OFFSET: this.document.elevation;
-
       } else {
         if(this.mesh){
           this.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES;
-          // this.mesh.elevation = this.document.elevation;
         }
       }
     }
     _onUpdate(changed, options, userId) {
       super._onUpdate(changed, options, userId);
-      const isTileSortable = this.document.getFlag(
-        isometricModuleConfig.MODULE_ID,
-        "isoTileAutoSortingEnabled",
-      );
+      if (!this.mesh) return;
+      const isTileSortable = this.document.getFlag(isometricModuleConfig.MODULE_ID,"isoTileAutoSortingEnabled",);
       if (isTileSortable) {
         applyDepthSort();
       }
@@ -44,11 +39,13 @@ export function isoDepthSortTokenMixin(Base) {
   return class DepthSortPlaceable extends Base {
     _refreshState() {
       super._refreshState();
+      if (!this.mesh) return;
       applyDepthSort();
     }
 
     _onAnimationUpdate(changed, context) {
       super._onAnimationUpdate(changed, context);
+      if (!this.mesh) return;
       if (changed.x || changed.y) {
         applyDepthSort();
       }
@@ -58,13 +55,16 @@ export function isoDepthSortTokenMixin(Base) {
 }
 
 export function applyDepthSort() {
-  const sortList = sortPlaceableByPosition(); //.map(({sprite}) => sprite);
+  const sortList = sortPlaceableByPosition();
   sortList.reverse();
 
   const anyTokenControlled = canvas.tokens.controlled.length > 0;
 
+  // console.log("sortList",sortList)
+
   for (let i = 0; i < sortList.length; i++) {
     const currentSprite = sortList[i].object;
+    // console.log(currentSprite[i])
     currentSprite.mesh.sort = i; // if this is commented, tokens render above all tiles
     currentSprite.document.sort = i; // if this is commented, tokens render above SW tiles but under se tiles
     if (currentSprite.document.documentName === "Tile" && currentSprite.mesh){
