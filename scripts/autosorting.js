@@ -1,10 +1,15 @@
 import { 
   isometricModuleConfig,
-  OCCLUSION_ELEVATION_OFFSET
+  OCCLUSION_ELEVATION_OFFSET,
+  DEFAULT_TILE_FACING,
+  fastFlipCompatiility
 } from "./consts.js";
 import {
-  sortPlaceableByPosition,
   toggleAnchorAxis,
+  getWallDimensions,
+  getSpriteAnchorPoint,
+  getPlaceableGeometry, // used later in depth sort
+  renderPlaceableGeometry,
 } from "./utils.js";
 import { applyIsometricTransformation } from "./transform.js";
 
@@ -88,6 +93,33 @@ export function applyDepthSort() {
   canvas.primary.sortDirty = true;
 }
 
+// filter the sort layer into a new array of sortables, copy that array , sort the copy and return the result.
+export function sortPlaceableByPosition() {
+  const placeableMeshLayer =
+    foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
+  const canvasLayer = canvas.primary.children;
+
+  const filteredLayer = canvasLayer.filter((sprite) => {
+    return sprite.sortLayer === placeableMeshLayer;
+  }); // only need DepthSortPlaceables
+  
+  let layerToSort = filteredLayer.map((sprite) => Object.assign({}, sprite));
+
+  layerToSort.sort((sprite, sibling) => {
+    const currentSprite = new SortableSprite(sprite);
+    const currentSibling = new SortableSprite(sibling);
+    return currentSprite.sortByDepth(currentSibling);
+  });
+
+  layerToSort.sort((sprite, sibling) => {
+    const currentSprite = new SortableSprite(sprite);
+    const currentSibling = new SortableSprite(sibling);
+    return currentSprite.getSortByFacing(currentSibling);
+  });
+  
+  return layerToSort;
+}
+
 export function wrapTileTestOcclusion() {
   const PrimarySpriteMesh = foundry.canvas.primary.PrimarySpriteMesh;
   const originalTestOcclusion = PrimarySpriteMesh.prototype.testOcclusion;
@@ -110,4 +142,170 @@ export function wrapTileTestOcclusion() {
     if (token.mesh.sort >= this.sort) return false;
     return originalTestOcclusion.call(this, token, options);
   };
+}
+
+// SortableSprite is a data class with some utility methods to avoid long chains of sprite.object.document.someValue in the code and overall make the
+// sorting code a bit more readable. Also help isolate cases and avoid endless nesting comparaison, the utility methods always check for validiy as well.
+// isFacing() if its a tile, return the right facing state, taking in account if its flipped for SW and SE facings.
+// isTile() return true if its a tile, a bit shorter than doing a full comparaison everytime its needed.
+// isToken() return true if its a token, a bit shorter than doing a full comparaison everytime its needed.
+// isFlipped() return true if the tile is either flipped via the tileFlipped flag or if fast flip is installed , based on tileMirrorHorizontal in that case.
+// isNotNull() in case an invalid object is passed in the constructor, dosent break but marked as null , used when during the token sort correction when traversing the
+// layerToSort if the token is at index 0 or at index layerToSort.length , again, used to make code a bit more readable and to rely less on "===" checks clutters everywhere.
+// getDebugData([args,...]) display SortableSprite props in a nice table for debugging purpose
+// getSortByFacing(sibling) take another adjacent SortableSprite and compare their x , y or iso depth based on facing rules and return a positive or negative value to determine sort order:
+// a negative value indicate that the sibling should be sorted below
+// a positive value indicate that the sibling should be sorted above
+// zero or NaN indicate a tie , no changes need to happen.
+//
+export class SortableSprite {
+  constructor(placeable) {
+    if (placeable) {
+      this.mesh = placeable.object.mesh;
+      this.id = placeable.object.document.id;
+      this.type = placeable.object.document.documentName;
+      this.name = placeable.object.document.name
+        ? placeable.object.document.name
+        : "no name";
+
+      this.width = placeable.object.mesh.width ?? 0;
+      this.height = placeable.object.mesh.height ?? 0;
+      this.x = placeable.object.document.x;
+      this.y = placeable.object.document.y;
+
+      this.isoDepth = (this.y - this.x) * 0.5;
+      this.facingConfig =
+        placeable.object.document.getFlag(
+          isometricModuleConfig.MODULE_ID,
+          "tileFacing",
+        ) ?? DEFAULT_TILE_FACING;
+      this.sort = placeable.object.document.sort;
+
+      this.preview = placeable.object.previewType;
+      if (game.modules.get(fastFlipCompatiility.MODULE_ID)?.active) {
+        this.tileMirrorHorizontal = placeable.object.document.getFlag(
+          fastFlipCompatiility.MODULE_ID,
+          fastFlipCompatiility.TILE_MIRROR_HORIZONTAL,
+        );
+      }
+      this.geometry = getSpriteAnchorPoint(this.mesh);
+      if(this.type === "Tile"){
+        this.geometry = getWallDimensions(this.mesh,this.isFacing());
+      }
+
+    } else {
+      this.isNull = true;
+    }
+  }
+  // status checks
+  isFacing() {
+    let currentFacing = null;
+    if (this.type !== "Tile") return null;
+    switch (this.facingConfig) {
+      case "south west":
+        currentFacing = this.isFlipped() ? "south east" : "south west";
+        break;
+      case "south east":
+        currentFacing = this.isFlipped() ? "south west" : "south east";
+        break;
+      case "south":
+        currentFacing = "south";
+        break;
+      case "side":
+        currentFacing = "side";
+        break;
+      default:
+        currentFacing = null;
+    }
+    return currentFacing;
+  }
+
+  isTile() {
+    return this.type === "Tile";
+  }
+  isToken() {
+    return this.type === "Token";
+  }
+  isNotNull() {
+    return !this.isNull;
+  }
+  isPreview() {
+    return this.preview !== null;
+  }
+
+  isFlipped() {
+    let result = false;
+    if (this.mesh) {
+      const scaleFlipped = this.mesh.scale.x < 0;
+      const textureFlipped = this.mesh.texture.rotate >= 8;
+      if (scaleFlipped !== textureFlipped) {
+        result = true;
+      }
+    }
+    return result;
+  }
+
+  isWithinYBounds(sibling) {
+    
+    const boundaryOffset = this.geometry.depth;
+    const isWithinYBounds =
+      sibling.geometry.y >= this.geometry.anchorPoint.y - boundaryOffset &&
+      sibling.geometry.y <= this.geometry.anchorPoint.y + boundaryOffset;
+    return isWithinYBounds;
+  }
+  isWithinXBounds(sibling) {
+    
+    const boundaryOffset = this.geometry.depth;
+    const isWithinXBounds =
+      sibling.geometry.x >= this.geometry.anchorPoint.x - boundaryOffset &&
+      sibling.geometry.x <= this.geometry.anchorPoint.x + boundaryOffset;
+    return isWithinXBounds;
+  }
+
+  // sorting
+  sortByDepth(sibling) {
+    return Math.floor(sibling.isoDepth - this.isoDepth);
+  }
+
+  getSortByFacing(sibling) {
+    let depthScore = 0;
+    if (this.isTile() && sibling.isToken()) {
+      
+    renderPlaceableGeometry([this, sibling]);
+
+      const anchorPoint = this.geometry.anchorPoint;
+      switch (this.isFacing()) {
+        case "south west":
+          if (sibling.geometry.y >= this.geometry.startPoint.y &&
+              sibling.geometry.y <= this.geometry.endPoint.y &&
+              this.isWithinXBounds(sibling)) {
+            depthScore = anchorPoint.x - sibling.geometry.x;
+          }
+          break;
+        case "south east":
+          if (sibling.geometry.x >= this.geometry.startPoint.x &&
+              sibling.geometry.x <= this.geometry.endPoint.x &&
+              this.isWithinYBounds(sibling)) {
+            depthScore = sibling.geometry.y - anchorPoint.y;
+          }
+          break;
+        default: break;
+      }
+    } else if (this.isToken() && sibling.isTile()) {
+      depthScore = -sibling.getSortByFacing(this);
+    }
+    return depthScore;
+  }
+
+  getDebugData(data) {
+    const debugData = {};
+    for (const [key, value] of Object.entries(this)) {
+      data.map((entry) => {
+        if (entry === key) {
+          debugData[key] = value;
+        }
+      });
+    }
+    console.table(debugData);
+  }
 }

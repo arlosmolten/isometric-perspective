@@ -1,8 +1,4 @@
 import {
-  isometricModuleConfig,
-  fastFlipCompatiility,
-  TILE_FACINGS,
-  DEFAULT_TILE_FACING,
   ISOMETRIC_CONST
 } from "./consts.js";
 
@@ -130,207 +126,6 @@ export function patchConfig(documentSheet, config, args) {
     return defaultRenderPartContext?.call(this, partId, context, options) || {};
   };
 }
-
-// filter the sort layer into a new array of sortables, copy that array , sort the copy and return the result.
-export function sortPlaceableByPosition() {
-  const placeableMeshLayer =
-    foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
-  const canvasLayer = canvas.primary.children;
-
-  const filteredLayer = canvasLayer.filter((sprite) => {
-    return sprite.sortLayer === placeableMeshLayer;
-  }); // only need DepthSortPlaceables
-  
-  let layerToSort = filteredLayer.map((sprite) => Object.assign({}, sprite));
-
-  layerToSort.sort((sprite, sibling) => {
-    const currentSprite = new SortableSprite(sprite);
-    const currentSibling = new SortableSprite(sibling);
-    return currentSprite.sortByDepth(currentSibling);
-  });
-
-  layerToSort.sort((sprite, sibling) => {
-    const currentSprite = new SortableSprite(sprite);
-    const currentSibling = new SortableSprite(sibling);
-    return currentSprite.getSortByFacing(currentSibling);
-  });
-
-  // keep for debugging later
-  // console.clear();
-  // layerToSort.map((sprite) => {
-  //   const currentSprite = new SortableSprite(sprite);
-  //   currentSprite.getDebugData(["name", "sort"]);
-  // });
-
-  return layerToSort;
-}
-
-// SortableSprite is a data class with some utility methods to avoid long chains of sprite.object.document.someValue in the code and overall make the
-// sorting code a bit more readable. Also help isolate cases and avoid endless nesting comparaison, the utility methods always check for validiy as well.
-// isFacing() if its a tile, return the right facing state, taking in account if its flipped for SW and SE facings.
-// isTile() return true if its a tile, a bit shorter than doing a full comparaison everytime its needed.
-// isToken() return true if its a token, a bit shorter than doing a full comparaison everytime its needed.
-// isFlipped() return true if the tile is either flipped via the tileFlipped flag or if fast flip is installed , based on tileMirrorHorizontal in that case.
-// isNotNull() in case an invalid object is passed in the constructor, dosent break but marked as null , used when during the token sort correction when traversing the
-// layerToSort if the token is at index 0 or at index layerToSort.length , again, used to make code a bit more readable and to rely less on "===" checks clutters everywhere.
-// getDebugData([args,...]) display SortableSprite props in a nice table for debugging purpose
-// getSortByFacing(sibling) take another adjacent SortableSprite and compare their x , y or iso depth based on facing rules and return a positive or negative value to determine sort order:
-// a negative value indicate that the sibling should be sorted below
-// a positive value indicate that the sibling should be sorted above
-// zero or NaN indicate a tie , no changes need to happen.
-//
-export class SortableSprite {
-  constructor(placeable) {
-    if (placeable) {
-      this.mesh = placeable.object.mesh;
-      this.id = placeable.object.document.id;
-      this.type = placeable.object.document.documentName;
-      this.name = placeable.object.document.name
-        ? placeable.object.document.name
-        : "no name";
-
-      this.width = placeable.object.mesh.width ?? 0;
-      this.height = placeable.object.mesh.height ?? 0;
-      this.x = placeable.object.document.x;
-      this.y = placeable.object.document.y;
-
-      this.isoDepth = (this.y - this.x) * 0.5;
-      this.facingConfig =
-        placeable.object.document.getFlag(
-          isometricModuleConfig.MODULE_ID,
-          "tileFacing",
-        ) ?? DEFAULT_TILE_FACING;
-      this.sort = placeable.object.document.sort;
-
-      this.preview = placeable.object.previewType;
-      if (game.modules.get(fastFlipCompatiility.MODULE_ID)?.active) {
-        this.tileMirrorHorizontal = placeable.object.document.getFlag(
-          fastFlipCompatiility.MODULE_ID,
-          fastFlipCompatiility.TILE_MIRROR_HORIZONTAL,
-        );
-      }
-      this.geometry = getSpriteAnchorPoint(this.mesh);
-      if(this.type === "Tile"){
-        this.geometry = getWallDimensions(this.mesh,this.isFacing());
-      }
-
-    } else {
-      this.isNull = true;
-    }
-  }
-  // status checks
-  isFacing() {
-    let currentFacing = null;
-    if (this.type !== "Tile") return null;
-    switch (this.facingConfig) {
-      case "south west":
-        currentFacing = this.isFlipped() ? "south east" : "south west";
-        break;
-      case "south east":
-        currentFacing = this.isFlipped() ? "south west" : "south east";
-        break;
-      case "south":
-        currentFacing = "south";
-        break;
-      case "side":
-        currentFacing = "side";
-        break;
-      default:
-        currentFacing = null;
-    }
-    return currentFacing;
-  }
-
-  isTile() {
-    return this.type === "Tile";
-  }
-  isToken() {
-    return this.type === "Token";
-  }
-  isNotNull() {
-    return !this.isNull;
-  }
-  isPreview() {
-    return this.preview !== null;
-  }
-
-  isFlipped() {
-    let result = false;
-    if (this.mesh) {
-      const scaleFlipped = this.mesh.scale.x < 0;
-      const textureFlipped = this.mesh.texture.rotate >= 8;
-      if (scaleFlipped !== textureFlipped) {
-        result = true;
-      }
-    }
-    return result;
-  }
-
-  isWithinYBounds(sibling) {
-    
-    const boundaryOffset = this.geometry.depth;
-    const isWithinYBounds =
-      sibling.geometry.y >= this.geometry.anchorPoint.y - boundaryOffset &&
-      sibling.geometry.y <= this.geometry.anchorPoint.y + boundaryOffset;
-    return isWithinYBounds;
-  }
-  isWithinXBounds(sibling) {
-    
-    const boundaryOffset = this.geometry.depth;
-    const isWithinXBounds =
-      sibling.geometry.x >= this.geometry.anchorPoint.x - boundaryOffset &&
-      sibling.geometry.x <= this.geometry.anchorPoint.x + boundaryOffset;
-    return isWithinXBounds;
-  }
-
-  // sorting
-  sortByDepth(sibling) {
-    return Math.floor(sibling.isoDepth - this.isoDepth);
-  }
-
-  getSortByFacing(sibling) {
-    let depthScore = 0;
-    if (this.isTile() && sibling.isToken()) {
-      
-    renderPlaceableGeometry([this, sibling]);
-
-      const anchorPoint = this.geometry.anchorPoint;
-      switch (this.isFacing()) {
-        case "south west":
-          if (sibling.geometry.y >= this.geometry.startPoint.y &&
-              sibling.geometry.y <= this.geometry.endPoint.y &&
-              this.isWithinXBounds(sibling)) {
-            depthScore = anchorPoint.x - sibling.geometry.x;
-          }
-          break;
-        case "south east":
-          if (sibling.geometry.x >= this.geometry.startPoint.x &&
-              sibling.geometry.x <= this.geometry.endPoint.x &&
-              this.isWithinYBounds(sibling)) {
-            depthScore = sibling.geometry.y - anchorPoint.y;
-          }
-          break;
-        default: break;
-      }
-    } else if (this.isToken() && sibling.isTile()) {
-      depthScore = -sibling.getSortByFacing(this);
-    }
-    return depthScore;
-  }
-
-  getDebugData(data) {
-    const debugData = {};
-    for (const [key, value] of Object.entries(this)) {
-      data.map((entry) => {
-        if (entry === key) {
-          debugData[key] = value;
-        }
-      });
-    }
-    console.table(debugData);
-  }
-}
-///*** SortableSprite end *///
 
 // if needed can be moved in SortableSprite
 function switchPlaceablePositions(filteredLayer, sortScore) {
@@ -467,7 +262,7 @@ export function createAdjustableButton(options) {
 }
 
 export function toggleAnchorAxis(object, toggle) {
-  cleanupTileAnchorLines();
+  cleanupNamedLines("anchorLine");
   if (toggle) {
     drawTileAnchorLines(object);
   }
@@ -479,7 +274,7 @@ export function toggleAnchorAxis(object, toggle) {
 // other improvement : instead of a drop down, two floating arrow buttons setting the facing that appear when the tile is controlled
 function drawTileAnchorLines(objectAnchor) {
   // Removes existing lines
-  cleanupTileAnchorLines();
+  cleanupNamedLines("anchorLine");
 
   // Create container for the lines
   const xAxisLine = new PIXI.Graphics();
@@ -520,13 +315,15 @@ function drawTileAnchorLines(objectAnchor) {
   canvas.stage.addChild(zAxisLine);
 }
 
-function cleanupTileAnchorLines() {
+// remove pixi.drawings lines by name
+function cleanupNamedLines(name) {
   const existingLines = canvas.stage.children.filter(
-    (child) => child.name === "anchorLine",
+    (child) => child.name === name,
   );
   existingLines.forEach((line) => line.destroy());
 }
 
+// CLEANUP : this might no longer be required - marked for cleanup
 
 export function getTileGeometry(tileDocument) {
   const width = tileDocument.width;
@@ -549,6 +346,8 @@ export function getTileGeometry(tileDocument) {
   const center  = { x: topLeft.x + width / 2, y: topLeft.y + height / 2 };
   return { anchorPoint, anchor, width, height, topLeft, center, rotation: tileDocument.rotation ?? 0 };
 }
+
+// CLEANUP : this might no longer be required - marked for cleanup
 
 // used to auto adjust a tile offset to its anchor point, this is very approximative
 export function alignWallTileBottomAnchor(object, anchorPoint, isoOffsets) {
@@ -623,7 +422,8 @@ export function getMeshGeometry(mesh) {
     y: mesh.anchor.y * textureHeight,
   };
 
-  // the image-space rhombus becomes a parallelogram in document space
+  // wall tiles generally take the shape of a skewed rectangle, or parallelogram to be exact semantically ... the footprint of a wall 
+  // take its center line from the bottom of that wall's bottom edge length and extend in both direction on its width equal to that wall's height
   const parallelogram = {};
   for (const [name, pointInImage] of Object.entries(verticesInImage)) {
     const offsetFromAnchor = meshMatrix.apply({
@@ -691,34 +491,10 @@ export function getWallDimensions(mesh, facing) {
   const backEndPoint = geometry.topPoint;
 
   // the vector from the baseline to the back edge carries the parallelogram's
-  // height, slant included. The detection area is the footprint extended by
-  // that same vector in front of the baseline.
+  // height, slant included
   const backShift = {
     x: backStartPoint.x - baselineStartPoint.x,
     y: backStartPoint.y - baselineStartPoint.y,
-  };
-  const detectionArea = [
-    backStartPoint,
-    backEndPoint,
-    {
-      x: baselineEndPoint.x - backShift.x,
-      y: baselineEndPoint.y - backShift.y,
-    },
-    {
-      x: baselineStartPoint.x - backShift.x,
-      y: baselineStartPoint.y - backShift.y,
-    },
-  ];
-
-  // the middle line: from the baseline point under the anchor, outward
-  // along the facing by one parallelogram height
-  const anchorBaselinePoint = {
-    x: anchorPoint.x - backShift.x * 0.5,
-    y: anchorPoint.y - backShift.y * 0.5,
-  };
-  const anchorFrontPoint = {
-    x: anchorBaselinePoint.x - backShift.x,
-    y: anchorBaselinePoint.y - backShift.y,
   };
 
   const length = Math.hypot(
@@ -734,6 +510,46 @@ export function getWallDimensions(mesh, facing) {
   const depth = Math.abs(
     backShift.x * baselineUnit.y - backShift.y * baselineUnit.x
   );
+
+  // the detection area is the footprint itself, extended along the wall's
+  // run by half the parallelogram's height past each end
+  const runExtension = {
+    x: baselineUnit.x * (depth / 2),
+    y: baselineUnit.y * (depth / 2),
+  };
+  const detectionArea = [
+    {
+      x: backStartPoint.x - runExtension.x,
+      y: backStartPoint.y - runExtension.y,
+    },
+    {
+      x: backEndPoint.x + runExtension.x,
+      y: backEndPoint.y + runExtension.y,
+    },
+    {
+      x: baselineEndPoint.x + runExtension.x,
+      y: baselineEndPoint.y + runExtension.y,
+    },
+    {
+      x: baselineStartPoint.x - runExtension.x,
+      y: baselineStartPoint.y - runExtension.y,
+    },
+  ];
+  // the boundary's middle line: the segment's line, extended cap to cap
+  const detectionMidlineStartPoint = {
+    x: (detectionArea[0].x + detectionArea[3].x) / 2,
+    y: (detectionArea[0].y + detectionArea[3].y) / 2,
+  };
+  const detectionMidlineEndPoint = {
+    x: (detectionArea[1].x + detectionArea[2].x) / 2,
+    y: (detectionArea[1].y + detectionArea[2].y) / 2,
+  };
+
+  // the baseline point under the anchor: the end of the facing line
+  const anchorBaselinePoint = {
+    x: anchorPoint.x - backShift.x * 0.5,
+    y: anchorPoint.y - backShift.y * 0.5,
+  };
 
   let normal;
   let startPoint;
@@ -760,21 +576,16 @@ export function getWallDimensions(mesh, facing) {
     backStartPoint,
     backEndPoint,
     detectionArea,
+    detectionMidlineStartPoint,
+    detectionMidlineEndPoint,
     anchorBaselinePoint,
-    anchorFrontPoint,
   };
 }
 
+// return the approximative visual anchor point of a placeable mesh , different from the document anchor point.
 export function getSpriteAnchorPoint(mesh) {
-  const rhombus = getMeshGeometry(mesh);
-  return rhombus.bottomPoint;
-}
-
-function cleanupNamedLines(name) {
-  const existingLines = canvas.stage.children.filter(
-    (child) => child.name === name,
-  );
-  existingLines.forEach((line) => line.destroy());
+  const footprint = getMeshGeometry(mesh);
+  return footprint.bottomPoint;
 }
 
 // draw mesh height axis line
@@ -783,32 +594,6 @@ function getMeshRiseVector(mesh) {
   meshMatrix.setTransform(0, 0, 0, 0,
     mesh.scale.x, mesh.scale.y, mesh.rotation, mesh.skew.x, mesh.skew.y);
   return meshMatrix.apply({ x: 0, y: -mesh.texture.height });
-}
-
-// draw an iso box 
-function drawRhombusEdges(boundaries, rhombus, riseVector, alpha) {
-  const topPoint = { x: rhombus.topPoint.x + riseVector.x, y: rhombus.topPoint.y + riseVector.y };
-  const rightPoint = { x: rhombus.rightPoint.x + riseVector.x, y: rhombus.rightPoint.y + riseVector.y };
-  const bottomPoint = { x: rhombus.bottomPoint.x + riseVector.x, y: rhombus.bottomPoint.y + riseVector.y };
-  const leftPoint = { x: rhombus.leftPoint.x + riseVector.x, y: rhombus.leftPoint.y + riseVector.y };
-  boundaries.lineStyle(2, 0xff0000, alpha);
-  boundaries.moveTo(rightPoint.x, rightPoint.y);
-  boundaries.lineTo(bottomPoint.x, bottomPoint.y);
-  boundaries.moveTo(topPoint.x, topPoint.y);
-  boundaries.lineTo(leftPoint.x, leftPoint.y);
-  boundaries.lineStyle(2, 0x0000ff, alpha);
-  boundaries.moveTo(topPoint.x, topPoint.y);
-  boundaries.lineTo(rightPoint.x, rightPoint.y);
-  boundaries.moveTo(leftPoint.x, leftPoint.y);
-  boundaries.lineTo(bottomPoint.x, bottomPoint.y);
-}
-
-// draw anchor
-function drawAnchorPoint(boundaries, anchorPoint) {
-  boundaries.lineStyle(2, 0xff69b4, 1);
-  boundaries.beginFill(0xff69b4);
-  boundaries.drawCircle(anchorPoint.x, anchorPoint.y, 7);
-  boundaries.endFill();
 }
 
 //draw a box containing a sprite mesh with variable height ( tokens or block shaped tiles )
@@ -836,7 +621,34 @@ export function drawBlockBoundaries(object) {
   canvas.stage.addChild(boundaries);
 }
 
-// draw the boundaries of a sortable placeable
+// draw an iso box footprint 
+function drawRhombusEdges(boundaries, rhombus, riseVector, alpha) {
+  const topPoint = { x: rhombus.topPoint.x + riseVector.x, y: rhombus.topPoint.y + riseVector.y };
+  const rightPoint = { x: rhombus.rightPoint.x + riseVector.x, y: rhombus.rightPoint.y + riseVector.y };
+  const bottomPoint = { x: rhombus.bottomPoint.x + riseVector.x, y: rhombus.bottomPoint.y + riseVector.y };
+  const leftPoint = { x: rhombus.leftPoint.x + riseVector.x, y: rhombus.leftPoint.y + riseVector.y };
+  boundaries.lineStyle(2, 0xff0000, alpha);
+  boundaries.moveTo(rightPoint.x, rightPoint.y);
+  boundaries.lineTo(bottomPoint.x, bottomPoint.y);
+  boundaries.moveTo(topPoint.x, topPoint.y);
+  boundaries.lineTo(leftPoint.x, leftPoint.y);
+  boundaries.lineStyle(2, 0x0000ff, alpha);
+  boundaries.moveTo(topPoint.x, topPoint.y);
+  boundaries.lineTo(rightPoint.x, rightPoint.y);
+  boundaries.moveTo(leftPoint.x, leftPoint.y);
+  boundaries.lineTo(bottomPoint.x, bottomPoint.y);
+}
+
+// draw anchor dot
+function drawAnchorPoint(boundaries, anchorPoint) {
+  boundaries.lineStyle(2, 0xff69b4, 1);
+  boundaries.beginFill(0xff69b4);
+  boundaries.drawCircle(anchorPoint.x, anchorPoint.y, 7);
+  boundaries.endFill();
+}
+
+// return an array of objects containing instructions that can be iterated over for drawPlaceableGeometry() , used together to draw 
+// debug boxes around placeables , or visual UI elements to help users configure depth sortable placeables on the canvas.
 export function getPlaceableGeometry(mesh, shape, facing) {
   const GREEN = 0x00ff00;
 
@@ -884,9 +696,9 @@ export function getPlaceableGeometry(mesh, shape, facing) {
         closePath(),
         endFill(),
         ...tracePath(parallelogramPoints, 2, 0.35),
-        ...drawLine(dimensions.startPoint, dimensions.endPoint, 2, 0.4),
+        ...drawLine(dimensions.detectionMidlineStartPoint, dimensions.detectionMidlineEndPoint, 2, 0.4),
         ...drawLine(dimensions.baselineStartPoint, dimensions.baselineEndPoint, 3, 0.9),
-        ...drawLine(dimensions.anchorBaselinePoint, dimensions.anchorFrontPoint, 2, 0.4),
+        ...drawLine(dimensions.anchorPoint, dimensions.anchorBaselinePoint, 2, 0.4),
         ...drawAnchorDot(dimensions.anchorPoint),
       ];
     }
@@ -909,6 +721,7 @@ export function getPlaceableGeometry(mesh, shape, facing) {
   return steps;
 }
 
+// iterate over the an array of istructuctions provided by getPlaceableGeometry() , create a shape and return it to be used by renderPlaceableGeometry()
 export function drawPlaceableGeometry(steps) {
   const shape = new PIXI.Graphics();
   for (const step of steps) {
@@ -943,6 +756,7 @@ export function drawPlaceableGeometry(steps) {
 
 let placeableShapeList = [];
 
+// take an array of sortableSprites, and render boxes or walls footprints if the sortableSprites have a facing value , otherwise draw a box around them
 export function renderPlaceableGeometry(sortableSprites) {
   clearPlaceableGeometry();
   for (const sprite of sortableSprites) {
@@ -958,6 +772,7 @@ export function renderPlaceableGeometry(sortableSprites) {
   }
 }
 
+// clear all the pixi drawings in placeableShapeList
 export function clearPlaceableGeometry() {
   for (const shape of placeableShapeList) {
     if (!shape.destroyed) shape.destroy();
@@ -965,6 +780,5 @@ export function clearPlaceableGeometry() {
   placeableShapeList = [];
 }
 
-
-window.getWallDimensions = getWallDimensions;
-window.getMeshGeometry = getMeshGeometry;
+// window.getWallDimensions = getWallDimensions;
+// window.getMeshGeometry = getMeshGeometry;
