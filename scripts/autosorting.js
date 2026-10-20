@@ -4,34 +4,44 @@ import {
 } from "./consts.js";
 import {
   sortPlaceableByPosition,
-  // debugCanvasLayer,
   toggleAnchorAxis,
 } from "./utils.js";
+import { applyIsometricTransformation } from "./transform.js";
 
 export function isoDepthSortTileMixin(Base) {
   return class DepthSortTile extends Base {
+        
+    applyRenderFlags(flags) {
+      super.applyRenderFlags(flags);
+      if (!this.mesh) return;
+      applyIsometricTransformation(this, this.isSceneIsometric);
+      if (this.isTileSortable) applyDepthSort();
+    }
+
     _refreshState() {
       super._refreshState();
       if (!this.mesh) return;
-      const isTileSortable = this.document.flags[isometricModuleConfig.MODULE_ID]?.isoTileAutoSortingEnabled || false;
 
-      if (isTileSortable) {
-        applyDepthSort();
-        this.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS;
-      } else {
-        if(this.mesh){
-          this.mesh.sortLayer = foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES;
-        }
+      this.mesh.sortLayer = this.isTileSortable
+          ? foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TOKENS
+          : foundry.canvas.groups.PrimaryCanvasGroup.SORT_LAYERS.TILES;
+
+      if (this.document.getFlag(isometricModuleConfig.MODULE_ID,"isoOffsetGizmoEnabled",) === true){
+        toggleAnchorAxis(this.document, true);
+        // if(this.controlled){ // show gizmo on selected WIP
+        //    drawWallBoundaries(this.document.mesh);
+        // }
       }
     }
-    _onUpdate(changed, options, userId) {
-      super._onUpdate(changed, options, userId);
-      if (!this.mesh) return;
-      const isTileSortable = this.document.getFlag(isometricModuleConfig.MODULE_ID,"isoTileAutoSortingEnabled",);
-      if (isTileSortable) {
-        applyDepthSort();
-      }
+
+    get isTileSortable() {
+      return (this.document.getFlag(isometricModuleConfig.MODULE_ID,"isoTileAutoSortingEnabled",) || false);
     }
+
+    get isSceneIsometric() {
+      return (this.scene.getFlag(isometricModuleConfig.MODULE_ID,"isometricEnabled",));
+    }
+
   };
 }
 

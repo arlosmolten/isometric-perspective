@@ -326,9 +326,9 @@ Hooks.on("renderDrawingHUD", handleRenderDrawingHUD);
 Hooks.on("ready", createTileIsometricTab);
 Hooks.on("renderTileConfig", initTileForm);
 Hooks.on("createTile", handleCreateTile);
-Hooks.on("updateTile", handleUpdateTile);
+// Hooks.on("updateTile", handleUpdateTile);
 Hooks.on("closeTileConfig", closeConfig);
-Hooks.on("refreshTile", handleRefreshTile);
+// Hooks.on("refreshTile", handleRefreshTile);
 Hooks.on("renderTilePalette", createTileIsometricPaletteConfig);
 Hooks.on("getSceneControlButtons", (controls) => {
   addDepthSortControls(controls);

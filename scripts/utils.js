@@ -5,6 +5,7 @@ import {
   DEFAULT_TILE_FACING,
   ISOMETRIC_CONST
 } from "./consts.js";
+
 // Função auxiliar para converter coordenadas isométricas para cartesianas
 export function isoToCartesian(isoX, isoY) {
   const angle = Math.PI / 4; // 45 graus em radianos
@@ -201,11 +202,6 @@ export class SortableSprite {
         ) ?? DEFAULT_TILE_FACING;
       this.sort = placeable.object.document.sort;
 
-      // console.log("FLAG",
-      //   placeable.object.document.documentName,
-      //   placeable.object.document.id,
-      //   placeable.object.document.getFlag(isometricModuleConfig.MODULE_ID, "tileFacing"));
-
       this.preview = placeable.object.previewType;
       if (game.modules.get(fastFlipCompatiility.MODULE_ID)?.active) {
         this.tileMirrorHorizontal = placeable.object.document.getFlag(
@@ -273,33 +269,17 @@ export class SortableSprite {
   isWithinYBounds(sibling) {
     
     const boundaryOffset = this.geometry.depth;
-    // const boundaryOffset = this.height * 0.5;
-    // console.log("SORT BY SW;", this.isFacing(),"|", sibling.y,"|", this.geometry.anchorPoint.y ,"|",sibling.y >= this.geometry.anchorPoint.y);
-    // console.log("SORT BY SW;", this.isFacing(),"|", sibling.y,"|", this.geometry.anchorPoint.y ,"|",sibling.y >= this.geometry.anchorPoint.y);
-    // console.log( sibling.name,":", sibling.geometry , this.name,":", this.geometry)
-    // console.log( "TEST ANCHOR COMPARE :",sibling.name,":", sibling.geometry.y , this.name,":", this.geometry.anchorPoint.y)
-
-    // console.log("Y",sibling.name, ":",sibling.geometry.y,":",this.geometry.anchorPoint.y,"|", this.geometry.anchorPoint.y - boundaryOffset,"|", this.geometry.anchorPoint.y + boundaryOffset )
-
     const isWithinYBounds =
       sibling.geometry.y >= this.geometry.anchorPoint.y - boundaryOffset &&
       sibling.geometry.y <= this.geometry.anchorPoint.y + boundaryOffset;
-      // sibling.y >= this.y; - boundaryOffset &&
-      // sibling.y <= this.y + boundaryOffset;
     return isWithinYBounds;
   }
   isWithinXBounds(sibling) {
     
     const boundaryOffset = this.geometry.depth;
-    // const boundaryOffset = this.height * 0.5;
-
-    // console.log("X",sibling.geometry.x,":",this.geometry.anchorPoint.x, this.geometry.anchorPoint.x - boundaryOffset, this.geometry.anchorPoint.x + boundaryOffset )
-
     const isWithinXBounds =
       sibling.geometry.x >= this.geometry.anchorPoint.x - boundaryOffset &&
       sibling.geometry.x <= this.geometry.anchorPoint.x + boundaryOffset;
-      // sibling.x >= this.x - boundaryOffset &&
-      // sibling.x <= this.x + boundaryOffset;
     return isWithinXBounds;
   }
 
@@ -312,8 +292,7 @@ export class SortableSprite {
     let depthScore = 0;
     if (this.isTile() && sibling.isToken()) {
       
-      drawWallBoundaries(this)
-      drawBlockBoundaries(sibling)
+    renderPlaceableGeometry([this, sibling]);
 
       const anchorPoint = this.geometry.anchorPoint;
       switch (this.isFacing()) {
@@ -644,35 +623,36 @@ export function getMeshGeometry(mesh) {
     y: mesh.anchor.y * textureHeight,
   };
 
-  const rhombus = {};
+  // the image-space rhombus becomes a parallelogram in document space
+  const parallelogram = {};
   for (const [name, pointInImage] of Object.entries(verticesInImage)) {
     const offsetFromAnchor = meshMatrix.apply({
       x: pointInImage.x - anchorInImage.x,
       y: pointInImage.y - anchorInImage.y,
     });
-    rhombus[name] = {
+    parallelogram[name] = {
       x: mesh.position.x + offsetFromAnchor.x,
       y: mesh.position.y + offsetFromAnchor.y,
     };
   }
-  return rhombus;
+  parallelogram.points = [
+    parallelogram.topPoint,
+    parallelogram.rightPoint,
+    parallelogram.bottomPoint,
+    parallelogram.leftPoint,
+  ];
+  return parallelogram;
 }
 
 // utility function for a tile that is wall shaped.
-function getWallDimensions(mesh, facing) {
+export function getWallDimensions(mesh, facing) {
   const geometry = getMeshGeometry(mesh);
 
   let smallestX = geometry.topPoint.x;
   let largestX = geometry.topPoint.x;
   let smallestY = geometry.topPoint.y;
   let largestY = geometry.topPoint.y;
-  const rhombusPoints = [
-    geometry.topPoint,
-    geometry.rightPoint,
-    geometry.bottomPoint,
-    geometry.leftPoint,
-  ];
-  for (const point of rhombusPoints) {
+  for (const point of geometry.points) {
     if (point.x < smallestX) smallestX = point.x;
     if (point.x > largestX) largestX = point.x;
     if (point.y < smallestY) smallestY = point.y;
@@ -681,49 +661,108 @@ function getWallDimensions(mesh, facing) {
 
   const anchorPoint = geometry.centerPoint;
 
+  // the baseline is the parallelogram's bottom edge: it starts at the bottom
+  // vertex, and its other end is the neighbouring vertex that reaches
+  // farthest along the wall's run
+  const baselineStartPoint = geometry.bottomPoint;
+  let baselineEndPoint;
   if (facing === "south east") {
-    const length = largestX - smallestX;
-    const depth = largestY - smallestY;
-    const normal = { x: 0, y: 1 };
-    const startPoint = { x: smallestX, y: anchorPoint.y };
-    const endPoint = { x: largestX, y: anchorPoint.y };
-
-    // calculate the baseline of a wall
-    const baselineStartPoint = geometry.leftPoint;
-    const baselineEndPoint = geometry.bottomPoint;
-    return {
-      length,
-      depth,
-      anchorPoint,
-      startPoint,
-      endPoint,
-      normal,
-      baselineStartPoint,
-      baselineEndPoint,
-    };
+    baselineEndPoint =
+      Math.abs(geometry.rightPoint.x - geometry.bottomPoint.x) >=
+      Math.abs(geometry.leftPoint.x - geometry.bottomPoint.x)
+        ? geometry.rightPoint
+        : geometry.leftPoint;
+  } else if (facing === "south west") {
+    baselineEndPoint =
+      Math.abs(geometry.rightPoint.y - geometry.bottomPoint.y) >=
+      Math.abs(geometry.leftPoint.y - geometry.bottomPoint.y)
+        ? geometry.rightPoint
+        : geometry.leftPoint;
+  } else {
+    return undefined;
   }
 
-  if (facing === "south west") {
-    const length = largestY - smallestY;
-    const depth = largestX - smallestX;
-    const normal = { x: -1, y: 0 };
-    const startPoint = { x: anchorPoint.x, y: smallestY };
-    const endPoint = { x: anchorPoint.x, y: largestY };
-    const baselineStartPoint = geometry.bottomPoint;
-    const baselineEndPoint = geometry.rightPoint;
-    return {
-      length,
-      depth,
-      anchorPoint,
-      startPoint,
-      endPoint,
-      normal,
-      baselineStartPoint,
-      baselineEndPoint,
-    };
+  // the back edge is the parallelogram edge opposite the baseline: it starts
+  // at the bottom vertex's other neighbour and ends at the top vertex
+  const backStartPoint =
+    baselineEndPoint === geometry.rightPoint
+      ? geometry.leftPoint
+      : geometry.rightPoint;
+  const backEndPoint = geometry.topPoint;
+
+  // the vector from the baseline to the back edge carries the parallelogram's
+  // height, slant included. The detection area is the footprint extended by
+  // that same vector in front of the baseline.
+  const backShift = {
+    x: backStartPoint.x - baselineStartPoint.x,
+    y: backStartPoint.y - baselineStartPoint.y,
+  };
+  const detectionArea = [
+    backStartPoint,
+    backEndPoint,
+    {
+      x: baselineEndPoint.x - backShift.x,
+      y: baselineEndPoint.y - backShift.y,
+    },
+    {
+      x: baselineStartPoint.x - backShift.x,
+      y: baselineStartPoint.y - backShift.y,
+    },
+  ];
+
+  // the middle line: from the baseline point under the anchor, outward
+  // along the facing by one parallelogram height
+  const anchorBaselinePoint = {
+    x: anchorPoint.x - backShift.x * 0.5,
+    y: anchorPoint.y - backShift.y * 0.5,
+  };
+  const anchorFrontPoint = {
+    x: anchorBaselinePoint.x - backShift.x,
+    y: anchorBaselinePoint.y - backShift.y,
+  };
+
+  const length = Math.hypot(
+    baselineEndPoint.x - baselineStartPoint.x,
+    baselineEndPoint.y - baselineStartPoint.y
+  );
+  const baselineUnit = {
+    x: (baselineEndPoint.x - baselineStartPoint.x) / length,
+    y: (baselineEndPoint.y - baselineStartPoint.y) / length,
+  };
+  // the parallelogram's true height: the perpendicular distance between
+  // the baseline and the back edge
+  const depth = Math.abs(
+    backShift.x * baselineUnit.y - backShift.y * baselineUnit.x
+  );
+
+  let normal;
+  let startPoint;
+  let endPoint;
+  if (facing === "south east") {
+    normal = { x: 0, y: 1 };
+    startPoint = { x: smallestX, y: anchorPoint.y };
+    endPoint = { x: largestX, y: anchorPoint.y };
+  } else {
+    normal = { x: -1, y: 0 };
+    startPoint = { x: anchorPoint.x, y: smallestY };
+    endPoint = { x: anchorPoint.x, y: largestY };
   }
 
-  return undefined;
+  return {
+    length,
+    depth,
+    anchorPoint,
+    startPoint,
+    endPoint,
+    normal,
+    baselineStartPoint,
+    baselineEndPoint,
+    backStartPoint,
+    backEndPoint,
+    detectionArea,
+    anchorBaselinePoint,
+    anchorFrontPoint,
+  };
 }
 
 export function getSpriteAnchorPoint(mesh) {
@@ -772,10 +811,11 @@ function drawAnchorPoint(boundaries, anchorPoint) {
   boundaries.endFill();
 }
 
-//traw a box containing a sprite mesh with variable height ( tokens or block shaped tiles )
+//draw a box containing a sprite mesh with variable height ( tokens or block shaped tiles )
 export function drawBlockBoundaries(object) {
-  if (!object?.mesh?.texture) return;
   cleanupNamedLines("blockBoundaryLine");
+  cleanupNamedLines("boundaryLine");
+  if (!object?.mesh?.texture) return;
   const rhombus = getMeshGeometry(object.mesh);
   const riseVector = getMeshRiseVector(object.mesh);
 
@@ -796,94 +836,135 @@ export function drawBlockBoundaries(object) {
   canvas.stage.addChild(boundaries);
 }
 
-// draw the boundaries of a wall 
-function drawWallBoundaries(object) {
-  if (!object?.mesh?.texture) return;
-  const sprite = object instanceof SortableSprite ? object : new SortableSprite({ object });
-  const dimensions = sprite.geometry;
-  if (!dimensions?.baselineStartPoint) return;
+// draw the boundaries of a sortable placeable
+export function getPlaceableGeometry(mesh, shape, facing) {
+  const GREEN = 0x00ff00;
 
-  cleanupNamedLines("wallBoundaryLine");
-  const boundaries = new PIXI.Graphics();
-  boundaries.name = "wallBoundaryLine";
-  canvas.stage.addChild(boundaries);
+  // action models: each returns one drawing step for drawPlaceableGeometry()
+  const lineStyle = (width, alpha) => ({ action: "lineStyle", width, color: GREEN, alpha });
+  const beginFill = (alpha) => ({ action: "beginFill", color: GREEN, alpha });
+  const endFill = () => ({ action: "endFill" });
+  const moveTo = (point) => ({ action: "moveTo", point });
+  const lineTo = (point) => ({ action: "lineTo", point });
+  const closePath = () => ({ action: "closePath" });
+  const drawCircle = (point, radius) => ({ action: "drawCircle", point, radius });
 
-  const rhombus = getMeshGeometry(sprite.mesh);
-  const anchorPoint = dimensions.anchorPoint;
-  const normal = dimensions.normal;
-  const reach = dimensions.depth;
+  // small composers built from the action models
+  const tracePath = (points, width, alpha) => {
+    const steps = [lineStyle(width, alpha), moveTo(points[0])];
+    for (const point of points.slice(1)) steps.push(lineTo(point));
+    steps.push(closePath());
+    return steps;
+  };
+  const drawLine = (fromPoint, toPoint, width, alpha) => [
+    lineStyle(width, alpha),
+    moveTo(fromPoint),
+    lineTo(toPoint),
+  ];
+  const drawAnchorDot = (point) => [
+    lineStyle(2, 1),
+    beginFill(1),
+    drawCircle(point, 7),
+    endFill(),
+  ];
 
-  let areaPoints;
-  if (sprite.isFacing() === "south east") {
-    areaPoints = [
-      { x: dimensions.startPoint.x, y: anchorPoint.y - reach },
-      { x: dimensions.endPoint.x, y: anchorPoint.y - reach },
-      { x: dimensions.endPoint.x, y: anchorPoint.y + reach },
-      { x: dimensions.startPoint.x, y: anchorPoint.y + reach },
-    ];
-  } else {
-    areaPoints = [
-      { x: anchorPoint.x - reach, y: dimensions.startPoint.y },
-      { x: anchorPoint.x - reach, y: dimensions.endPoint.y },
-      { x: anchorPoint.x + reach, y: dimensions.endPoint.y },
-      { x: anchorPoint.x + reach, y: dimensions.startPoint.y },
-    ];
+  const parallelogram = getMeshGeometry(mesh);
+  const parallelogramPoints = parallelogram.points;
+
+  if (shape === "wall") {
+    const dimensions = getWallDimensions(mesh, facing);
+    if (dimensions) {
+      return [
+        lineStyle(2, 0.9),
+        beginFill(0.08),
+        moveTo(dimensions.detectionArea[0]),
+        lineTo(dimensions.detectionArea[1]),
+        lineTo(dimensions.detectionArea[2]),
+        lineTo(dimensions.detectionArea[3]),
+        closePath(),
+        endFill(),
+        ...tracePath(parallelogramPoints, 2, 0.35),
+        ...drawLine(dimensions.startPoint, dimensions.endPoint, 2, 0.4),
+        ...drawLine(dimensions.baselineStartPoint, dimensions.baselineEndPoint, 3, 0.9),
+        ...drawLine(dimensions.anchorBaselinePoint, dimensions.anchorFrontPoint, 2, 0.4),
+        ...drawAnchorDot(dimensions.anchorPoint),
+      ];
+    }
+    // not a wall facing: fall through and describe the placeable as a box
   }
-  boundaries.lineStyle(2, 0xff66cc, 0.9);
-  boundaries.beginFill(0xff66cc, 0.08);
-  boundaries.moveTo(areaPoints[0].x, areaPoints[0].y);
-  boundaries.lineTo(areaPoints[1].x, areaPoints[1].y);
-  boundaries.lineTo(areaPoints[2].x, areaPoints[2].y);
-  boundaries.lineTo(areaPoints[3].x, areaPoints[3].y);
-  boundaries.closePath();
-  boundaries.endFill();
 
-  // footprint box
-  boundaries.lineStyle(2, 0xff66cc, 0.35);
-  boundaries.moveTo(rhombus.topPoint.x, rhombus.topPoint.y);
-  boundaries.lineTo(rhombus.rightPoint.x, rhombus.rightPoint.y);
-  boundaries.lineTo(rhombus.bottomPoint.x, rhombus.bottomPoint.y);
-  boundaries.lineTo(rhombus.leftPoint.x, rhombus.leftPoint.y);
-  boundaries.closePath();
+  // "box": footprint parallelogram, rise lines, top parallelogram, anchor dot
+  const riseVector = getMeshRiseVector(mesh);
+  const risenPoints = parallelogramPoints.map((point) => ({
+    x: point.x + riseVector.x,
+    y: point.y + riseVector.y,
+  }));
 
-  // anchor point reference
-  boundaries.lineStyle(2, 0xff66cc, 0.4);
-  boundaries.moveTo(dimensions.startPoint.x, dimensions.startPoint.y);
-  boundaries.lineTo(dimensions.endPoint.x, dimensions.endPoint.y);
-
-  // baseline
-  boundaries.lineStyle(3, 0xff66cc, 0.9);
-  boundaries.moveTo(dimensions.baselineStartPoint.x, dimensions.baselineStartPoint.y);
-  boundaries.lineTo(dimensions.baselineEndPoint.x, dimensions.baselineEndPoint.y);
-
-  // facing direction arrow
-  const baselineCenter = {
-    x: (dimensions.baselineStartPoint.x + dimensions.baselineEndPoint.x) * 0.5,
-    y: (dimensions.baselineStartPoint.y + dimensions.baselineEndPoint.y) * 0.5,
-  };
-  const arrowLength = canvas.grid.size;
-  const arrowTip = {
-    x: baselineCenter.x + normal.x * arrowLength,
-    y: baselineCenter.y + normal.y * arrowLength,
-  };
-  const headSize = canvas.grid.size * 0.25;
-  const headBack = {
-    x: arrowTip.x - normal.x * headSize,
-    y: arrowTip.y - normal.y * headSize,
-  };
-  const headSide = { x: -normal.y, y: normal.x };
-  boundaries.moveTo(baselineCenter.x, baselineCenter.y);
-  boundaries.lineTo(arrowTip.x, arrowTip.y);
-  boundaries.moveTo(arrowTip.x, arrowTip.y);
-  boundaries.lineTo(
-    headBack.x + headSide.x * headSize * 0.5,
-    headBack.y + headSide.y * headSize * 0.5,
-  );
-  boundaries.moveTo(arrowTip.x, arrowTip.y);
-  boundaries.lineTo(
-    headBack.x - headSide.x * headSize * 0.5,
-    headBack.y - headSide.y * headSize * 0.5,
-  );
-
-  drawAnchorPoint(boundaries, anchorPoint);
+  const steps = [...tracePath(parallelogramPoints, 2, 0.9)];
+  for (let i = 0; i < parallelogramPoints.length; i++) {
+    steps.push(...drawLine(parallelogramPoints[i], risenPoints[i], 2, 0.9));
+  }
+  steps.push(...tracePath(risenPoints, 2, 0.45));
+  steps.push(...drawAnchorDot(parallelogram.bottomPoint));
+  return steps;
 }
+
+export function drawPlaceableGeometry(steps) {
+  const shape = new PIXI.Graphics();
+  for (const step of steps) {
+    switch (step.action) {
+      case "lineStyle":
+        shape.lineStyle(step.width, step.color, step.alpha);
+        break;
+      case "beginFill":
+        shape.beginFill(step.color, step.alpha);
+        break;
+      case "endFill":
+        shape.endFill();
+        break;
+      case "moveTo":
+        shape.moveTo(step.point.x, step.point.y);
+        break;
+      case "lineTo":
+        shape.lineTo(step.point.x, step.point.y);
+        break;
+      case "closePath":
+        shape.closePath();
+        break;
+      case "drawCircle":
+        shape.drawCircle(step.point.x, step.point.y, step.radius);
+        break;
+      default:
+        console.warn(`drawPlaceableGeometry: unknown action "${step.action}"`);
+    }
+  }
+  return shape;
+}
+
+let placeableShapeList = [];
+
+export function renderPlaceableGeometry(sortableSprites) {
+  clearPlaceableGeometry();
+  for (const sprite of sortableSprites) {
+    if (!sprite?.mesh?.texture) continue;
+    const facing = sprite.isFacing();
+    const shape =
+      facing === "south west" || facing === "south east" ? "wall" : "box";
+    const steps = getPlaceableGeometry(sprite.mesh, shape, facing);
+    const drawnShape = drawPlaceableGeometry(steps);
+    drawnShape.name = sprite.id;
+    canvas.stage.addChild(drawnShape);
+    placeableShapeList.push(drawnShape);
+  }
+}
+
+export function clearPlaceableGeometry() {
+  for (const shape of placeableShapeList) {
+    if (!shape.destroyed) shape.destroy();
+  }
+  placeableShapeList = [];
+}
+
+
+window.getWallDimensions = getWallDimensions;
+window.getMeshGeometry = getMeshGeometry;
