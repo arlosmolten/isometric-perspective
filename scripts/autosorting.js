@@ -173,7 +173,6 @@ export class SortableSprite {
       this.x = placeable.object.document.x;
       this.y = placeable.object.document.y;
 
-      this.isoDepth = (this.y - this.x) * 0.5;
       this.facingConfig =
         placeable.object.document.getFlag(
           isometricModuleConfig.MODULE_ID,
@@ -188,10 +187,14 @@ export class SortableSprite {
           fastFlipCompatiility.TILE_MIRROR_HORIZONTAL,
         );
       }
+
       this.geometry = getSpriteAnchorPoint(this.mesh);
-      if(this.type === "Tile"){
-        this.geometry = getWallDimensions(this.mesh,this.isFacing());
+      if (this.type === "Tile") {
+        const wallDimensions = getWallDimensions(this.mesh, this.isFacing());
+        if (wallDimensions) this.geometry = wallDimensions;
       }
+      const anchorPoint = this.geometry.anchorPoint ?? this.geometry;
+      this.isoDepth = (anchorPoint.y - anchorPoint.x) * 0.5;
 
     } else {
       this.isNull = true;
@@ -245,21 +248,19 @@ export class SortableSprite {
     return result;
   }
 
-  isWithinYBounds(sibling) {
-    
-    const boundaryOffset = this.geometry.depth;
-    const isWithinYBounds =
-      sibling.geometry.y >= this.geometry.anchorPoint.y - boundaryOffset &&
-      sibling.geometry.y <= this.geometry.anchorPoint.y + boundaryOffset;
-    return isWithinYBounds;
-  }
-  isWithinXBounds(sibling) {
-    
-    const boundaryOffset = this.geometry.depth;
-    const isWithinXBounds =
-      sibling.geometry.x >= this.geometry.anchorPoint.x - boundaryOffset &&
-      sibling.geometry.x <= this.geometry.anchorPoint.x + boundaryOffset;
-    return isWithinXBounds;
+  // a more precise detection area for depth sort that use the new geometry area calculation 
+  isWithinDetectionArea(sibling) {
+    const area = this.geometry.detectionArea;
+    if (!area) return false;
+    const origin = area[3];
+    const across = { x: area[0].x - origin.x, y: area[0].y - origin.y };
+    const along = { x: area[2].x - origin.x, y: area[2].y - origin.y };
+    const delta = { x: sibling.geometry.x - origin.x, y: sibling.geometry.y - origin.y };
+    const determinant = across.x * along.y - across.y * along.x;
+    if (determinant === 0) return false;
+    const acrossAmount = (delta.x * along.y - delta.y * along.x) / determinant;
+    const alongAmount = (across.x * delta.y - across.y * delta.x) / determinant;
+    return acrossAmount >= 0 && acrossAmount <= 1 && alongAmount >= 0 && alongAmount <= 1;
   }
 
   // sorting
@@ -271,21 +272,17 @@ export class SortableSprite {
     let depthScore = 0;
     if (this.isTile() && sibling.isToken()) {
       
-    renderPlaceableGeometry([this, sibling]);
+    // renderPlaceableGeometry([this, sibling]); // for debugging
 
       const anchorPoint = this.geometry.anchorPoint;
       switch (this.isFacing()) {
         case "south west":
-          if (sibling.geometry.y >= this.geometry.startPoint.y &&
-              sibling.geometry.y <= this.geometry.endPoint.y &&
-              this.isWithinXBounds(sibling)) {
+          if (this.isWithinDetectionArea(sibling)) {
             depthScore = anchorPoint.x - sibling.geometry.x;
           }
           break;
         case "south east":
-          if (sibling.geometry.x >= this.geometry.startPoint.x &&
-              sibling.geometry.x <= this.geometry.endPoint.x &&
-              this.isWithinYBounds(sibling)) {
+          if (this.isWithinDetectionArea(sibling)) {
             depthScore = sibling.geometry.y - anchorPoint.y;
           }
           break;
