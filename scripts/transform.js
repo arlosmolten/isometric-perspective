@@ -218,9 +218,10 @@ export function applyBackgroundTransformation(scene, isSceneIsometric, shouldTra
     );
 
     const dimensions = scene.dimensions;
-    const offsetX = scene.background.offsetX ?? 0;
-    const offsetY = scene.background.offsetY ?? 0;
-    background.position.set((dimensions.width / 2) + offsetX,(dimensions.height / 2) + offsetY);
+    const backgroundData = scene.levels? scene.levels.background : scene.background;
+    const offsetX = backgroundData?.offsetX ?? 0;
+    const offsetY = backgroundData?.offsetY ?? 0;
+    background.position.set((dimensions.width / 2) + offsetX, (dimensions.height / 2) + offsetY);
 
   } else {
     // Reset transformations
