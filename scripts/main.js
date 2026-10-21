@@ -13,8 +13,6 @@ import {
   createTileIsometricTab,
   initTileForm,
   handleCreateTile,
-  handleUpdateTile,
-  handleRefreshTile,
   addDepthSortControls,
   closeConfig,
   createTileIsometricPaletteConfig,

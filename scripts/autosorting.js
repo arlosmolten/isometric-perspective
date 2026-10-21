@@ -76,12 +76,8 @@ export function applyDepthSort() {
   sortList.reverse();
 
   const anyTokenControlled = canvas.tokens.controlled.length > 0;
-
-  // console.log("sortList",sortList)
-
   for (let i = 0; i < sortList.length; i++) {
     const currentSprite = sortList[i].object;
-    // console.log(currentSprite[i])
     currentSprite.mesh.sort = i; // if this is commented, tokens render above all tiles
     currentSprite.document.sort = i; // if this is commented, tokens render above SW tiles but under se tiles
     if (currentSprite.document.documentName === "Tile" && currentSprite.mesh){
@@ -265,9 +261,14 @@ export class SortableSprite {
     return acrossAmount >= 0 && acrossAmount <= 1 && alongAmount >= 0 && alongAmount <= 1;
   }
 
-  // sorting
   sortByDepth(sibling) {
-    return Math.floor(sibling.isoDepth - this.isoDepth);
+    const depthDifference = sibling.isoDepth - this.isoDepth;
+    // tie breaker , tokens remain sorted behind tiles by default, not the ebst case but better than the opposite.
+    // a better solution should be researched later.
+    if (depthDifference !== 0) return depthDifference;
+    if (this.isTile() && sibling.isToken()) return 1;
+    if (this.isToken() && sibling.isTile()) return -1;
+    return this.id < sibling.id ? 1 : -1;
   }
 
   getSortByFacing(sibling) {

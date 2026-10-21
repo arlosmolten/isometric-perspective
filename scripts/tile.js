@@ -255,57 +255,6 @@ export function handleCreateTile(tileDocument) {
   }
 }
 
-export function handleUpdateTile(tileDocument, updateData, options, userId) {
-  // const tile = canvas.tiles.get(tileDocument.id);
-  // if (!tile) return;
-  // const scene = tile.scene;
-
-  // const isSceneIsometric = scene.getFlag(
-  //   isometricModuleConfig.MODULE_ID,
-  //   "isometricEnabled",
-  // );
-  // if (
-  //   updateData.x !== undefined ||
-  //   updateData.y !== undefined ||
-  //   updateData.width !== undefined ||
-  //   updateData.height !== undefined ||
-  //   updateData.texture !== undefined
-  // ) {
-    // console.log("UPDATE IN HANDLE: ", updateData)
-    // requestAnimationFrame(() =>
-    //   applyIsometricTransformation(tile, isSceneIsometric),
-    // );
-  // }
-
-  // if (
-  //   tileDocument.getFlag(
-  //     isometricModuleConfig.MODULE_ID,
-  //     "isoOffsetGizmoEnabled",
-  //   ) === true
-  // ) {
-  //   toggleAnchorAxis(tileDocument, true);
-  // }
-}
-
-export function handleRefreshTile(tile) {
-  // console.log("TILE:", tile );
-  // const scene = tile.scene;
-  // const isSceneIsometric = scene.getFlag(
-  //   isometricModuleConfig.MODULE_ID,
-  //   "isometricEnabled",
-  // );
-  // applyIsometricTransformation(tile, isSceneIsometric);
-
-  // if (
-  //   tile.document.getFlag(
-  //     isometricModuleConfig.MODULE_ID,
-  //     "isoOffsetGizmoEnabled",
-  //   ) === true
-  // ) {
-  //   toggleAnchorAxis(tile.document, true);
-  // }
-}
-
 export function addDepthSortControls(controls) {
   controls.tiles.tools.toggleDephtSort = {
     name: "toggleDephtSort",
