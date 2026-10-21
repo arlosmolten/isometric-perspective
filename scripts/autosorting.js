@@ -16,6 +16,7 @@ import { applyIsometricTransformation } from "./transform.js";
 export function isoDepthSortTileMixin(Base) {
   return class DepthSortTile extends Base {
         
+    // used to be in refreshState but caused too many updates and desync , see https://foundryvtt.com/api/v14/classes/foundry.canvas.interaction.RenderFlags.html
     applyRenderFlags(flags) {
       super.applyRenderFlags(flags);
       if (!this.mesh) return;
@@ -52,8 +53,9 @@ export function isoDepthSortTileMixin(Base) {
 
 export function isoDepthSortTokenMixin(Base) {
   return class DepthSortPlaceable extends Base {
-    _refreshState() {
-      super._refreshState();
+
+    applyRenderFlags(flags) {
+      super.applyRenderFlags(flags);
       if (!this.mesh) return;
       applyDepthSort();
     }
