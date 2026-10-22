@@ -8,7 +8,6 @@ import {
   toggleAnchorAxis,
   getWallDimensions,
   getSpriteAnchorPoint,
-  getPlaceableGeometry, // used later in depth sort
   renderPlaceableGeometry,
 } from "./utils.js";
 import { applyIsometricTransformation } from "./transform.js";

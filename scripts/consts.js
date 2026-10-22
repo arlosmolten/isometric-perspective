@@ -174,12 +174,8 @@ export const TILE_FACINGS = [
     sortingRule: "Y" //  -> \ y axis direction
   },
   {
-    facing:'south',
+    facing:'block',
     sortingRule: "Depth" //
-  },
-  {
-    facing:'side',
-    sortingRule: "Depth" //  
   },
 ]
 

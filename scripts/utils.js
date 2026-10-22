@@ -323,8 +323,6 @@ function cleanupNamedLines(name) {
   existingLines.forEach((line) => line.destroy());
 }
 
-// CLEANUP : this might no longer be required - marked for cleanup
-
 export function getTileGeometry(tileDocument) {
   const width = tileDocument.width;
   const height = tileDocument.height;
@@ -346,8 +344,6 @@ export function getTileGeometry(tileDocument) {
   const center  = { x: topLeft.x + width / 2, y: topLeft.y + height / 2 };
   return { anchorPoint, anchor, width, height, topLeft, center, rotation: tileDocument.rotation ?? 0 };
 }
-
-// CLEANUP : this might no longer be required - marked for cleanup
 
 // used to auto adjust a tile offset to its anchor point, this is very approximative
 export function alignWallTileBottomAnchor(object, anchorPoint, isoOffsets) {
@@ -405,6 +401,7 @@ export function getMeshGeometry(mesh) {
     x: textureWidth / 2,
     y: textureHeight - rhombusHeight / 2,
   };
+
   const verticesInImage = {
     topPoint:    { x: textureWidth / 2, y: textureHeight - rhombusHeight },
     rightPoint:  { x: textureWidth,     y: centerInImage.y },
@@ -459,11 +456,10 @@ export function getWallDimensions(mesh, facing) {
     if (point.y > largestY) largestY = point.y;
   }
 
+  // center of the footprint and used to compare depth, 
   const anchorPoint = geometry.centerPoint;
 
-  // the baseline is the parallelogram's bottom edge: it starts at the bottom
-  // vertex, and its other end is the neighbouring vertex that reaches
-  // farthest along the wall's run
+  // a baseline is the middle line that cut the footprint half along the length and going through the anchor point.
   const baselineStartPoint = geometry.bottomPoint;
   let baselineEndPoint;
   if (facing === "south east") {
@@ -505,48 +501,50 @@ export function getWallDimensions(mesh, facing) {
     x: (baselineEndPoint.x - baselineStartPoint.x) / length,
     y: (baselineEndPoint.y - baselineStartPoint.y) / length,
   };
-  // the parallelogram's true height: the perpendicular distance between
-  // the baseline and the back edge
+
   const depth = Math.abs(
     backShift.x * baselineUnit.y - backShift.y * baselineUnit.x
   );
 
-  // the detection area is the footprint itself, extended along the wall's
-  // run by half the parallelogram's height past each end
   const runExtension = {
     x: baselineUnit.x * (depth / 2),
     y: baselineUnit.y * (depth / 2),
   };
+
+  // the det  ection area serves as a boundary to limit where depth sorting happens to avoid sorting placeables nowhere close to each others when its not required
   const detectionArea = [
-    {
+    { // top right 
       x: backStartPoint.x - runExtension.x,
       y: backStartPoint.y - runExtension.y,
     },
-    {
+    { // top left 
       x: backEndPoint.x + runExtension.x,
       y: backEndPoint.y + runExtension.y,
     },
-    {
+    { // bottom left 
       x: baselineEndPoint.x + runExtension.x,
       y: baselineEndPoint.y + runExtension.y,
     },
-    {
+    { // bottom right
       x: baselineStartPoint.x - runExtension.x,
       y: baselineStartPoint.y - runExtension.y,
     },
   ];
-  // the boundary's middle line: the segment's line, extended cap to cap
+
+  // top point 
   const detectionMidlineStartPoint = {
     x: (detectionArea[0].x + detectionArea[3].x) / 2,
     y: (detectionArea[0].y + detectionArea[3].y) / 2,
   };
+
+  // bottom point
   const detectionMidlineEndPoint = {
     x: (detectionArea[1].x + detectionArea[2].x) / 2,
     y: (detectionArea[1].y + detectionArea[2].y) / 2,
   };
 
-  // the baseline point under the anchor: the end of the facing line
-  const anchorBaselinePoint = {
+  // show which direction the tile is facing away from its anchor point
+  const facingIndicator = {
     x: anchorPoint.x - backShift.x * 0.5,
     y: anchorPoint.y - backShift.y * 0.5,
   };
@@ -578,7 +576,7 @@ export function getWallDimensions(mesh, facing) {
     detectionArea,
     detectionMidlineStartPoint,
     detectionMidlineEndPoint,
-    anchorBaselinePoint,
+    facingIndicator,
   };
 }
 
@@ -683,29 +681,27 @@ export function getPlaceableGeometry(mesh, shape, facing) {
   const parallelogram = getMeshGeometry(mesh);
   const parallelogramPoints = parallelogram.points;
 
+  // for placables with a facing value , a tile that represent a wall in game
   if (shape === "wall") {
     const dimensions = getWallDimensions(mesh, facing);
     if (dimensions) {
       return [
         lineStyle(2, 0.9),
         beginFill(0.08),
-        moveTo(dimensions.detectionArea[0]),
-        lineTo(dimensions.detectionArea[1]),
-        lineTo(dimensions.detectionArea[2]),
-        lineTo(dimensions.detectionArea[3]),
+        moveTo(dimensions.detectionArea[0]), // top right corner
+        lineTo(dimensions.detectionArea[1]), // top left corner
+        lineTo(dimensions.detectionArea[2]), // bottom left corner
+        lineTo(dimensions.detectionArea[3]), // bottom right corner
         closePath(),
         endFill(),
-        ...tracePath(parallelogramPoints, 2, 0.35),
         ...drawLine(dimensions.detectionMidlineStartPoint, dimensions.detectionMidlineEndPoint, 2, 0.4),
-        ...drawLine(dimensions.baselineStartPoint, dimensions.baselineEndPoint, 3, 0.9),
-        ...drawLine(dimensions.anchorPoint, dimensions.anchorBaselinePoint, 2, 0.4),
+        ...drawLine(dimensions.anchorPoint, dimensions.facingIndicator, 2, 0.4),
         ...drawAnchorDot(dimensions.anchorPoint),
       ];
     }
-    // not a wall facing: fall through and describe the placeable as a box
   }
 
-  // "box": footprint parallelogram, rise lines, top parallelogram, anchor dot
+  // for for everything else, its simply a box 
   const riseVector = getMeshRiseVector(mesh);
   const risenPoints = parallelogramPoints.map((point) => ({
     x: point.x + riseVector.x,
