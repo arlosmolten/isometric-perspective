@@ -13,8 +13,6 @@ import {
   createTileIsometricTab,
   initTileForm,
   handleCreateTile,
-  handleUpdateTile,
-  handleRefreshTile,
   addDepthSortControls,
   closeConfig,
   createTileIsometricPaletteConfig,
@@ -296,14 +294,14 @@ Hooks.on("setup",registerRuler);
 Hooks.once("ready", addWelcomeScreen);
 //scene configuration
 Hooks.on("ready", createSceneIsometricTab);
-Hooks.on("ready", applyDepthSort);
+// Hooks.on("ready", applyDepthSort);
 
 //scene management
 Hooks.on("renderSceneConfig", initSceneForm);
 Hooks.on("updateScene", handleUpdateScene);
 Hooks.on("canvasReady", handleCanvasReady);
 Hooks.on("canvasResize", handleCanvasResize);
-Hooks.on("canvasReady", applyDepthSort); // required on 1st time scene loading
+// Hooks.on("canvasReady", applyDepthSort); // required on 1st time scene loading
 
 //token config
 Hooks.on("ready", createTokenIsometricTab);
@@ -326,9 +324,9 @@ Hooks.on("renderDrawingHUD", handleRenderDrawingHUD);
 Hooks.on("ready", createTileIsometricTab);
 Hooks.on("renderTileConfig", initTileForm);
 Hooks.on("createTile", handleCreateTile);
-Hooks.on("updateTile", handleUpdateTile);
+// Hooks.on("updateTile", handleUpdateTile);
 Hooks.on("closeTileConfig", closeConfig);
-Hooks.on("refreshTile", handleRefreshTile);
+// Hooks.on("refreshTile", handleRefreshTile);
 Hooks.on("renderTilePalette", createTileIsometricPaletteConfig);
 Hooks.on("getSceneControlButtons", (controls) => {
   addDepthSortControls(controls);
@@ -336,6 +334,7 @@ Hooks.on("getSceneControlButtons", (controls) => {
 
 //autosorting
 Hooks.on("init", () => {
+// Hooks.on("canvasReady", () => {
   CONFIG.Token.objectClass = isoDepthSortTokenMixin(CONFIG.Token.objectClass);
   CONFIG.Tile.objectClass = isoDepthSortTileMixin(CONFIG.Tile.objectClass);
   wrapTileTestOcclusion();

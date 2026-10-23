@@ -1,5 +1,5 @@
 import { isometricModuleConfig } from './consts.js';
-import { sortPlaceableByPosition } from './utils.js';
+import { sortPlaceableByPosition } from './autosorting.js';
 
 export function registerDynamicTileConfig() {
   const enableOcclusionDynamicTile = game.settings.get(isometricModuleConfig.MODULE_ID, "enableOcclusionDynamicTile");
